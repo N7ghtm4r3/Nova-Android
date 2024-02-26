@@ -2,4 +2,7 @@
     <string name="app_name">Nova</string>
     <string name="projects">Projects</string>
     <string name="no_version_available_yet">No version available yet</string>
+    <string name="creation_date">Creation date:</string>
+    <string name="approbation_date">Approbation date:</string>
+    <string name="release_notes">Release notes</string>
 </resources>

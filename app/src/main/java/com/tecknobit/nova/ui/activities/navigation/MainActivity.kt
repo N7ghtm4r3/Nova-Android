@@ -140,10 +140,9 @@ class MainActivity : ComponentActivity() {
                                                 .clickable {
                                                     startActivity(Intent(
                                                         this@MainActivity,
-                                                        ProjectActivity::class.java
-                                                    ).apply {
-                                                        putExtra(PROJECT_KEY, project)
-                                                    }
+                                                        ProjectActivity::class.java).apply {
+                                                            putExtra(PROJECT_KEY, project)
+                                                        }
                                                     )
                                                 },
                                             leadingContent = {

@@ -6,26 +6,45 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
@@ -85,12 +104,180 @@ class ProjectActivity : ComponentActivity() {
                                         color = Color.White
                                     )
                                 }
-
+                            },
+                            actions = {
+                                IconButton(
+                                    onClick = {
+                                        // TODO: MAKE REQUEST THEN
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.DeleteForever,
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+                                }
                             }
                         )
+                    },
+                    floatingActionButton = {
+                        FloatingActionButton(
+                            onClick = {
+                                // TODO: MAKE REAL WORKFLOW
+                            },
+                            containerColor = md_theme_light_primary
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null
+                            )
+                        }
                     }
                 ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .padding(
+                                top = it.calculateTopPadding()
+                            )
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(16.dp)
+                    ) {
+                        items(
+                            key = { release -> release.id },
+                            items = project.value.releases
+                        ) { release ->
+                            OutlinedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                elevation = CardDefaults.cardElevation(5.dp),
+                                onClick = {
 
+                                }
+                            ) {
+                                Column (
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxSize()
+                                ) {
+                                    Row (
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Text(
+                                            text = release.releaseVersion,
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        OutlinedCard (
+                                            modifier = Modifier
+                                                .size(
+                                                    width = 65.dp,
+                                                    height = 25.dp
+                                                ),
+                                            border = BorderStroke(
+                                                width = 1.dp,
+                                                color = Color.Red
+                                            )
+                                        ) {
+                                            Column (
+                                                modifier = Modifier
+                                                    .fillMaxSize(),
+                                                verticalArrangement = Arrangement.Center,
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(
+                                                    text = "Bug",
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.Red
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Column (
+                                        modifier = Modifier
+                                            .padding(
+                                                top = 5.dp,
+                                                start = 5.dp
+                                            ),
+                                    ) {
+                                        Row (
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                        ) {
+                                            Text(
+                                                text = getString(R.string.creation_date),
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = release.creationDate,
+                                                fontSize = 16.sp
+                                            )
+                                        }
+                                        Row (
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                        ) {
+                                            Text(
+                                                text = getString(R.string.approbation_date),
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = release.approbationDate,
+                                                fontSize = 16.sp
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        modifier = Modifier
+                                            .padding(
+                                                top = 5.dp
+                                            ),
+                                        text = getString(R.string.release_notes),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Column(
+                                        modifier = Modifier
+                                            .padding(
+                                                top = 5.dp,
+                                                start = 5.dp
+                                            ),
+                                    ) {
+                                        release.releaseNotes.forEach { releaseNote ->
+                                            Row (
+                                                modifier = Modifier
+                                                    .fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "-",
+                                                    fontSize = 16.sp
+                                                )
+                                                Text(
+                                                    text = releaseNote.content,
+                                                    fontSize = 16.sp,
+                                                    textAlign = TextAlign.Justify,
+                                                    style = TextStyle(
+                                                        lineHeight = 14.sp
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
