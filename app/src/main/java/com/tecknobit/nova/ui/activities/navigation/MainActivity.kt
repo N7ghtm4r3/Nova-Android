@@ -1,10 +1,10 @@
-package com.tecknobit.nova.navigation
+package com.tecknobit.nova.ui.activities.navigation
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
-import android.os.StrictMode
-import android.os.StrictMode.ThreadPolicy
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +44,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
+import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 
@@ -64,15 +66,14 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // TODO: MOVE TO SPLASHSCREEN
-        val policy = ThreadPolicy.Builder().permitAll().build()
-        StrictMode.setThreadPolicy(policy)
         setContent {
             NovaTheme {
                 Scaffold (
                     floatingActionButton = {
                         FloatingActionButton(
-                            onClick = {  },
+                            onClick = {
+                                // TODO: MAKE REAL WORKFLOW
+                            },
                             containerColor = md_theme_light_primary
                         ) {
                             Icon(
@@ -137,7 +138,13 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 .clip(RoundedCornerShape(15.dp))
                                                 .clickable {
-
+                                                    startActivity(Intent(
+                                                        this@MainActivity,
+                                                        ProjectActivity::class.java
+                                                    ).apply {
+                                                        putExtra(PROJECT_KEY, project)
+                                                    }
+                                                    )
                                                 },
                                             leadingContent = {
                                                 AsyncImage(
@@ -155,14 +162,18 @@ class MainActivity : ComponentActivity() {
                                             headlineContent = {
                                                 Text(
                                                     text = project.name,
-                                                    fontSize = 20.sp,
+                                                    fontSize = 18.sp,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             },
                                             supportingContent = {
+                                                val workingProgressVersionText = project.workingProgressVersionText
                                                 Text(
-                                                    text = project.workingProgressVersionText,
-                                                    fontSize = 18.sp
+                                                    text = if(workingProgressVersionText != null)
+                                                        workingProgressVersionText
+                                                    else
+                                                        getString(R.string.no_version_available_yet),
+                                                    fontSize = 16.sp
                                                 )
                                             },
                                             trailingContent = {
@@ -174,21 +185,6 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             }
                                         )
-
-                                        /*Card (
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(100.dp),
-                                            shape = RoundedCornerShape(15.dp),
-                                            /*colors = CardDefaults.cardColors(
-                                                containerColor = Color.White
-                                            ),*/
-                                            elevation = CardDefaults.cardElevation(5.dp),
-                                        ) {
-                                           Column {
-                                               Text(it)
-                                           }
-                                        }*/
                                     }
                                 }
                             }
@@ -197,6 +193,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finishAffinity()
+            }
+        })
     }
 
 }

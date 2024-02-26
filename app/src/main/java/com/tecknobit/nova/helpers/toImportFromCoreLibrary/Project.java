@@ -1,8 +1,19 @@
 package com.tecknobit.nova.helpers.toImportFromCoreLibrary;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-public class Project {
+public class Project implements Serializable {
+
+    public static final String PROJECT_KEY = "project";
+
+    public static final String PROJECT_IDENTIFIER_KEY = "id";
+
+    public static final String LOGO_URL_KEY = "logoUrl";
+
+    public static final String PROJECT_NAME_KEY = "name";
+
+    public static final String WORKING_PROGRESS_VERSION_KEY = "workingProgressVersion";
 
     private final String id;
 
@@ -48,6 +59,8 @@ public class Project {
     }
 
     public String getWorkingProgressVersionText() {
+        if(workingProgressVersion == null)
+            return null;
         if(workingProgressVersion.startsWith("v. "))
             return workingProgressVersion;
         return "v. " + workingProgressVersion;
