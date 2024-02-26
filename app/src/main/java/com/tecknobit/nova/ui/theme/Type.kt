@@ -11,7 +11,7 @@ import com.tecknobit.nova.R
 /**
  * **fontFamily** -> the Pandoro's font family
  */
-val fontFamily = FontFamily(Font(R.font.roboto))
+val fontFamily = FontFamily(Font(R.font.robold))
 
 /**
  * **Typography** -> the Pandoro's Typography

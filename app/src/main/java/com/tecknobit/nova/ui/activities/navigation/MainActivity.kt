@@ -29,6 +29,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
@@ -47,6 +48,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
+import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 
 
@@ -98,7 +100,7 @@ class MainActivity : ComponentActivity() {
                                 topEnd = 35.dp
                             ),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color.White
+                                containerColor = gray_background
                             ),
                             elevation = CardDefaults.cardElevation(10.dp),
                         ) {
@@ -138,13 +140,14 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 .clip(RoundedCornerShape(15.dp))
                                                 .clickable {
-                                                    startActivity(Intent(
-                                                        this@MainActivity,
-                                                        ProjectActivity::class.java).apply {
-                                                            putExtra(PROJECT_KEY, project)
-                                                        }
-                                                    )
+                                                    val intent = Intent(this@MainActivity,
+                                                        ProjectActivity::class.java)
+                                                    intent.putExtra(PROJECT_KEY, project)
+                                                    startActivity(intent)
                                                 },
+                                            colors = ListItemDefaults.colors(
+                                                containerColor = Color.White
+                                            ),
                                             leadingContent = {
                                                 AsyncImage(
                                                     modifier = Modifier

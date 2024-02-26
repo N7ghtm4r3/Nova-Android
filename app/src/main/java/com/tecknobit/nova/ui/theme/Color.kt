@@ -65,3 +65,14 @@ val md_theme_dark_scrim = Color(0xFF000000)
 
 
 val seed = Color(0xFFF2A242)
+val gray_background = Color(248,249,251)
+
+/**
+ * Method to transform a [Color] from an hex [String]
+ * @param hex: hex value to transform
+ *
+ * @return color as [Color]
+ */
+fun fromHexToColor(hex: String): Color {
+    return Color(("ff" + hex.removePrefix("#").lowercase()).toLong(16))
+}

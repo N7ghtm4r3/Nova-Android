@@ -34,8 +34,8 @@ public class Project extends NovaItem {
     public Project(String name, String workingProgressVersion) {
         this(UUID.randomUUID().toString().replace("-", ""),
                 "https://t3.ftcdn.net/jpg/05/69/72/02/360_F_569720237_58rhoQoMjxyB0QCeXQK0OVUA0qNogTmq.jpg",
-                name, workingProgressVersion, List.of(new Release("1.0.1"),
-                        new Release("1.0.0")));
+                name, workingProgressVersion, List.of(new Release("1.0.1", Release.ReleaseStatus.Approved),
+                        new Release("1.0.0", Release.ReleaseStatus.New)));
     }
 
     public Project(String id, String logoUrl, String name, String workingProgressVersion,
