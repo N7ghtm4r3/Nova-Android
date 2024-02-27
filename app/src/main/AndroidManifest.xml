@@ -38,6 +38,12 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Nova"
             tools:ignore="LockedOrientationActivity" />
+        <activity
+            android:name=".ui.activities.session.ReleaseActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Nova"
+            tools:ignore="LockedOrientationActivity" />
     </application>
 
 </manifest>

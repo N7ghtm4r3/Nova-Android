@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Release.RELEASE_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Release.ReleaseStatus
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
@@ -65,11 +70,13 @@ class ProjectActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        project = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            mutableStateOf(intent.getSerializableExtra(Project.PROJECT_KEY, Project::class.java)!!)
-        else
-            mutableStateOf(intent.getSerializableExtra(Project.PROJECT_KEY)!! as Project)
         setContent {
+            project = remember {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                    mutableStateOf(intent.getSerializableExtra(Project.PROJECT_KEY, Project::class.java)!!)
+                else
+                    mutableStateOf(intent.getSerializableExtra(Project.PROJECT_KEY)!! as Project)
+            }
             NovaTheme {
                 Scaffold (
                     topBar = {
@@ -126,6 +133,17 @@ class ProjectActivity : ComponentActivity() {
                                 }
                                 IconButton(
                                     onClick = {
+                                        // TODO: MAKE REAL WORKFLOW
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Group,
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
                                         // TODO: MAKE REQUEST THEN
                                     }
                                 ) {
@@ -175,7 +193,11 @@ class ProjectActivity : ComponentActivity() {
                                     containerColor = Color.White
                                 ),
                                 onClick = {
-                                    // TODO: NAV TO RELEASE ACTIVITY
+                                    val intent = Intent(this@ProjectActivity,
+                                        ReleaseActivity::class.java)
+                                    intent.putExtra(RELEASE_KEY, release)
+                                    intent.putExtra(PROJECT_KEY, project.value)
+                                    startActivity(intent)
                                 }
                             ) {
                                 val status = release.status
@@ -315,6 +337,11 @@ class ProjectActivity : ComponentActivity() {
                 }
             }
         }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                startActivity(Intent(this@ProjectActivity, MainActivity::class.java))
+            }
+        })
     }
 
     private fun ReleaseStatus.createColor(): Color {
