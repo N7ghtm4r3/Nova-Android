@@ -20,7 +20,7 @@ public class RejectedReleaseEvent extends ReleaseStandardEvent {
     // TODO: 25/02/2024 TO REMOVE
     public RejectedReleaseEvent() {
         this(UUID.randomUUID().toString().replace("-", ""), System.currentTimeMillis(),
-                "Prova commento icao elllefneqginegiwbgwebgiobwaiogbaiogbèawbgoawbgoiaègbowèegbawoègbawgbaw", new ArrayList<>(
+                "Prova commento quando versione viene rifiutata e viene messo per iscritto il motivo di tale rifiuto!", new ArrayList<>(
                        List.of(
                                new RejectedTag(Release.ReleaseTag.Bug, "Bug"),
                                new RejectedTag(Release.ReleaseTag.Tip, "Tip"),

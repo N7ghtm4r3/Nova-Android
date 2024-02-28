@@ -119,7 +119,7 @@ fun ReleaseTagBadge(
     OutlinedCard (
         modifier = Modifier
             .requiredWidthIn(
-                min = 65.dp,
+                min = 40.dp,
                 max = 140.dp
             )
             .height(25.dp),

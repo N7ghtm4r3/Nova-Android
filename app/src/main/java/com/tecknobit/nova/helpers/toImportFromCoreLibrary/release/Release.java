@@ -99,6 +99,11 @@ public class Release extends NovaItem {
                 System.currentTimeMillis(), new ArrayList<>(
                         List.of(
                                 new ReleaseStandardEvent(ReleaseStatus.Approved),
+                                new AssetUploadingEvent(),
+                                new RejectedReleaseEvent(),
+                                new AssetUploadingEvent(),
+                                new RejectedReleaseEvent(),
+                                new AssetUploadingEvent(),
                                 new ReleaseStandardEvent(ReleaseStatus.Alpha),
                                 new ReleaseStandardEvent(ReleaseStatus.Beta),
                                 new RejectedReleaseEvent(),
