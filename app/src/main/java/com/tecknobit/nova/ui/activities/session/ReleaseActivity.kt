@@ -7,11 +7,22 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,14 +36,22 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Release
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Release.RELEASE_KEY
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.AssetUploadingEvent
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedReleaseEvent
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
+import com.tecknobit.nova.ui.components.ReleaseStatusBadge
+import com.tecknobit.nova.ui.components.ReleaseTagBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
@@ -136,6 +155,89 @@ class ReleaseActivity : ComponentActivity() {
                     containerColor = gray_background
 
                 ) {
+                    val events = release.value.releaseEvents
+                    if(events.isNotEmpty()) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .background(gray_background)
+                                .fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                top = it.calculateTopPadding() + 16.dp,
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = 16.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(
+                                key = { event -> event.id },
+                                items = events
+                            ) { event ->
+                                Row (
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    val isAssesUploading = event is AssetUploadingEvent
+                                    if(isAssesUploading) {
+                                        IconButton(
+                                            onClick = {
+                                                // TODO: DOWNLOAD THE ASSET
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Download,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.Download,
+                                            contentDescription = null
+                                        )
+                                    }
+                                    Column {
+                                        Text(
+                                            text = event.releaseEventDate,
+                                            fontSize = 14.sp
+                                        )
+                                        if(isAssesUploading) {
+                                            Text(
+                                                text = getString(R.string.new_asset_uploaded),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 22.sp
+                                            )
+                                        } else if(event is ReleaseStandardEvent) {
+                                            ReleaseStatusBadge(
+                                                releaseStatus = event.status,
+                                                paddingStart = 0.dp,
+                                                onClick = {
+                                                    // TODO: DISPLAY THE MESSAGE FOR THE TAG
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.height(5.dp))
+                                            if(event is RejectedReleaseEvent) {
+                                                LazyRow {
+                                                    items(
+                                                        key = { tag -> tag.tag.name },
+                                                        items = event.tags
+                                                    ) { tag ->
+                                                        ReleaseTagBadge(
+                                                            tag = tag.tag,
+                                                            onClick = {
+                                                                // TODO: DISPLAY THE MESSAGE FOR THE TAG
+                                                            }
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

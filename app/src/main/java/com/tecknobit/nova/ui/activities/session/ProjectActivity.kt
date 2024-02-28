@@ -7,7 +7,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
@@ -16,10 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidthIn
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,11 +50,11 @@ import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Release.RELEASE_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Release.ReleaseStatus
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
+import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
-import com.tecknobit.nova.ui.theme.fromHexToColor
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 
@@ -200,8 +196,6 @@ class ProjectActivity : ComponentActivity() {
                                     startActivity(intent)
                                 }
                             ) {
-                                val status = release.status
-                                val statusColor = status.createColor()
                                 Column (
                                     modifier = Modifier
                                         .padding(16.dp)
@@ -217,41 +211,9 @@ class ProjectActivity : ComponentActivity() {
                                             fontSize = 20.sp,
                                             fontWeight = FontWeight.Bold
                                         )
-                                        OutlinedCard (
-                                            modifier = Modifier
-                                                .padding(
-                                                    start = 10.dp
-                                                )
-                                                .requiredWidthIn(
-                                                    min = 65.dp,
-                                                    max = 100.dp
-                                                )
-                                                .wrapContentWidth()
-                                                .height(25.dp),
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = Color.White
-                                            ),
-                                            border = BorderStroke(
-                                                width = 1.dp,
-                                                color = statusColor
-                                            )
-                                        ) {
-                                            Column (
-                                                modifier = Modifier
-                                                    .padding(
-                                                        start = 10.dp,
-                                                        end = 10.dp
-                                                    ),
-                                                verticalArrangement = Arrangement.Center,
-                                                horizontalAlignment = Alignment.CenterHorizontally
-                                            ) {
-                                                Text(
-                                                    text = status.name,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = statusColor
-                                                )
-                                            }
-                                        }
+                                        ReleaseStatusBadge(
+                                            releaseStatus = release.status
+                                        )
                                     }
                                     Column (
                                         modifier = Modifier
@@ -275,7 +237,7 @@ class ProjectActivity : ComponentActivity() {
                                                 fontSize = 16.sp
                                             )
                                         }
-                                        if(status == ReleaseStatus.Approved) {
+                                        if(release.status == ReleaseStatus.Approved) {
                                             Row (
                                                 modifier = Modifier
                                                     .fillMaxWidth(),
@@ -342,10 +304,6 @@ class ProjectActivity : ComponentActivity() {
                 startActivity(Intent(this@ProjectActivity, MainActivity::class.java))
             }
         })
-    }
-
-    private fun ReleaseStatus.createColor(): Color {
-        return fromHexToColor(color)
     }
 
 }

@@ -1,5 +1,7 @@
 package com.tecknobit.nova.helpers.toImportFromCoreLibrary;
 
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release;
+
 import java.util.List;
 import java.util.UUID;
 

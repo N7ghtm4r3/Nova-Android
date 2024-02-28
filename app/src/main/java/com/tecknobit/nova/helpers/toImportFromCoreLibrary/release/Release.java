@@ -1,7 +1,13 @@
-package com.tecknobit.nova.helpers.toImportFromCoreLibrary;
+package com.tecknobit.nova.helpers.toImportFromCoreLibrary.release;
 
 import com.tecknobit.apimanager.formatters.TimeFormatter;
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.NovaItem;
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.AssetUploadingEvent;
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedReleaseEvent;
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent;
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +24,8 @@ public class Release extends NovaItem {
     public static final String RELEASE_NOTES_KEY = "releaseNotes";
 
     public static final String CREATION_DATE_KEY = "creationDate";
+
+    public static final String RELEASE_EVENTS_KEY = "releaseEvents";
 
     public static final String APPROBATION_DATE_KEY = "approbationDate";
 
@@ -49,7 +57,6 @@ public class Release extends NovaItem {
 
     }
 
-
     public enum ReleaseTag {
 
         Bug("#E24747"),
@@ -80,6 +87,8 @@ public class Release extends NovaItem {
 
     private final long creationDate;
 
+    private final List<ReleaseEvent> releaseEvents;
+
     private final long approbationDate;
 
     // TODO: 25/02/2024 TO REMOVE
@@ -87,16 +96,22 @@ public class Release extends NovaItem {
         this(UUID.randomUUID().toString().replace("-", ""), "v. " + releaseVersion,
                 status, List.of(new ReleaseNote("Release note 1"), new ReleaseNote("" +
                         "Nota un po piu lunga per testare bene il layout e sperarare che sia un bel layout perché non è il mio punto forte e spero di migliorarlo")),
-                System.currentTimeMillis(), System.currentTimeMillis());
+                System.currentTimeMillis(), new ArrayList<>(
+                        List.of(new ReleaseStandardEvent(ReleaseStatus.Beta),
+                                new RejectedReleaseEvent(),
+                                new AssetUploadingEvent()
+                        )
+                ), System.currentTimeMillis());
     }
 
-    public Release(String id, String releaseVersion, ReleaseStatus status, List<ReleaseNote> releaseNotes, long creationDate,
-                   long approbationDate) {
+    public Release(String id, String releaseVersion, ReleaseStatus status, List<ReleaseNote> releaseNotes,
+                   long creationDate, List<ReleaseEvent> releaseEvents, long approbationDate) {
         super(id);
         this.releaseVersion = releaseVersion;
         this.status = status;
         this.releaseNotes = releaseNotes;
         this.creationDate = creationDate;
+        this.releaseEvents = releaseEvents;
         this.approbationDate = approbationDate;
     }
 
@@ -118,6 +133,10 @@ public class Release extends NovaItem {
 
     public String getCreationDate() {
         return TimeFormatter.getStringDate(creationDate);
+    }
+
+    public List<ReleaseEvent> getReleaseEvents() {
+        return releaseEvents;
     }
 
     public long getApprobationTimestamp() {

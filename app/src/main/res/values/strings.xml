@@ -5,4 +5,5 @@
     <string name="creation_date">Creation date:</string>
     <string name="approbation_date">Approbation date:</string>
     <string name="release_notes">Release notes</string>
+    <string name="new_asset_uploaded">New asset uploaded</string>
 </resources>
