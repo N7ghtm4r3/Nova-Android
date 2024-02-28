@@ -6,4 +6,9 @@
     <string name="approbation_date">Approbation date:</string>
     <string name="release_notes">Release notes</string>
     <string name="new_asset_uploaded">New asset uploaded</string>
+    <string name="approved_timeline_message">Asset has been approved</string>
+    <string name="alpha_timeline_message">Asset has been promoted to Alpha version</string>
+    <string name="beta_timeline_message">Asset has been promoted to Beta version</string>
+    <string name="latest_timeline_message">Asset has been set as the latest version</string>
+    <string name="new_asset_has_been_uploaded">New asset has been uploaded</string>
 </resources>

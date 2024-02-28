@@ -12,6 +12,7 @@ import com.tecknobit.nova.R
  * **fontFamily** -> the Pandoro's font family
  */
 val fontFamily = FontFamily(Font(R.font.robold))
+val thinFontFamily = FontFamily(Font(R.font.robothin))
 
 /**
  * **Typography** -> the Pandoro's Typography

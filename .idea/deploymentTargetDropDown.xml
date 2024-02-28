@@ -4,6 +4,19 @@
     <value>
       <entry key="app">
         <State>
+          <runningDeviceTargetSelectedWithDropDown>
+            <Target>
+              <type value="RUNNING_DEVICE_TARGET" />
+              <deviceKey>
+                <Key>
+                  <type value="VIRTUAL_DEVICE_PATH" />
+                  <value value="C:\Users\manue\.android\avd\Pixel_3a_XL_API_30.avd" />
+                </Key>
+              </deviceKey>
+            </Target>
+          </runningDeviceTargetSelectedWithDropDown>
+          <timeTargetWasSelectedWithDropDown value="2024-02-28T16:17:14.213890600Z" />
+          <multipleDevicesSelectedInDropDown value="true" />
           <runningDeviceTargetsSelectedWithDialog>
             <Target>
               <type value="RUNNING_DEVICE_TARGET" />
@@ -11,6 +24,15 @@
                 <Key>
                   <type value="SERIAL_NUMBER" />
                   <value value="RF8M70PLLAV" />
+                </Key>
+              </deviceKey>
+            </Target>
+            <Target>
+              <type value="RUNNING_DEVICE_TARGET" />
+              <deviceKey>
+                <Key>
+                  <type value="VIRTUAL_DEVICE_PATH" />
+                  <value value="C:\Users\manue\.android\avd\Pixel_3a_XL_API_30.avd" />
                 </Key>
               </deviceKey>
             </Target>

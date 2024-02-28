@@ -57,6 +57,7 @@ import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
+import com.tecknobit.nova.ui.theme.thinFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 class ProjectActivity : ComponentActivity() {
@@ -234,7 +235,8 @@ class ProjectActivity : ComponentActivity() {
                                             )
                                             Text(
                                                 text = release.creationDate,
-                                                fontSize = 16.sp
+                                                fontSize = 16.sp,
+                                                fontFamily = thinFontFamily
                                             )
                                         }
                                         if(release.status == ReleaseStatus.Approved) {
@@ -250,7 +252,8 @@ class ProjectActivity : ComponentActivity() {
                                                 )
                                                 Text(
                                                     text = release.approbationDate,
-                                                    fontSize = 16.sp
+                                                    fontSize = 16.sp,
+                                                    fontFamily = thinFontFamily
                                                 )
                                             }
                                         }

@@ -7,18 +7,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteForever
@@ -33,6 +32,7 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +42,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pushpal.jetlime.ItemsList
+import com.pushpal.jetlime.JetLimeColumn
+import com.pushpal.jetlime.JetLimeDefaults
+import com.pushpal.jetlime.JetLimeEventDefaults
+import com.pushpal.jetlime.JetLimeExtendedEvent
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
@@ -52,11 +57,13 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.Rejecte
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.ReleaseTagBadge
+import com.tecknobit.nova.ui.components.getMessage
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
+import com.tecknobit.nova.ui.theme.thinFontFamily
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeApi::class)
 class ReleaseActivity : ComponentActivity() {
 
     private lateinit var release: MutableState<Release>
@@ -153,34 +160,34 @@ class ReleaseActivity : ComponentActivity() {
                         }
                     },
                     containerColor = gray_background
-
                 ) {
                     val events = release.value.releaseEvents
-                    if(events.isNotEmpty()) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .background(gray_background)
-                                .fillMaxSize(),
-                            contentPadding = PaddingValues(
-                                top = it.calculateTopPadding() + 16.dp,
-                                start = 16.dp,
-                                end = 16.dp,
-                                bottom = 16.dp
+                    JetLimeColumn(
+                        modifier = Modifier
+                            .padding(
+                                top = it.calculateTopPadding() + 25.dp,
+                                start = 20.dp,
+                                end = 20.dp,
+                                bottom = 20.dp
                             ),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            items(
-                                key = { event -> event.id },
-                                items = events
-                            ) { event ->
-                                Row (
+                        itemsList = ItemsList(events),
+                        style = JetLimeDefaults.columnStyle(
+                            contentDistance = 24.dp
+                        ),
+                        key = { _, item -> item.id },
+                    ) { _, event, position ->
+                        val isAssetUploadingEvent = event is AssetUploadingEvent
+                        JetLimeExtendedEvent(
+                            style = JetLimeEventDefaults.eventStyle(
+                                position = position
+                            ),
+                            additionalContent = {
+                                Column (
                                     modifier = Modifier
-                                        .fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        .width(105.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    val isAssesUploading = event is AssetUploadingEvent
-                                    if(isAssesUploading) {
+                                    if(isAssetUploadingEvent) {
                                         IconButton(
                                             onClick = {
                                                 // TODO: DOWNLOAD THE ASSET
@@ -191,45 +198,62 @@ class ReleaseActivity : ComponentActivity() {
                                                 contentDescription = null
                                             )
                                         }
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Default.Download,
-                                            contentDescription = null
+                                    } else if (event is ReleaseStandardEvent) {
+                                        ReleaseStatusBadge(
+                                            releaseStatus = event.status,
+                                            paddingStart = 0.dp,
                                         )
                                     }
-                                    Column {
+                                }
+                            }
+                        ) {
+                            Row (
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = event.releaseEventDate,
+                                        fontFamily = thinFontFamily,
+                                    )
+                                    if(event !is RejectedReleaseEvent) {
+                                        val message = if(isAssetUploadingEvent)
+                                            R.string.new_asset_has_been_uploaded
+                                        else
+                                            (event as ReleaseStandardEvent).getMessage()
                                         Text(
-                                            text = event.releaseEventDate,
-                                            fontSize = 14.sp
+                                            text = getString(message),
                                         )
-                                        if(isAssesUploading) {
+                                    } else {
+                                        Column {
                                             Text(
-                                                text = getString(R.string.new_asset_uploaded),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 22.sp
+                                                text = event.reasons
                                             )
-                                        } else if(event is ReleaseStandardEvent) {
-                                            ReleaseStatusBadge(
-                                                releaseStatus = event.status,
-                                                paddingStart = 0.dp,
-                                                onClick = {
-                                                    // TODO: DISPLAY THE MESSAGE FOR THE TAG
-                                                }
-                                            )
-                                            Spacer(modifier = Modifier.height(5.dp))
-                                            if(event is RejectedReleaseEvent) {
-                                                LazyRow {
-                                                    items(
-                                                        key = { tag -> tag.tag.name },
-                                                        items = event.tags
-                                                    ) { tag ->
-                                                        ReleaseTagBadge(
-                                                            tag = tag.tag,
-                                                            onClick = {
-                                                                // TODO: DISPLAY THE MESSAGE FOR THE TAG
-                                                            }
-                                                        )
-                                                    }
+                                            LazyHorizontalGrid(
+                                                modifier = Modifier
+                                                    .requiredHeightIn(
+                                                        min = 30.dp,
+                                                        max = 60.dp
+                                                    ),
+                                                contentPadding = PaddingValues(
+                                                    top = 5.dp
+                                                ),
+                                                rows = GridCells.Fixed(2),
+                                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                            ) {
+                                                items(
+                                                    key = { tag -> tag.tag.name },
+                                                    items = event.tags
+                                                ) { tag ->
+                                                    ReleaseTagBadge(
+                                                        tag = tag.tag,
+                                                        onClick = {
+                                                            // TODO: DISPLAY THE MESSAGE FOR THE TAG
+                                                        }
+                                                    )
                                                 }
                                             }
                                         }

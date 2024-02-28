@@ -97,7 +97,10 @@ public class Release extends NovaItem {
                 status, List.of(new ReleaseNote("Release note 1"), new ReleaseNote("" +
                         "Nota un po piu lunga per testare bene il layout e sperarare che sia un bel layout perché non è il mio punto forte e spero di migliorarlo")),
                 System.currentTimeMillis(), new ArrayList<>(
-                        List.of(new ReleaseStandardEvent(ReleaseStatus.Beta),
+                        List.of(
+                                new ReleaseStandardEvent(ReleaseStatus.Approved),
+                                new ReleaseStandardEvent(ReleaseStatus.Alpha),
+                                new ReleaseStandardEvent(ReleaseStatus.Beta),
                                 new RejectedReleaseEvent(),
                                 new AssetUploadingEvent()
                         )

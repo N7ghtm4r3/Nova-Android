@@ -17,8 +17,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseTag
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
 import com.tecknobit.nova.ui.theme.fromHexToColor
 
 @Composable
@@ -118,9 +120,8 @@ fun ReleaseTagBadge(
         modifier = Modifier
             .requiredWidthIn(
                 min = 65.dp,
-                max = 100.dp
+                max = 140.dp
             )
-            .wrapContentWidth()
             .height(25.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -141,6 +142,8 @@ fun ReleaseTagBadge(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally),
                 text = tag.name,
                 fontWeight = FontWeight.Bold,
                 color = tagColor
@@ -151,4 +154,14 @@ fun ReleaseTagBadge(
 
 private fun ReleaseTag.createColor(): Color {
     return fromHexToColor(color)
+}
+
+fun ReleaseStandardEvent.getMessage(): Int {
+    return when(this.status) {
+        ReleaseStatus.Approved -> R.string.approved_timeline_message
+        ReleaseStatus.Alpha -> R.string.alpha_timeline_message
+        ReleaseStatus.Beta -> R.string.beta_timeline_message
+        ReleaseStatus.Latest -> R.string.latest_timeline_message
+        else -> -1
+    }
 }
