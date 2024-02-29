@@ -120,7 +120,7 @@ fun ReleaseTagBadge(
     onClick: () -> Unit
 ) {
     val tagColor = tag.createColor()
-    OutlinedCard (
+    OutlinedCard(
         modifier = Modifier
             .requiredWidthIn(
                 min = 40.dp,
@@ -156,7 +156,7 @@ fun ReleaseTagBadge(
     }
 }
 
-private fun ReleaseTag.createColor(): Color {
+fun ReleaseTag.createColor(): Color {
     return fromHexToColor(color)
 }
 

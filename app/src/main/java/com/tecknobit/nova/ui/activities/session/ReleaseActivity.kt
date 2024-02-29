@@ -7,13 +7,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
@@ -42,8 +45,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -67,6 +72,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.Releas
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Rejected
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.AssetUploadingEvent
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedReleaseEvent
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
@@ -297,11 +303,16 @@ class ReleaseActivity : ComponentActivity() {
                                                     ),
                                                     dismissAction = closeAction,
                                                     confirmAction = {
-                                                        if(reasons.value.isNotEmpty()) {
+                                                        if(isApproved.value) {
                                                             // TODO: MAKE THE REQUEST THEN
                                                             closeAction()
-                                                        } else
-                                                            isError.value = true
+                                                        } else {
+                                                            if(reasons.value.isNotEmpty()) {
+                                                                // TODO: MAKE THE REQUEST THEN
+                                                                closeAction()
+                                                            } else
+                                                                isError.value = true
+                                                        }
                                                     }
                                                 )
                                                 Row (
@@ -407,9 +418,16 @@ class ReleaseActivity : ComponentActivity() {
                         else
                             green
                     ),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = green
+                    ),
                     modifier = Modifier
                         .width(120.dp),
-                    onClick = { isApproved.value = !isApproved.value }
+                    onClick = {
+                        if(!isApproved.value)
+                            isApproved.value = true
+                    }
                 ) {
                     Text(
                         text = stringResource(R.string.approve)
@@ -426,9 +444,16 @@ class ReleaseActivity : ComponentActivity() {
                         else
                             red
                     ),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = red
+                    ),
                     modifier = Modifier
                         .width(120.dp),
-                    onClick = { isApproved.value = !isApproved.value }
+                    onClick = {
+                        if(isApproved.value)
+                            isApproved.value = false
+                    }
                 ) {
                     Text(
                         text = stringResource(R.string.reject)
@@ -459,6 +484,66 @@ class ReleaseActivity : ComponentActivity() {
                     },
                     isError = isError.value
                 )
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Start),
+                    text = getString(R.string.tags),
+                    fontSize = 20.sp
+                )
+                LazyHorizontalGrid(
+                    modifier = Modifier
+                        .requiredHeightIn(
+                            min = 40.dp,
+                            max = 80.dp
+                        )
+                        .align(Alignment.Start),
+                    contentPadding = PaddingValues(
+                        top = 5.dp
+                    ),
+                    rows = GridCells.Fixed(2),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    items(
+                        key = { tag -> tag.name },
+                        items = ReleaseTag.entries.toTypedArray()
+                    ) { tag ->
+                        var isAdded by remember { mutableStateOf(false) }
+                        val tagColor = tag.createColor()
+                        OutlinedButton(
+                            modifier = Modifier
+                                .requiredWidthIn(
+                                    min = 40.dp,
+                                    max = 150.dp
+                                )
+                                .height(40.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if(isAdded)
+                                    tagColor
+                                else
+                                    Color.White
+                            ),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = if(!isAdded)
+                                    tagColor
+                                else
+                                    Color.White
+                            ),
+                            onClick = { isAdded = !isAdded }
+                        ) {
+                            Text(
+                                text = tag.name,
+                                fontWeight = FontWeight.Bold,
+                                color = if(!isAdded)
+                                    tagColor
+                                else
+                                    Color.White
+                            )
+                        }
+                    }
+                }
             }
         }
     }
