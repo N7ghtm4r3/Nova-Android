@@ -1,6 +1,10 @@
 package com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events;
 
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release;
+import static com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Bug;
+import static com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Issue;
+import static com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.LayoutChange;
+import static com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Tip;
+
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus;
 
 import java.util.ArrayList;
@@ -22,10 +26,10 @@ public class RejectedReleaseEvent extends ReleaseStandardEvent {
         this(UUID.randomUUID().toString().replace("-", ""), System.currentTimeMillis(),
                 "Prova commento quando versione viene rifiutata e viene messo per iscritto il motivo di tale rifiuto!", new ArrayList<>(
                        List.of(
-                               new RejectedTag(Release.ReleaseTag.Bug, "Bug"),
-                               new RejectedTag(Release.ReleaseTag.Tip, "Tip"),
-                               new RejectedTag(Release.ReleaseTag.LayoutChange, "LayoutChange"),
-                               new RejectedTag(Release.ReleaseTag.Issue, "Issue")
+                               new RejectedTag(Bug, "Bug"),
+                               new RejectedTag(Tip, "Tip"),
+                               new RejectedTag(LayoutChange, "LayoutChange"),
+                               new RejectedTag(Issue, "Issue")
                        )
                 ));
     }

@@ -57,28 +57,6 @@ public class Release extends NovaItem {
 
     }
 
-    public enum ReleaseTag {
-
-        Bug("#E24747"),
-
-        Issue("#AF6BDC"),
-
-        LayoutChange("#3A98C7"),
-
-        Tip("#1A50B5");
-
-        private final String color;
-
-        ReleaseTag(String color) {
-            this.color = color;
-        }
-
-        public String getColor() {
-            return color;
-        }
-
-    }
-
     private final String releaseVersion;
 
     private final ReleaseStatus status;
@@ -98,14 +76,15 @@ public class Release extends NovaItem {
                         "Nota un po piu lunga per testare bene il layout e sperarare che sia un bel layout perché non è il mio punto forte e spero di migliorarlo")),
                 System.currentTimeMillis(), new ArrayList<>(
                         List.of(
+                                new ReleaseStandardEvent(ReleaseStatus.Latest),
+                                new ReleaseStandardEvent(ReleaseStatus.Alpha),
+                                new ReleaseStandardEvent(ReleaseStatus.Beta),
                                 new ReleaseStandardEvent(ReleaseStatus.Approved),
                                 new AssetUploadingEvent(),
                                 new RejectedReleaseEvent(),
                                 new AssetUploadingEvent(),
                                 new RejectedReleaseEvent(),
                                 new AssetUploadingEvent(),
-                                new ReleaseStandardEvent(ReleaseStatus.Alpha),
-                                new ReleaseStandardEvent(ReleaseStatus.Beta),
                                 new RejectedReleaseEvent(),
                                 new AssetUploadingEvent()
                         )

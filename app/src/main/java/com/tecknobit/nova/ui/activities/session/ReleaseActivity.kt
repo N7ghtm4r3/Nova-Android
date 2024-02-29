@@ -19,20 +19,27 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Comment
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -56,11 +64,14 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Latest
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Rejected
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.AssetUploadingEvent
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedReleaseEvent
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
+import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.ReleaseTagBadge
+import com.tecknobit.nova.ui.components.createColor
 import com.tecknobit.nova.ui.components.getMessage
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
@@ -72,10 +83,11 @@ class ReleaseActivity : ComponentActivity() {
 
     private lateinit var release: MutableState<Release>
 
+    private var navBackIntent: Intent? = null
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var navBackIntent: Intent? = null
         setContent {
             release = remember {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
@@ -90,6 +102,9 @@ class ReleaseActivity : ComponentActivity() {
             navBackIntent = Intent(this@ReleaseActivity, ProjectActivity::class.java)
             navBackIntent!!.putExtra(PROJECT_KEY, sourceProject)
             val releaseCurrentStatus = release.value.status
+            val isReleaseApproved = releaseCurrentStatus == Approved
+            val showPromoteRelease = remember { mutableStateOf(false) }
+            val showDeleteRelease = remember { mutableStateOf(false) }
             NovaTheme {
                 Scaffold (
                     topBar = {
@@ -102,7 +117,7 @@ class ReleaseActivity : ComponentActivity() {
                                     onClick = { startActivity(navBackIntent) }
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.ArrowBack,
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = null,
                                         tint = Color.White
                                     )
@@ -137,9 +152,7 @@ class ReleaseActivity : ComponentActivity() {
                                     )
                                 }
                                 IconButton(
-                                    onClick = {
-                                        // TODO: MAKE REQUEST THEN
-                                    }
+                                    onClick = { showDeleteRelease.value = true }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.DeleteForever,
@@ -155,12 +168,16 @@ class ReleaseActivity : ComponentActivity() {
                         if(releaseCurrentStatus != Latest) {
                             FloatingActionButton(
                                 onClick = {
-                                    // TODO: MAKE REAL WORKFLOW
+                                    if(isReleaseApproved)
+                                        showPromoteRelease.value = true
+                                    else {
+
+                                    }
                                 },
                                 containerColor = md_theme_light_primary
                             ) {
                                 Icon(
-                                    imageVector = if(releaseCurrentStatus == Approved)
+                                    imageVector = if(isReleaseApproved)
                                         Icons.Default.Verified
                                     else
                                         Icons.Default.Upload,
@@ -171,6 +188,29 @@ class ReleaseActivity : ComponentActivity() {
                     },
                     containerColor = gray_background
                 ) {
+                    NovaAlertDialog(
+                        show = showDeleteRelease,
+                        icon = Icons.Default.Warning,
+                        title = R.string.delete_release,
+                        message = R.string.delete_release_alert_message,
+                        confirmAction = {
+                            // TODO: MAKE THE REQUEST THEN
+                            showDeleteRelease.value = false
+                            startActivity(navBackIntent)
+                        }
+                    )
+                    if(isReleaseApproved) {
+                        NovaAlertDialog(
+                            show = showPromoteRelease,
+                            icon = Icons.Default.Verified,
+                            title = R.string.promote_release_as_latest,
+                            message = R.string.promoted_release_alert_message,
+                            confirmAction = {
+                                // TODO: MAKE THE REQUEST TO PROMOTE THE RELEASE AS LATEST THEN
+                                showPromoteRelease.value = false
+                            }
+                        )
+                    }
                     val events = release.value.releaseEvents
                     JetLimeColumn(
                         modifier = Modifier
@@ -235,6 +275,35 @@ class ReleaseActivity : ComponentActivity() {
                                         if((isAssetUploadingEvent && ((releaseCurrentStatus != Approved)
                                                     && (releaseCurrentStatus != Latest)))) {
                                             if(!(event as AssetUploadingEvent).isCommented) {
+                                                val showCommentAsset = remember { mutableStateOf(false) }
+                                                val isApproved = remember { mutableStateOf(true) }
+                                                val reasons = remember { mutableStateOf("") }
+                                                val isError = remember { mutableStateOf(false) }
+                                                val closeAction = {
+                                                    isApproved.value = true
+                                                    reasons.value = ""
+                                                    isError.value = false
+                                                    showCommentAsset.value = false
+                                                }
+                                                NovaAlertDialog(
+                                                    show = showCommentAsset,
+                                                    icon = Icons.AutoMirrored.Filled.Comment,
+                                                    onDismissAction = closeAction,
+                                                    title = R.string.comment_the_asset,
+                                                    message = commentReleaseMessage(
+                                                        isApproved = isApproved,
+                                                        reasons = reasons,
+                                                        isError = isError
+                                                    ),
+                                                    dismissAction = closeAction,
+                                                    confirmAction = {
+                                                        if(reasons.value.isNotEmpty()) {
+                                                            // TODO: MAKE THE REQUEST THEN
+                                                            closeAction()
+                                                        } else
+                                                            isError.value = true
+                                                    }
+                                                )
                                                 Row (
                                                     modifier = Modifier
                                                         .fillMaxWidth(),
@@ -245,17 +314,16 @@ class ReleaseActivity : ComponentActivity() {
                                                             // TODO: MAKE THE REAL WORKFLOW
                                                         }
                                                     ) {
+                                                        // TODO: FIND A SUITABLE TEXT
                                                         Text(
                                                             text = "Test"
                                                         )
                                                     }
                                                     Button(
-                                                        onClick = {
-                                                            // TODO: MAKE THE REAL WORKFLOW
-                                                        }
+                                                        onClick = { showCommentAsset.value = true }
                                                     ) {
                                                         Text(
-                                                            text = "Comment"
+                                                            text = getString(R.string.comment)
                                                         )
                                                     }
                                                 }
@@ -306,6 +374,93 @@ class ReleaseActivity : ComponentActivity() {
                 startActivity(navBackIntent!!)
             }
         })
+    }
+
+    private fun commentReleaseMessage(
+        isApproved: MutableState<Boolean>,
+        reasons: MutableState<String>,
+        isError: MutableState<Boolean>
+    ) = @Composable {
+        Column (
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = 10.dp,
+                    end = 10.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            val green = Approved.createColor()
+            val red = Rejected.createColor()
+            Row (
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedButton(
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = if(isApproved.value)
+                            green
+                        else
+                            Color.Unspecified,
+                        contentColor = if(isApproved.value)
+                            Color.White
+                        else
+                            green
+                    ),
+                    modifier = Modifier
+                        .width(120.dp),
+                    onClick = { isApproved.value = !isApproved.value }
+                ) {
+                    Text(
+                        text = stringResource(R.string.approve)
+                    )
+                }
+                OutlinedButton(
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = if(!isApproved.value)
+                            red
+                        else
+                            Color.Unspecified,
+                        contentColor = if(!isApproved.value)
+                            Color.White
+                        else
+                            red
+                    ),
+                    modifier = Modifier
+                        .width(120.dp),
+                    onClick = { isApproved.value = !isApproved.value }
+                ) {
+                    Text(
+                        text = stringResource(R.string.reject)
+                    )
+                }
+            }
+            if(!isApproved.value) {
+                OutlinedTextField(
+                    value = reasons.value,
+                    onValueChange = {
+                        isError.value = it.isEmpty() && reasons.value.isNotEmpty()
+                        reasons.value = it
+                    },
+                    label = {
+                        Text(
+                            text = getString(R.string.reasons)
+                        )
+                    },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = { reasons.value = "" }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    isError = isError.value
+                )
+            }
+        }
     }
 
 }

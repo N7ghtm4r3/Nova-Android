@@ -19,7 +19,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseTag
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Alpha
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Beta
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Latest
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
 import com.tecknobit.nova.ui.theme.fromHexToColor
 
@@ -106,7 +110,7 @@ private fun ReleaseStatusBadgeContent(
     }
 }
 
-private fun ReleaseStatus.createColor(): Color {
+fun ReleaseStatus.createColor(): Color {
     return fromHexToColor(color)
 }
 
@@ -158,10 +162,10 @@ private fun ReleaseTag.createColor(): Color {
 
 fun ReleaseStandardEvent.getMessage(): Int {
     return when(this.status) {
-        ReleaseStatus.Approved -> R.string.approved_timeline_message
-        ReleaseStatus.Alpha -> R.string.alpha_timeline_message
-        ReleaseStatus.Beta -> R.string.beta_timeline_message
-        ReleaseStatus.Latest -> R.string.latest_timeline_message
+        Approved -> R.string.approved_timeline_message
+        Alpha -> R.string.alpha_timeline_message
+        Beta -> R.string.beta_timeline_message
+        Latest -> R.string.latest_timeline_message
         else -> -1
     }
 }

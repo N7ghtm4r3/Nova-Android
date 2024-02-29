@@ -9,6 +9,17 @@
     <string name="approved_timeline_message">Asset has been approved</string>
     <string name="alpha_timeline_message">Asset has been promoted to Alpha version</string>
     <string name="beta_timeline_message">Asset has been promoted to Beta version</string>
-    <string name="latest_timeline_message">Asset has been set as the latest version</string>
+    <string name="latest_timeline_message">Release promoted as latest!</string>
     <string name="new_asset_has_been_uploaded">New asset has been uploaded</string>
+    <string name="delete_release">Delete release?</string>
+    <string name="delete_release_alert_message">If you confirm, the release will be deleted and the related data will no longer be available</string>
+    <string name="confirm">Confirm</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="promote_release_as_latest">Promote as the latest</string>
+    <string name="promoted_release_alert_message">If you confirm, the version will be promoted as the latest available and no more changes will be allowed on it</string>
+    <string name="comment">Comment</string>
+    <string name="comment_the_asset">Comment the asset</string>
+    <string name="approve">Approve</string>
+    <string name="reject">Reject</string>
+    <string name="reasons">Reasons</string>
 </resources>

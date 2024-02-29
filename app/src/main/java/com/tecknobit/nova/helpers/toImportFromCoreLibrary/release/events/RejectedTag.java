@@ -1,6 +1,6 @@
 package com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events;
 
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseTag;
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag;
 
 import java.io.Serializable;
 
