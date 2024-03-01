@@ -20,11 +20,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -53,6 +54,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
+import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
@@ -67,6 +69,7 @@ class ProjectActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val navBackIntent = Intent(this@ProjectActivity, MainActivity::class.java)
         setContent {
             project = remember {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
@@ -74,6 +77,7 @@ class ProjectActivity : ComponentActivity() {
                 else
                     mutableStateOf(intent.getSerializableExtra(Project.PROJECT_KEY)!! as Project)
             }
+            val showDeleteProject = remember { mutableStateOf(false) }
             NovaTheme {
                 Scaffold (
                     topBar = {
@@ -83,13 +87,10 @@ class ProjectActivity : ComponentActivity() {
                             ),
                             navigationIcon = {
                                 IconButton(
-                                    onClick = {
-                                        startActivity(Intent(this@ProjectActivity,
-                                            MainActivity::class.java))
-                                    }
+                                    onClick = { startActivity(navBackIntent) }
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.ArrowBack,
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = null,
                                         tint = Color.White
                                     )
@@ -140,9 +141,7 @@ class ProjectActivity : ComponentActivity() {
                                     )
                                 }
                                 IconButton(
-                                    onClick = {
-                                        // TODO: MAKE REQUEST THEN
-                                    }
+                                    onClick = { showDeleteProject.value = true }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.DeleteForever,
@@ -150,6 +149,18 @@ class ProjectActivity : ComponentActivity() {
                                         tint = Color.White
                                     )
                                 }
+                                NovaAlertDialog(
+                                    show = showDeleteProject,
+                                    icon = Icons.Default.Warning,
+                                    title = R.string.delete_project,
+                                    message = R.string.delete_project_alert_message
+                                    ,
+                                    confirmAction = {
+                                        // TODO: MAKE THE REQUEST THEN
+                                        showDeleteProject.value = false
+                                        startActivity(navBackIntent)
+                                    }
+                                )
                             }
                         )
                     },
@@ -304,7 +315,7 @@ class ProjectActivity : ComponentActivity() {
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                startActivity(Intent(this@ProjectActivity, MainActivity::class.java))
+                startActivity(navBackIntent)
             }
         })
     }

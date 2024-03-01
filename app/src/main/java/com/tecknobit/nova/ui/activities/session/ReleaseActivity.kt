@@ -656,9 +656,13 @@ class ReleaseActivity : ComponentActivity() {
                         TextButton(
                             onClick = {
                                 if(isInputMode) {
-                                    // TODO: MAKE REQUEST THEN
-                                }
-                                show.value = false
+                                    if(description.value.isNotEmpty()) {
+                                        // TODO: MAKE REQUEST THEN
+                                        show.value = false
+                                    } else
+                                        isError.value = true
+                                } else
+                                    show.value = false
                             }
                         ) {
                             val buttonText = if(isInputMode)

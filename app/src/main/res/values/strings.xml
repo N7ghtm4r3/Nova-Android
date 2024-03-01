@@ -25,4 +25,6 @@
     <string name="tags">Tags</string>
     <string name="close">Close</string>
     <string name="description">Description</string>
+    <string name="delete_project">Delete project?</string>
+    <string name="delete_project_alert_message">If you confirm, the project will be deleted and the related data will no longer be available</string>
 </resources>
