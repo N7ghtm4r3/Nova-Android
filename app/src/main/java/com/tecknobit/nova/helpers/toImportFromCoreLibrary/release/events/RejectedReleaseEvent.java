@@ -26,10 +26,11 @@ public class RejectedReleaseEvent extends ReleaseStandardEvent {
         this(UUID.randomUUID().toString().replace("-", ""), System.currentTimeMillis(),
                 "Prova commento quando versione viene rifiutata e viene messo per iscritto il motivo di tale rifiuto!", new ArrayList<>(
                        List.of(
-                               new RejectedTag(Bug, "Bug"),
-                               new RejectedTag(Tip, "Tip"),
-                               new RejectedTag(LayoutChange, "LayoutChange"),
-                               new RejectedTag(Issue, "Issue")
+                               new RejectedTag(Bug, "Bug Prova commento quando versione viene rifiutata e viene messo per iscritto il motivo di tale rifiuto!"),
+                               new RejectedTag(Tip, ""),
+                               //new RejectedTag(Tip, "Tip Prova commento quando versione viene rifiutata e viene messo per iscritto il motivo di tale rifiuto! "),
+                               new RejectedTag(LayoutChange, "LayoutChange Prova commento quando versione viene rifiutata e viene messo per iscritto il motivo di tale rifiuto!"),
+                               new RejectedTag(Issue, "Issue Prova commento quando versione viene rifiutata e viene messo per iscritto il motivo di tale rifiuto!")
                        )
                 ));
     }

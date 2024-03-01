@@ -26,10 +26,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,10 +39,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ExperimentalComposeApi
@@ -72,14 +76,21 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.Releas
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Rejected
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.AssetUploadingEvent
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedReleaseEvent
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.*
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.ReleaseTagBadge
 import com.tecknobit.nova.ui.components.createColor
 import com.tecknobit.nova.ui.components.getMessage
+import com.tecknobit.nova.ui.theme.BlueSchemeColors
+import com.tecknobit.nova.ui.theme.LightblueSchemeColors
 import com.tecknobit.nova.ui.theme.NovaTheme
+import com.tecknobit.nova.ui.theme.RedSchemeColors
+import com.tecknobit.nova.ui.theme.Typography
+import com.tecknobit.nova.ui.theme.VioletSchemeColors
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
@@ -349,8 +360,8 @@ class ReleaseActivity : ComponentActivity() {
                                             LazyHorizontalGrid(
                                                 modifier = Modifier
                                                     .requiredHeightIn(
-                                                        min = 30.dp,
-                                                        max = 60.dp
+                                                        min = 35.dp,
+                                                        max = 70.dp
                                                     ),
                                                 contentPadding = PaddingValues(
                                                     top = 5.dp
@@ -363,11 +374,17 @@ class ReleaseActivity : ComponentActivity() {
                                                     key = { tag -> tag.tag.name },
                                                     items = event.tags
                                                 ) { tag ->
+                                                    val showAlert = remember {
+                                                        mutableStateOf(false)
+                                                    }
                                                     ReleaseTagBadge(
-                                                        tag = tag.tag,
-                                                        onClick = {
-                                                            // TODO: DISPLAY THE MESSAGE FOR THE TAG
-                                                        }
+                                                        tag = tag,
+                                                        onClick = { showAlert.value = true }
+                                                    )
+                                                    TagInformation(
+                                                        show = showAlert,
+                                                        tag = tag,
+                                                        date = event.releaseEventDate
                                                     )
                                                 }
                                             }
@@ -544,6 +561,116 @@ class ReleaseActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    @Composable
+    private fun TagInformation(
+        show: MutableState<Boolean>,
+        tag: RejectedTag,
+        date: String
+    ) {
+        MaterialTheme(
+            colorScheme = when(tag.tag) {
+                Bug -> RedSchemeColors
+                Issue -> VioletSchemeColors
+                LayoutChange -> LightblueSchemeColors
+                else -> BlueSchemeColors
+            },
+            typography = Typography,
+        ) {
+            if(show.value) {
+                val isInputMode = tag.comment.isEmpty()
+                val isInputButton = @Composable {
+                    TextButton(
+                        onClick = { show.value = false }
+                    ) {
+                        Text(
+                            text = stringResource(R.string.dismiss)
+                        )
+                    }
+                }
+                val dismissButton = if(isInputMode)
+                    isInputButton
+                else
+                    null
+                val description = remember { mutableStateOf("") }
+                val isError = remember { mutableStateOf(false) }
+                AlertDialog(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null
+                        )
+                    },
+                    onDismissRequest = { show.value = false },
+                    title = {
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            text = tag.tag.name,
+                            textAlign = TextAlign.Start
+                        )
+                    },
+                    text = {
+                        Column {
+                            Text(
+                                text = date,
+                                fontFamily = thinFontFamily,
+                            )
+                            if(!isInputMode) {
+                                Text(
+                                    text = tag.comment,
+                                    textAlign = TextAlign.Justify
+                                )
+                            } else {
+                                OutlinedTextField(
+                                    value = description.value,
+                                    onValueChange = {
+                                        isError.value = it.isEmpty() && description.value.isNotEmpty()
+                                        description.value = it
+                                    },
+                                    label = {
+                                        Text(
+                                            text = stringResource(R.string.description)
+                                        )
+                                    },
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = { description.value = "" }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    },
+                                    isError = isError.value
+                                )
+                            }
+                        }
+                    },
+                    dismissButton = dismissButton,
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                if(isInputMode) {
+                                    // TODO: MAKE REQUEST THEN
+                                }
+                                show.value = false
+                            }
+                        ) {
+                            val buttonText = if(isInputMode)
+                                R.string.confirm
+                            else
+                                R.string.close
+                            Text(
+                                text = stringResource(buttonText)
+                            )
+                        }
+                    }
+                )
             }
         }
     }

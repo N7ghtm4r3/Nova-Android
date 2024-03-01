@@ -23,4 +23,6 @@
     <string name="reject">Reject</string>
     <string name="reasons">Reasons</string>
     <string name="tags">Tags</string>
+    <string name="close">Close</string>
+    <string name="description">Description</string>
 </resources>

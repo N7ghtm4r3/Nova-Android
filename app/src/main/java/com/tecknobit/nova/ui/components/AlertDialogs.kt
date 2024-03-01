@@ -71,6 +71,31 @@ fun NovaAlertDialog(
     show: MutableState<Boolean>,
     icon: ImageVector,
     onDismissAction: () -> Unit = { show.value = false },
+    title: String,
+    message: @Composable (() -> Unit),
+    dismissAction: () -> Unit = { show.value = false },
+    confirmAction: () -> Unit
+) {
+    NovaAlertDialog(
+        show = show,
+        icon = icon,
+        onDismissAction = onDismissAction,
+        title = {
+            Text(
+                text = title
+            )
+        },
+        message = message,
+        dismissAction = dismissAction,
+        confirmAction = confirmAction
+    )
+}
+
+@Composable
+fun NovaAlertDialog(
+    show: MutableState<Boolean>,
+    icon: ImageVector,
+    onDismissAction: () -> Unit = { show.value = false },
     title: @Composable (() -> Unit),
     message: @Composable (() -> Unit),
     dismissAction: () -> Unit = { show.value = false },

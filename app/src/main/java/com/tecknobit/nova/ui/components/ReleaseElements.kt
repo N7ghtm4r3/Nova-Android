@@ -3,6 +3,7 @@ package com.tecknobit.nova.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
@@ -17,12 +18,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Alpha
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Beta
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Latest
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
 import com.tecknobit.nova.ui.theme.fromHexToColor
@@ -116,43 +119,81 @@ fun ReleaseStatus.createColor(): Color {
 
 @Composable
 fun ReleaseTagBadge(
-    tag: ReleaseTag,
-    onClick: () -> Unit
+    tag: RejectedTag,
+    onClick: () -> Unit = {}
 ) {
-    val tagColor = tag.createColor()
-    OutlinedCard(
-        modifier = Modifier
-            .requiredWidthIn(
-                min = 40.dp,
-                max = 140.dp
-            )
-            .height(25.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = tagColor
-        ),
-        onClick = onClick
-    ) {
-        Column (
-            modifier = Modifier
-                .padding(
-                    start = 10.dp,
-                    end = 10.dp
-                ),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+    val modifier = Modifier
+        .requiredWidthIn(
+            min = 45.dp,
+            max = 140.dp
+        )
+        .height(35.dp)
+    val isAdded = tag.comment.isNotEmpty()
+    val tagColor = tag.tag.createColor()
+    val colors = CardDefaults.cardColors(
+        containerColor = if(isAdded)
+            tagColor
+        else
+            Color.White
+    )
+    val textColor = if(!isAdded)
+        tagColor
+    else
+        Color.White
+    val border = BorderStroke(
+        width = 1.dp,
+        color = textColor
+    )
+    // TODO: MAKE THE REAL WORKFLOW TO SELECT THE CORRECT BADGE IF IS THE CLIENT SHOW ONCLICK POSSIBILITY ELSE HIDE TO THE VENDOR
+    val isVendor = false
+    if(isVendor) {
+        OutlinedCard(
+            modifier = modifier,
+            colors = colors,
+            border = border
         ) {
-            Text(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally),
-                text = tag.name,
-                fontWeight = FontWeight.Bold,
-                color = tagColor
+            ReleaseTagContent(
+                tag = tag.tag,
+                textColor = textColor
             )
         }
+    } else {
+        OutlinedCard(
+            modifier = modifier,
+            colors = colors,
+            border = border,
+            onClick = onClick
+        ) {
+            ReleaseTagContent(
+                tag = tag.tag,
+                textColor = textColor
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReleaseTagContent(
+    tag: ReleaseTag,
+    textColor: Color
+) {
+    Column (
+        modifier = Modifier
+            .fillMaxHeight()
+            .padding(
+                start = 10.dp,
+                end = 10.dp
+            ),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally),
+            text = tag.name,
+            color = textColor,
+            fontSize = 14.sp
+        )
     }
 }
 

@@ -43,6 +43,7 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Nova"
+            android:windowSoftInputMode="adjustResize"
             tools:ignore="LockedOrientationActivity" />
     </application>
 

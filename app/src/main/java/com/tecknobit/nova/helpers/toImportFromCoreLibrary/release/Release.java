@@ -72,8 +72,7 @@ public class Release extends NovaItem {
     // TODO: 25/02/2024 TO REMOVE
     public Release(String releaseVersion, ReleaseStatus status) {
         this(UUID.randomUUID().toString().replace("-", ""), "v. " + releaseVersion,
-                status, List.of(new ReleaseNote("Release note 1"), new ReleaseNote("" +
-                        "Nota un po piu lunga per testare bene il layout e sperarare che sia un bel layout perché non è il mio punto forte e spero di migliorarlo")),
+                status, List.of(new ReleaseNote("Release note 1"), new ReleaseNote("Nota un po piu lunga per testare bene il layout e sperarare che sia un bel layout perché non è il mio punto forte e spero di migliorarlo")),
                 System.currentTimeMillis(), new ArrayList<>(
                         List.of(
                                 new ReleaseStandardEvent(ReleaseStatus.Latest),
