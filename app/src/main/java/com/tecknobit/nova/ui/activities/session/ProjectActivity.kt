@@ -24,18 +24,25 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +61,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
+import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
@@ -66,6 +74,8 @@ class ProjectActivity : ComponentActivity() {
 
     private lateinit var project: MutableState<Project>
 
+    private lateinit var displayMembers: MutableState<Boolean>
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,11 +83,12 @@ class ProjectActivity : ComponentActivity() {
         setContent {
             project = remember {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                    mutableStateOf(intent.getSerializableExtra(Project.PROJECT_KEY, Project::class.java)!!)
+                    mutableStateOf(intent.getSerializableExtra(PROJECT_KEY, Project::class.java)!!)
                 else
-                    mutableStateOf(intent.getSerializableExtra(Project.PROJECT_KEY)!! as Project)
+                    mutableStateOf(intent.getSerializableExtra(PROJECT_KEY)!! as Project)
             }
             val showDeleteProject = remember { mutableStateOf(false) }
+            displayMembers = remember { mutableStateOf(false) }
             NovaTheme {
                 Scaffold (
                     topBar = {
@@ -130,9 +141,7 @@ class ProjectActivity : ComponentActivity() {
                                     )
                                 }
                                 IconButton(
-                                    onClick = {
-                                        // TODO: MAKE REAL WORKFLOW
-                                    }
+                                    onClick = { displayMembers.value = true }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Group,
@@ -140,6 +149,7 @@ class ProjectActivity : ComponentActivity() {
                                         tint = Color.White
                                     )
                                 }
+                                ProjectMembers()
                                 IconButton(
                                     onClick = { showDeleteProject.value = true }
                                 ) {
@@ -153,8 +163,7 @@ class ProjectActivity : ComponentActivity() {
                                     show = showDeleteProject,
                                     icon = Icons.Default.Warning,
                                     title = R.string.delete_project,
-                                    message = R.string.delete_project_alert_message
-                                    ,
+                                    message = R.string.delete_project_alert_message,
                                     confirmAction = {
                                         // TODO: MAKE THE REQUEST THEN
                                         showDeleteProject.value = false
@@ -318,6 +327,59 @@ class ProjectActivity : ComponentActivity() {
                 startActivity(navBackIntent)
             }
         })
+    }
+
+    @Composable
+    private fun ProjectMembers() {
+        val sheetState = rememberModalBottomSheetState()
+        if(displayMembers.value) {
+            ModalBottomSheet(
+                onDismissRequest = { displayMembers.value = false },
+                sheetState = sheetState,
+                containerColor = gray_background
+            ) {
+                LazyColumn {
+                    items(
+                        key = { member -> member.id},
+                        items = project.value.members
+                    ) { member ->
+                        ListItem(
+                            leadingContent = { Logo(member.profilePicUrl) },
+                            headlineContent = {
+                                Text(
+                                    text = "${member.name} ${member.surname}",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            colors = ListItemDefaults.colors(
+                                containerColor = gray_background
+                            ),
+                            supportingContent = {
+                                Text(
+                                    text = member.email,
+                                    fontSize = 16.sp,
+                                )
+                            },
+                            trailingContent = {
+                                // TODO: MAKE THE REAL WORKFLOW TO HIDE THE POSSIBILITY TO REMOVE OR REMOVED FROM THE GROUP
+                                IconButton(
+                                    onClick = {
+                                        /*TODO MAKE THE REQUEST THEN*/
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.PersonRemove,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        )
+                        HorizontalDivider()
+                    }
+                }
+            }
+        }
     }
 
 }

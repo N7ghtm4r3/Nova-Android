@@ -1,6 +1,7 @@
 package com.tecknobit.nova.helpers.toImportFromCoreLibrary;
 
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release;
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.ProjectMember;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +16,8 @@ public class Project extends NovaItem {
 
     public static final String PROJECT_NAME_KEY = "name";
 
+    public static final String PROJECT_MEMBERS_KEY = "projectMembers";
+
     public static final String WORKING_PROGRESS_VERSION_KEY = "workingProgressVersion";
 
     public static final String PROJECT_RELEASES_KEY = "projectReleases";
@@ -22,6 +25,8 @@ public class Project extends NovaItem {
     private final String logoUrl;
 
     private final String name;
+
+    private final List<ProjectMember> members;
 
     private final String workingProgressVersion;
 
@@ -36,17 +41,37 @@ public class Project extends NovaItem {
     public Project(String name, String workingProgressVersion) {
         this(UUID.randomUUID().toString().replace("-", ""),
                 "https://t3.ftcdn.net/jpg/05/69/72/02/360_F_569720237_58rhoQoMjxyB0QCeXQK0OVUA0qNogTmq.jpg",
-                name, workingProgressVersion, List.of(
+                name, List.of(
+                        new ProjectMember("Prova", "Uno"),
+                        new ProjectMember("Prova", "Due"),
+                        new ProjectMember("Prova", "Tre"),
+                        new ProjectMember("Prova", "Uno"),
+                        new ProjectMember("Prova", "Due"),
+                        new ProjectMember("Prova", "Tre"),
+                        new ProjectMember("Prova", "Uno"),
+                        new ProjectMember("Prova", "Due"),
+                        new ProjectMember("Prova", "Tre"),
+                        new ProjectMember("Prova", "Uno"),
+                        new ProjectMember("Prova", "Due"),
+                        new ProjectMember("Prova", "Tre"),
+                        new ProjectMember("Prova", "Uno"),
+                        new ProjectMember("Prova", "Due"),
+                        new ProjectMember("Prova", "Tre"),
+                        new ProjectMember("Prova", "Uno"),
+                        new ProjectMember("Prova", "Due"),
+                        new ProjectMember("Prova", "Tre")
+                ), workingProgressVersion, List.of(
                         new Release("1.0.2", Release.ReleaseStatus.Latest),
                         new Release("1.0.1", Release.ReleaseStatus.Approved),
                         new Release("1.0.0", Release.ReleaseStatus.New)));
     }
 
-    public Project(String id, String logoUrl, String name, String workingProgressVersion,
-                   List<Release> releases) {
+    public Project(String id, String logoUrl, String name, List<ProjectMember> members,
+                   String workingProgressVersion, List<Release> releases) {
         super(id);
         this.logoUrl = logoUrl;
         this.name = name;
+        this.members = members;
         this.workingProgressVersion = workingProgressVersion;
         this.releases = releases;
     }
@@ -57,6 +82,10 @@ public class Project extends NovaItem {
 
     public String getName() {
         return name;
+    }
+
+    public List<ProjectMember> getMembers() {
+        return members;
     }
 
     public String getWorkingProgressVersion() {

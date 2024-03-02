@@ -36,17 +36,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
+import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
@@ -148,19 +145,7 @@ class MainActivity : ComponentActivity() {
                                             colors = ListItemDefaults.colors(
                                                 containerColor = Color.White
                                             ),
-                                            leadingContent = {
-                                                AsyncImage(
-                                                    modifier = Modifier
-                                                        .clip(RoundedCornerShape(15.dp))
-                                                        .size(60.dp),
-                                                    model = ImageRequest.Builder(LocalContext.current)
-                                                        .data(project.logoUrl)
-                                                        .crossfade(true)
-                                                        .build(),
-                                                    contentDescription = null,
-                                                    contentScale = ContentScale.Crop
-                                                )
-                                            },
+                                            leadingContent = { Logo(project.logoUrl) },
                                             headlineContent = {
                                                 Text(
                                                     text = project.name,
