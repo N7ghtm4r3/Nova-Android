@@ -1,12 +1,17 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.tecknobit.nova.ui.activities.session
 
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
@@ -15,6 +20,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,11 +28,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -38,23 +47,30 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LastBaseline
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.meetup.twain.MarkdownEditor
+import com.meetup.twain.MarkdownText
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
@@ -66,6 +82,7 @@ import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
+import com.tecknobit.nova.ui.theme.md_theme_light_error
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
 
@@ -73,6 +90,8 @@ import com.tecknobit.nova.ui.theme.thinFontFamily
 class ProjectActivity : ComponentActivity() {
 
     private lateinit var project: MutableState<Project>
+
+    private lateinit var displayAddRelease: MutableState<Boolean>
 
     private lateinit var displayMembers: MutableState<Boolean>
 
@@ -88,6 +107,7 @@ class ProjectActivity : ComponentActivity() {
                     mutableStateOf(intent.getSerializableExtra(PROJECT_KEY)!! as Project)
             }
             val showDeleteProject = remember { mutableStateOf(false) }
+            displayAddRelease = remember { mutableStateOf(false) }
             displayMembers = remember { mutableStateOf(false) }
             NovaTheme {
                 Scaffold (
@@ -175,9 +195,7 @@ class ProjectActivity : ComponentActivity() {
                     },
                     floatingActionButton = {
                         FloatingActionButton(
-                            onClick = {
-                                // TODO: MAKE REAL WORKFLOW
-                            },
+                            onClick = { displayAddRelease.value = true },
                             containerColor = md_theme_light_primary
                         ) {
                             Icon(
@@ -185,6 +203,7 @@ class ProjectActivity : ComponentActivity() {
                                 contentDescription = null
                             )
                         }
+                        AddRelease()
                     }
                 ) {
                     LazyColumn(
@@ -287,34 +306,15 @@ class ProjectActivity : ComponentActivity() {
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Column(
+                                    MarkdownText(
                                         modifier = Modifier
                                             .padding(
-                                                top = 5.dp,
-                                                start = 5.dp
-                                            ),
-                                    ) {
-                                        release.releaseNotes.forEach { releaseNote ->
-                                            Row (
-                                                modifier = Modifier
-                                                    .fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "-",
-                                                    fontSize = 16.sp
-                                                )
-                                                Text(
-                                                    text = releaseNote.content,
-                                                    fontSize = 16.sp,
-                                                    textAlign = TextAlign.Justify,
-                                                    style = TextStyle(
-                                                        lineHeight = 14.sp
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    }
+                                                top = 5.dp
+                                            )
+                                            .fillMaxWidth(),
+                                        markdown = release.releaseNotes.content,
+                                        fontSize = 16.sp
+                                    )
                                 }
                             }
                         }
@@ -327,6 +327,114 @@ class ProjectActivity : ComponentActivity() {
                 startActivity(navBackIntent)
             }
         })
+    }
+
+    @SuppressLint("UnrememberedMutableState")
+    @Composable
+    private fun AddRelease() {
+        var releaseVersion by remember { mutableStateOf("") }
+        var releaseVersionError by remember { mutableStateOf(false) }
+        val releaseNotes = rememberSaveable(stateSaver = TextFieldValue.Saver) {
+            mutableStateOf(TextFieldValue(""))
+        }
+        var releaseNotesError by remember { mutableStateOf(false) }
+        val resetLayout = {
+            releaseVersion = ""
+            releaseVersionError = false
+            releaseNotes.value = TextFieldValue("")
+            releaseNotesError = false
+            displayAddRelease.value = false
+        }
+        NovaAlertDialog(
+            show = displayAddRelease,
+            onDismissAction = { resetLayout() },
+            icon = Icons.Default.NewReleases,
+            title = stringResource(id = R.string.add_release),
+            message = {
+                Column (
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        singleLine = true,
+                        value = releaseVersion,
+                        onValueChange = {
+                            releaseVersionError = it.isEmpty() && releaseVersion.isNotEmpty()
+                            releaseVersion = it
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.release_version)
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { releaseVersion = "" }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        isError = releaseVersionError
+                    )
+                    Text(
+                        text = stringResource(R.string.release_notes),
+                        fontSize = 18.sp
+                    )
+                    Card (
+                        shape = RoundedCornerShape(5.dp),
+                        border = if(releaseNotesError) {
+                            BorderStroke(
+                                width = 2.dp,
+                                color = md_theme_light_error
+                            )
+                        } else
+                            null
+                    ) {
+                        MarkdownEditor(
+                            modifier = Modifier
+                                .padding(
+                                    start = 10.dp,
+                                    end = 10.dp
+                                )
+                                .heightIn(
+                                    min = 55.dp,
+                                    max = 250.dp
+                                )
+                                .fillMaxWidth(),
+                            value = releaseNotes.value,
+                            onValueChange = { value ->
+                                releaseNotesError = value.text.isEmpty()
+                                releaseNotes.value = value.copy(text = value.text)
+                            },
+                            setView = {
+                                it.textCursorDrawable = ContextCompat.getDrawable(
+                                    this@ProjectActivity,
+                                    R.drawable.custom_cursor
+                                )
+                            }
+                        )
+                    }
+                }
+            },
+            dismissAction = { resetLayout() },
+            confirmAction = {
+                if(releaseVersion.isNotEmpty()) {
+                    if(releaseNotes.value.text.isNotEmpty()) {
+                        // TODO: MOVE THIS CHECK ON SERVER
+                        releaseVersion = releaseVersion.removePrefix("v.")
+                        if(!releaseVersion.startsWith(" "))
+                            releaseVersion = " $releaseVersion"
+                        Log.d("gagagagagaga", "v.$releaseVersion")
+                        // TODO: MAKE THE REQUEST THEN
+                        resetLayout()
+                    } else
+                        releaseNotesError = true
+                } else
+                    releaseVersionError = true
+            }
+        )
     }
 
     @Composable

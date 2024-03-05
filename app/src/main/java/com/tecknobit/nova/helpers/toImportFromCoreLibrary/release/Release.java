@@ -61,7 +61,7 @@ public class Release extends NovaItem {
 
     private final ReleaseStatus status;
 
-    private final List<ReleaseNote> releaseNotes;
+    private final ReleaseNote releaseNotes;
 
     private final long creationDate;
 
@@ -72,8 +72,10 @@ public class Release extends NovaItem {
     // TODO: 25/02/2024 TO REMOVE
     public Release(String releaseVersion, ReleaseStatus status) {
         this(UUID.randomUUID().toString().replace("-", ""), "v. " + releaseVersion,
-                status, List.of(new ReleaseNote("Release note 1"), new ReleaseNote("Nota un po piu lunga per testare bene il layout e sperarare che sia un bel layout perché non è il mio punto forte e spero di migliorarlo")),
-                System.currentTimeMillis(), new ArrayList<>(
+                status, new ReleaseNote("""
+                        - A **first-level** heading
+                        - A *second-level* heading
+                        - A third-level heading"""), System.currentTimeMillis(), new ArrayList<>(
                         List.of(
                                 new ReleaseStandardEvent(ReleaseStatus.Latest),
                                 new ReleaseStandardEvent(ReleaseStatus.Alpha),
@@ -90,7 +92,7 @@ public class Release extends NovaItem {
                 ), System.currentTimeMillis());
     }
 
-    public Release(String id, String releaseVersion, ReleaseStatus status, List<ReleaseNote> releaseNotes,
+    public Release(String id, String releaseVersion, ReleaseStatus status, ReleaseNote releaseNotes,
                    long creationDate, List<ReleaseEvent> releaseEvents, long approbationDate) {
         super(id);
         this.releaseVersion = releaseVersion;
@@ -109,7 +111,7 @@ public class Release extends NovaItem {
         return status;
     }
 
-    public List<ReleaseNote> getReleaseNotes() {
+    public ReleaseNote getReleaseNotes() {
         return releaseNotes;
     }
 
