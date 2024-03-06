@@ -191,8 +191,7 @@ class ReleaseActivity : ComponentActivity() {
                             var showFilePicker by remember { mutableStateOf(false) }
                             MultipleFilePicker(
                                 show = showFilePicker,
-                                // TODO: WORK TO FETCH IN AUTO ALL THE MIMETYPES AVAILABLE
-                                fileExtensions = listOf("png", "jpg", "pdf", "apk")
+                                fileExtensions = Release.ALLOWED_ASSETS_TYPE
                             ) { assets ->
                                 if(!assets.isNullOrEmpty()) {
                                     // TODO: MAKE REQUEST THEN

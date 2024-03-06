@@ -13,6 +13,11 @@ import java.util.UUID;
 
 public class Release extends NovaItem {
 
+    public static final List<String> ALLOWED_ASSETS_TYPE = List.of(
+            "zip", "tgz", "7z", "jar", "apk", "aab", "ipa", "exe", "msi", "deb", "rpm",
+            "pkg", "dmg", "appimage", "pdf", "txt", "md"
+    );
+
     public static final String RELEASE_KEY = "release";
     
     public static final String RELEASE_IDENTIFIER_KEY = "releaseId";
