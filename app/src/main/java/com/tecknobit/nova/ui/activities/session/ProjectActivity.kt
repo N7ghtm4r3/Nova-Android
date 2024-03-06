@@ -63,6 +63,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -77,6 +78,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
+import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
@@ -206,79 +208,64 @@ class ProjectActivity : ComponentActivity() {
                         AddRelease()
                     }
                 ) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .padding(
-                                top = it.calculateTopPadding()
-                            )
-                            .fillMaxSize()
-                            .background(gray_background),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
-                        items(
-                            key = { release -> release.id },
-                            items = project.value.releases
-                        ) { release ->
-                            OutlinedCard(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                shape = RoundedCornerShape(15.dp),
-                                elevation = CardDefaults.cardElevation(5.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color.White
-                                ),
-                                onClick = {
-                                    val intent = Intent(this@ProjectActivity,
-                                        ReleaseActivity::class.java)
-                                    intent.putExtra(RELEASE_KEY, release)
-                                    intent.putExtra(PROJECT_KEY, project.value)
-                                    startActivity(intent)
-                                }
-                            ) {
-                                Column (
+                    val releases = project.value.releases
+                    if(releases.isNotEmpty()) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .padding(
+                                    top = it.calculateTopPadding()
+                                )
+                                .fillMaxSize()
+                                .background(gray_background),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            contentPadding = PaddingValues(16.dp)
+                        ) {
+                            items(
+                                key = { release -> release.id },
+                                items = releases
+                            ) { release ->
+                                OutlinedCard(
                                     modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxSize()
-                                ) {
-                                    Row (
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = release.releaseVersion,
-                                            fontSize = 20.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        ReleaseStatusBadge(
-                                            releaseStatus = release.status
-                                        )
+                                        .fillMaxWidth(),
+                                    shape = RoundedCornerShape(15.dp),
+                                    elevation = CardDefaults.cardElevation(5.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color.White
+                                    ),
+                                    onClick = {
+                                        val intent = Intent(this@ProjectActivity,
+                                            ReleaseActivity::class.java)
+                                        intent.putExtra(RELEASE_KEY, release)
+                                        intent.putExtra(PROJECT_KEY, project.value)
+                                        startActivity(intent)
                                     }
+                                ) {
                                     Column (
                                         modifier = Modifier
-                                            .padding(
-                                                top = 5.dp,
-                                                start = 5.dp
-                                            ),
+                                            .padding(16.dp)
+                                            .fillMaxSize()
                                     ) {
                                         Row (
                                             modifier = Modifier
                                                 .fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
-                                                text = getString(R.string.creation_date),
-                                                fontSize = 16.sp
+                                                text = release.releaseVersion,
+                                                fontSize = 20.sp,
+                                                fontWeight = FontWeight.Bold
                                             )
-                                            Text(
-                                                text = release.creationDate,
-                                                fontSize = 16.sp,
-                                                fontFamily = thinFontFamily
+                                            ReleaseStatusBadge(
+                                                releaseStatus = release.status
                                             )
                                         }
-                                        if(release.status == ReleaseStatus.Approved) {
+                                        Column (
+                                            modifier = Modifier
+                                                .padding(
+                                                    top = 5.dp,
+                                                    start = 5.dp
+                                                ),
+                                        ) {
                                             Row (
                                                 modifier = Modifier
                                                     .fillMaxWidth(),
@@ -286,38 +273,61 @@ class ProjectActivity : ComponentActivity() {
                                                 horizontalArrangement = Arrangement.spacedBy(5.dp)
                                             ) {
                                                 Text(
-                                                    text = getString(R.string.approbation_date),
+                                                    text = getString(R.string.creation_date),
                                                     fontSize = 16.sp
                                                 )
                                                 Text(
-                                                    text = release.approbationDate,
+                                                    text = release.creationDate,
                                                     fontSize = 16.sp,
                                                     fontFamily = thinFontFamily
                                                 )
                                             }
+                                            if(release.status == ReleaseStatus.Approved) {
+                                                Row (
+                                                    modifier = Modifier
+                                                        .fillMaxWidth(),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                ) {
+                                                    Text(
+                                                        text = getString(R.string.approbation_date),
+                                                        fontSize = 16.sp
+                                                    )
+                                                    Text(
+                                                        text = release.approbationDate,
+                                                        fontSize = 16.sp,
+                                                        fontFamily = thinFontFamily
+                                                    )
+                                                }
+                                            }
                                         }
+                                        Text(
+                                            modifier = Modifier
+                                                .padding(
+                                                    top = 5.dp
+                                                ),
+                                            text = getString(R.string.release_notes),
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        MarkdownText(
+                                            modifier = Modifier
+                                                .padding(
+                                                    top = 5.dp
+                                                )
+                                                .fillMaxWidth(),
+                                            markdown = release.releaseNotes.content,
+                                            fontSize = 16.sp
+                                        )
                                     }
-                                    Text(
-                                        modifier = Modifier
-                                            .padding(
-                                                top = 5.dp
-                                            ),
-                                        text = getString(R.string.release_notes),
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    MarkdownText(
-                                        modifier = Modifier
-                                            .padding(
-                                                top = 5.dp
-                                            )
-                                            .fillMaxWidth(),
-                                        markdown = release.releaseNotes.content,
-                                        fontSize = 16.sp
-                                    )
                                 }
                             }
                         }
+                    } else {
+                        EmptyList(
+                            icon = painterResource(id = R.drawable.releases_foreground),
+                            description = R.string.no_releases_yet
+                        )
                     }
                 }
             }

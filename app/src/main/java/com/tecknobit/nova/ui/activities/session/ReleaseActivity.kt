@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Upload
@@ -78,8 +79,11 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.AssetUp
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedReleaseEvent
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.*
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Bug
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Issue
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.LayoutChange
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
+import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.ReleaseTagBadge
@@ -188,7 +192,7 @@ class ReleaseActivity : ComponentActivity() {
                                     if(isReleaseApproved)
                                         showPromoteRelease.value = true
                                     else {
-
+                                        // TODO: UPLOAD ASSET
                                     }
                                 },
                                 containerColor = md_theme_light_primary
@@ -229,163 +233,165 @@ class ReleaseActivity : ComponentActivity() {
                         )
                     }
                     val events = release.value.releaseEvents
-                    JetLimeColumn(
-                        modifier = Modifier
-                            .padding(
-                                top = it.calculateTopPadding() + 25.dp,
-                                start = 20.dp,
-                                end = 20.dp,
-                                bottom = 20.dp
+                    if(events.isNotEmpty()) {
+                        JetLimeColumn(
+                            modifier = Modifier
+                                .padding(
+                                    top = it.calculateTopPadding() + 25.dp,
+                                    start = 20.dp,
+                                    end = 20.dp,
+                                    bottom = 20.dp
+                                ),
+                            itemsList = ItemsList(events),
+                            style = JetLimeDefaults.columnStyle(
+                                contentDistance = 24.dp,
+                                lineThickness = 3.dp
                             ),
-                        itemsList = ItemsList(events),
-                        style = JetLimeDefaults.columnStyle(
-                            contentDistance = 24.dp,
-                            lineThickness = 3.dp
-                        ),
-                        key = { _, item -> item.id },
-                    ) { _, event, position ->
-                        val isAssetUploadingEvent = event is AssetUploadingEvent
-                        JetLimeExtendedEvent(
-                            style = JetLimeEventDefaults.eventStyle(
-                                position = position,
-                                pointRadius = 11.5.dp,
-                                pointStrokeWidth = if(isAssetUploadingEvent)
-                                    6.dp
-                                else
-                                    1.5.dp
-                            ),
-                            additionalContent = {
-                                Column (
-                                    modifier = Modifier
-                                        .width(105.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    if(event is ReleaseStandardEvent) {
-                                        ReleaseStatusBadge(
-                                            releaseStatus = event.status,
-                                            paddingStart = 0.dp,
-                                        )
+                            key = { _, item -> item.id },
+                        ) { _, event, position ->
+                            val isAssetUploadingEvent = event is AssetUploadingEvent
+                            JetLimeExtendedEvent(
+                                style = JetLimeEventDefaults.eventStyle(
+                                    position = position,
+                                    pointRadius = 11.5.dp,
+                                    pointStrokeWidth = if(isAssetUploadingEvent)
+                                        6.dp
+                                    else
+                                        1.5.dp
+                                ),
+                                additionalContent = {
+                                    Column (
+                                        modifier = Modifier
+                                            .width(105.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        if(event is ReleaseStandardEvent) {
+                                            ReleaseStatusBadge(
+                                                releaseStatus = event.status,
+                                                paddingStart = 0.dp,
+                                            )
+                                        }
                                     }
                                 }
-                            }
-                        ) {
-                            Row (
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Column {
-                                    Text(
-                                        text = event.releaseEventDate,
-                                        fontFamily = thinFontFamily,
-                                    )
-                                    if(event !is RejectedReleaseEvent) {
-                                        val message = if(isAssetUploadingEvent)
-                                            R.string.new_asset_has_been_uploaded
-                                        else
-                                            (event as ReleaseStandardEvent).getMessage()
+                                Row (
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Column {
                                         Text(
-                                            text = getString(message),
+                                            text = event.releaseEventDate,
+                                            fontFamily = thinFontFamily,
                                         )
-                                        // TODO: MAKE THE WORKFLOW TO HIDE WHEN MEMBER IS NOT THE CLIENT
-                                        if((isAssetUploadingEvent && ((releaseCurrentStatus != Approved)
-                                                    && (releaseCurrentStatus != Latest)))) {
-                                            if(!(event as AssetUploadingEvent).isCommented) {
-                                                val showCommentAsset = remember { mutableStateOf(false) }
-                                                val isApproved = remember { mutableStateOf(true) }
-                                                val reasons = remember { mutableStateOf("") }
-                                                val isError = remember { mutableStateOf(false) }
-                                                val closeAction = {
-                                                    isApproved.value = true
-                                                    reasons.value = ""
-                                                    isError.value = false
-                                                    showCommentAsset.value = false
-                                                }
-                                                NovaAlertDialog(
-                                                    show = showCommentAsset,
-                                                    icon = Icons.AutoMirrored.Filled.Comment,
-                                                    onDismissAction = closeAction,
-                                                    title = R.string.comment_the_asset,
-                                                    message = commentReleaseMessage(
-                                                        isApproved = isApproved,
-                                                        reasons = reasons,
-                                                        isError = isError
-                                                    ),
-                                                    dismissAction = closeAction,
-                                                    confirmAction = {
-                                                        if(isApproved.value) {
-                                                            // TODO: MAKE THE REQUEST THEN
-                                                            closeAction()
-                                                        } else {
-                                                            if(reasons.value.isNotEmpty()) {
+                                        if(event !is RejectedReleaseEvent) {
+                                            val message = if(isAssetUploadingEvent)
+                                                R.string.new_asset_has_been_uploaded
+                                            else
+                                                (event as ReleaseStandardEvent).getMessage()
+                                            Text(
+                                                text = getString(message),
+                                            )
+                                            // TODO: MAKE THE WORKFLOW TO HIDE WHEN MEMBER IS NOT THE CLIENT
+                                            if((isAssetUploadingEvent && ((releaseCurrentStatus != Approved)
+                                                        && (releaseCurrentStatus != Latest)))) {
+                                                if(!(event as AssetUploadingEvent).isCommented) {
+                                                    val showCommentAsset = remember { mutableStateOf(false) }
+                                                    val isApproved = remember { mutableStateOf(true) }
+                                                    val reasons = remember { mutableStateOf("") }
+                                                    val isError = remember { mutableStateOf(false) }
+                                                    val closeAction = {
+                                                        isApproved.value = true
+                                                        reasons.value = ""
+                                                        isError.value = false
+                                                        showCommentAsset.value = false
+                                                    }
+                                                    NovaAlertDialog(
+                                                        show = showCommentAsset,
+                                                        icon = Icons.AutoMirrored.Filled.Comment,
+                                                        onDismissAction = closeAction,
+                                                        title = R.string.comment_the_asset,
+                                                        message = commentReleaseMessage(
+                                                            isApproved = isApproved,
+                                                            reasons = reasons,
+                                                            isError = isError
+                                                        ),
+                                                        dismissAction = closeAction,
+                                                        confirmAction = {
+                                                            if(isApproved.value) {
                                                                 // TODO: MAKE THE REQUEST THEN
                                                                 closeAction()
-                                                            } else
-                                                                isError.value = true
+                                                            } else {
+                                                                if(reasons.value.isNotEmpty()) {
+                                                                    // TODO: MAKE THE REQUEST THEN
+                                                                    closeAction()
+                                                                } else
+                                                                    isError.value = true
+                                                            }
                                                         }
-                                                    }
-                                                )
-                                                Row (
-                                                    modifier = Modifier
-                                                        .fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                                ) {
-                                                    Button(
-                                                        onClick = {
-                                                            // TODO: MAKE THE REAL WORKFLOW
+                                                    )
+                                                    Row (
+                                                        modifier = Modifier
+                                                            .fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                    ) {
+                                                        Button(
+                                                            onClick = {
+                                                                // TODO: MAKE THE REAL WORKFLOW
+                                                            }
+                                                        ) {
+                                                            // TODO: FIND A SUITABLE TEXT
+                                                            Text(
+                                                                text = "Test"
+                                                            )
                                                         }
-                                                    ) {
-                                                        // TODO: FIND A SUITABLE TEXT
-                                                        Text(
-                                                            text = "Test"
-                                                        )
-                                                    }
-                                                    Button(
-                                                        onClick = { showCommentAsset.value = true }
-                                                    ) {
-                                                        Text(
-                                                            text = getString(R.string.comment)
-                                                        )
+                                                        Button(
+                                                            onClick = { showCommentAsset.value = true }
+                                                        ) {
+                                                            Text(
+                                                                text = getString(R.string.comment)
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-                                    } else {
-                                        Column {
-                                            Text(
-                                                text = event.reasons,
-                                                textAlign = TextAlign.Justify
-                                            )
-                                            LazyHorizontalGrid(
-                                                modifier = Modifier
-                                                    .requiredHeightIn(
-                                                        min = 35.dp,
-                                                        max = 70.dp
+                                        } else {
+                                            Column {
+                                                Text(
+                                                    text = event.reasons,
+                                                    textAlign = TextAlign.Justify
+                                                )
+                                                LazyHorizontalGrid(
+                                                    modifier = Modifier
+                                                        .requiredHeightIn(
+                                                            min = 35.dp,
+                                                            max = 70.dp
+                                                        ),
+                                                    contentPadding = PaddingValues(
+                                                        top = 5.dp
                                                     ),
-                                                contentPadding = PaddingValues(
-                                                    top = 5.dp
-                                                ),
-                                                rows = GridCells.Fixed(2),
-                                                verticalArrangement = Arrangement.spacedBy(5.dp),
-                                                horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                            ) {
-                                                items(
-                                                    key = { tag -> tag.tag.name },
-                                                    items = event.tags
-                                                ) { tag ->
-                                                    val showAlert = remember {
-                                                        mutableStateOf(false)
+                                                    rows = GridCells.Fixed(2),
+                                                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                ) {
+                                                    items(
+                                                        key = { tag -> tag.tag.name },
+                                                        items = event.tags
+                                                    ) { tag ->
+                                                        val showAlert = remember {
+                                                            mutableStateOf(false)
+                                                        }
+                                                        ReleaseTagBadge(
+                                                            tag = tag,
+                                                            onClick = { showAlert.value = true }
+                                                        )
+                                                        TagInformation(
+                                                            show = showAlert,
+                                                            tag = tag,
+                                                            date = event.releaseEventDate
+                                                        )
                                                     }
-                                                    ReleaseTagBadge(
-                                                        tag = tag,
-                                                        onClick = { showAlert.value = true }
-                                                    )
-                                                    TagInformation(
-                                                        show = showAlert,
-                                                        tag = tag,
-                                                        date = event.releaseEventDate
-                                                    )
                                                 }
                                             }
                                         }
@@ -393,6 +399,11 @@ class ReleaseActivity : ComponentActivity() {
                                 }
                             }
                         }
+                    } else {
+                        EmptyList(
+                            icon = Icons.Default.EventBusy,
+                            description = R.string.no_events_yet
+                        )
                     }
                 }
             }

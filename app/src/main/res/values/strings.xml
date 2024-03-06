@@ -32,4 +32,7 @@
     <string name="note">Note</string>
     <string name="notes">Notes</string>
     <string name="add_release">Add release</string>
+    <string name="no_events_yet">No events yet</string>
+    <string name="no_releases_yet">No releases yet</string>
+    <string name="no_projects_yet">No projects yet</string>
 </resources>

@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +44,7 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
+import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
@@ -111,68 +113,77 @@ class MainActivity : ComponentActivity() {
                                         start = 20.dp
                                     )
                             ) {
-                                Text(
-                                    text = getString(R.string.projects),
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                LazyColumn(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                    contentPadding = PaddingValues(
-                                        top = 10.dp,
-                                        bottom = 10.dp
-                                    ),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    items(
-                                        key = { project -> project.id },
-                                        items = projects
-                                    ) { project ->
-                                        ListItem(
-                                            modifier = Modifier
-                                                .shadow(
-                                                    elevation = 5.dp,
-                                                    shape = RoundedCornerShape(15.dp)
-                                                )
-                                                .clip(RoundedCornerShape(15.dp))
-                                                .clickable {
-                                                    val intent = Intent(this@MainActivity,
-                                                        ProjectActivity::class.java)
-                                                    intent.putExtra(PROJECT_KEY, project)
-                                                    startActivity(intent)
+                                if(projects.isNotEmpty()) {
+                                    Text(
+                                        text = getString(R.string.projects),
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    LazyColumn(
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                        contentPadding = PaddingValues(
+                                            top = 10.dp,
+                                            bottom = 10.dp
+                                        ),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        items(
+                                            key = { project -> project.id },
+                                            items = projects
+                                        ) { project ->
+                                            ListItem(
+                                                modifier = Modifier
+                                                    .shadow(
+                                                        elevation = 5.dp,
+                                                        shape = RoundedCornerShape(15.dp)
+                                                    )
+                                                    .clip(RoundedCornerShape(15.dp))
+                                                    .clickable {
+                                                        val intent = Intent(
+                                                            this@MainActivity,
+                                                            ProjectActivity::class.java
+                                                        )
+                                                        intent.putExtra(PROJECT_KEY, project)
+                                                        startActivity(intent)
+                                                    },
+                                                colors = ListItemDefaults.colors(
+                                                    containerColor = Color.White
+                                                ),
+                                                leadingContent = { Logo(project.logoUrl) },
+                                                headlineContent = {
+                                                    Text(
+                                                        text = project.name,
+                                                        fontSize = 18.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
                                                 },
-                                            colors = ListItemDefaults.colors(
-                                                containerColor = Color.White
-                                            ),
-                                            leadingContent = { Logo(project.logoUrl) },
-                                            headlineContent = {
-                                                Text(
-                                                    text = project.name,
-                                                    fontSize = 18.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            },
-                                            supportingContent = {
-                                                val workingProgressVersionText = project.workingProgressVersionText
-                                                Text(
-                                                    text = if(workingProgressVersionText != null)
-                                                        workingProgressVersionText
-                                                    else
-                                                        getString(R.string.no_version_available_yet),
-                                                    fontSize = 16.sp
-                                                )
-                                            },
-                                            trailingContent = {
-                                                Icon(
-                                                    modifier = Modifier
-                                                        .size(30.dp),
-                                                    imageVector = Icons.Default.KeyboardArrowRight,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        )
+                                                supportingContent = {
+                                                    val workingProgressVersionText = project.workingProgressVersionText
+                                                    Text(
+                                                        text = if(workingProgressVersionText != null)
+                                                            workingProgressVersionText
+                                                        else
+                                                            getString(R.string.no_version_available_yet),
+                                                        fontSize = 16.sp
+                                                    )
+                                                },
+                                                trailingContent = {
+                                                    Icon(
+                                                        modifier = Modifier
+                                                            .size(30.dp),
+                                                        imageVector = Icons.Default.KeyboardArrowRight,
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                            )
+                                        }
                                     }
+                                } else {
+                                    EmptyList(
+                                        icon = Icons.Default.FolderOff,
+                                        description = R.string.no_projects_yet
+                                    )
                                 }
                             }
                         }
