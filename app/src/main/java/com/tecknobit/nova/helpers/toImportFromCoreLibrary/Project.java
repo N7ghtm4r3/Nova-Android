@@ -1,7 +1,7 @@
 package com.tecknobit.nova.helpers.toImportFromCoreLibrary;
 
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release;
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.ProjectMember;
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.PublicUser;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +26,7 @@ public class Project extends NovaItem {
 
     private final String name;
 
-    private final List<ProjectMember> members;
+    private final List<PublicUser> members;
 
     private final String workingProgressVersion;
 
@@ -42,31 +42,31 @@ public class Project extends NovaItem {
         this(UUID.randomUUID().toString().replace("-", ""),
                 "https://t3.ftcdn.net/jpg/05/69/72/02/360_F_569720237_58rhoQoMjxyB0QCeXQK0OVUA0qNogTmq.jpg",
                 name, List.of(
-                        new ProjectMember("Prova", "Uno"),
-                        new ProjectMember("Prova", "Due"),
-                        new ProjectMember("Prova", "Tre"),
-                        new ProjectMember("Prova", "Uno"),
-                        new ProjectMember("Prova", "Due"),
-                        new ProjectMember("Prova", "Tre"),
-                        new ProjectMember("Prova", "Uno"),
-                        new ProjectMember("Prova", "Due"),
-                        new ProjectMember("Prova", "Tre"),
-                        new ProjectMember("Prova", "Uno"),
-                        new ProjectMember("Prova", "Due"),
-                        new ProjectMember("Prova", "Tre"),
-                        new ProjectMember("Prova", "Uno"),
-                        new ProjectMember("Prova", "Due"),
-                        new ProjectMember("Prova", "Tre"),
-                        new ProjectMember("Prova", "Uno"),
-                        new ProjectMember("Prova", "Due"),
-                        new ProjectMember("Prova", "Tre")
+                        new PublicUser("Prova", "Uno"),
+                        new PublicUser("Prova", "Due"),
+                        new PublicUser("Prova", "Tre"),
+                        new PublicUser("Prova", "Uno"),
+                        new PublicUser("Prova", "Due"),
+                        new PublicUser("Prova", "Tre"),
+                        new PublicUser("Prova", "Uno"),
+                        new PublicUser("Prova", "Due"),
+                        new PublicUser("Prova", "Tre"),
+                        new PublicUser("Prova", "Uno"),
+                        new PublicUser("Prova", "Due"),
+                        new PublicUser("Prova", "Tre"),
+                        new PublicUser("Prova", "Uno"),
+                        new PublicUser("Prova", "Due"),
+                        new PublicUser("Prova", "Tre"),
+                        new PublicUser("Prova", "Uno"),
+                        new PublicUser("Prova", "Due"),
+                        new PublicUser("Prova", "Tre")
                 ), workingProgressVersion, List.of(
                         new Release("1.0.2", Release.ReleaseStatus.Latest),
                         new Release("1.0.1", Release.ReleaseStatus.Approved),
                         new Release("1.0.0", Release.ReleaseStatus.New)));
     }
 
-    public Project(String id, String logoUrl, String name, List<ProjectMember> members,
+    public Project(String id, String logoUrl, String name, List<PublicUser> members,
                    String workingProgressVersion, List<Release> releases) {
         super(id);
         this.logoUrl = logoUrl;
@@ -84,7 +84,7 @@ public class Project extends NovaItem {
         return name;
     }
 
-    public List<ProjectMember> getMembers() {
+    public List<PublicUser> getMembers() {
         return members;
     }
 

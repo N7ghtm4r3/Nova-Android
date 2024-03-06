@@ -62,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.darkrockstudios.libraries.mpfilepicker.MultipleFilePicker
 import com.pushpal.jetlime.ItemsList
 import com.pushpal.jetlime.JetLimeColumn
 import com.pushpal.jetlime.JetLimeDefaults
@@ -187,13 +188,23 @@ class ReleaseActivity : ComponentActivity() {
                     floatingActionButton = {
                         // TODO: MAKE THE WORKFLOW TO HIDE WHEN MEMBER IS THE CLIENT
                         if(releaseCurrentStatus != Latest) {
+                            var showFilePicker by remember { mutableStateOf(false) }
+                            MultipleFilePicker(
+                                show = showFilePicker,
+                                // TODO: WORK TO FETCH IN AUTO ALL THE MIMETYPES AVAILABLE
+                                fileExtensions = listOf("png", "jpg", "pdf", "apk")
+                            ) { assets ->
+                                if(!assets.isNullOrEmpty()) {
+                                    // TODO: MAKE REQUEST THEN
+                                    showFilePicker = false
+                                }
+                            }
                             FloatingActionButton(
                                 onClick = {
                                     if(isReleaseApproved)
                                         showPromoteRelease.value = true
-                                    else {
-                                        // TODO: UPLOAD ASSET
-                                    }
+                                    else
+                                        showFilePicker = true
                                 },
                                 containerColor = md_theme_light_primary
                             ) {

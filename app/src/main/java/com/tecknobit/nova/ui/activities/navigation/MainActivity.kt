@@ -5,8 +5,11 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,11 +56,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
@@ -244,11 +247,21 @@ class MainActivity : ComponentActivity() {
                         contentAlignment = Alignment.Center
                     ) {
                         // TODO: USE THE NOVA PROJECT LOGO AS DEFAULT IMAGE
-                        Image(
+                        var projectLogo by remember { mutableStateOf("https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg") }
+                        val photoPickerLauncher = rememberLauncherForActivityResult(
+                            contract = PickVisualMedia(),
+                            onResult = { uri ->
+                                if(uri != null) {
+                                    projectLogo = uri.toString()
+                                    // TODO: MAKE THE REQUEST THEN
+                                }
+                            }
+                        )
+                        AsyncImage(
                             modifier = Modifier
                                 .size(125.dp)
                                 .clip(CircleShape),
-                            painter = painterResource(id = R.drawable.ic_launcher_background),
+                            model = projectLogo,
                             contentDescription = null,
                             contentScale = ContentScale.Crop
                         )
@@ -257,9 +270,7 @@ class MainActivity : ComponentActivity() {
                                 .clip(CircleShape)
                                 .background(Color(0xD0DFD8D8))
                                 .align(Alignment.BottomEnd),
-                            onClick = {
-                                // TODO: CHANGE PROFILE PICK WITH PICKER
-                            }
+                            onClick = { photoPickerLauncher.launch(PickVisualMediaRequest(ImageOnly)) }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
