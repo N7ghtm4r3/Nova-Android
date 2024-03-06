@@ -35,4 +35,6 @@
     <string name="no_events_yet">No events yet</string>
     <string name="no_releases_yet">No releases yet</string>
     <string name="no_projects_yet">No projects yet</string>
+    <string name="add_project">Add project</string>
+    <string name="name">Name</string>
 </resources>

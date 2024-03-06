@@ -6,9 +6,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -20,23 +22,39 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +64,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
+import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
@@ -64,17 +83,18 @@ class MainActivity : ComponentActivity() {
 
     }
 
+    private lateinit var displayAddProject: MutableState<Boolean>
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             NovaTheme {
+                displayAddProject = remember { mutableStateOf(false) }
                 Scaffold (
                     floatingActionButton = {
                         FloatingActionButton(
-                            onClick = {
-                                // TODO: MAKE REAL WORKFLOW
-                            },
+                            onClick = { displayAddProject.value = true },
                             containerColor = md_theme_light_primary
                         ) {
                             Icon(
@@ -82,6 +102,7 @@ class MainActivity : ComponentActivity() {
                                 contentDescription = null
                             )
                         }
+                        AddProject()
                     }
                 ) {
                     Column (
@@ -196,6 +217,92 @@ class MainActivity : ComponentActivity() {
                 finishAffinity()
             }
         })
+    }
+
+    @Composable
+    private fun AddProject() {
+        var projectName by remember { mutableStateOf("") }
+        var projectNameError by remember { mutableStateOf(false) }
+        val resetLayout = {
+            projectName = ""
+            projectNameError = false
+            displayAddProject.value = false
+        }
+        NovaAlertDialog(
+            show = displayAddProject,
+            onDismissAction = resetLayout,
+            icon = Icons.Default.CreateNewFolder,
+            title = stringResource(R.string.add_project),
+            message = {
+                Column (
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box (
+                        modifier = Modifier
+                            .size(125.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // TODO: USE THE NOVA PROJECT LOGO AS DEFAULT IMAGE
+                        Image(
+                            modifier = Modifier
+                                .size(125.dp)
+                                .clip(CircleShape),
+                            painter = painterResource(id = R.drawable.ic_launcher_background),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop
+                        )
+                        IconButton(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color(0xD0DFD8D8))
+                                .align(Alignment.BottomEnd),
+                            onClick = {
+                                // TODO: CHANGE PROFILE PICK WITH PICKER
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
+                    }
+                    OutlinedTextField(
+                        singleLine = true,
+                        value = projectName,
+                        onValueChange = {
+                            projectNameError = it.isEmpty() && projectName.isNotEmpty()
+                            projectName = it
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.name)
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { projectName = "" }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        isError = projectNameError
+                    )
+                }
+            },
+            dismissAction = resetLayout,
+            confirmAction = {
+                if(projectName.isNotEmpty()) {
+                    // TODO: MAKE REQUEST THEN
+                    resetLayout()
+                } else
+                    projectNameError = true
+            }
+        )
     }
 
 }
