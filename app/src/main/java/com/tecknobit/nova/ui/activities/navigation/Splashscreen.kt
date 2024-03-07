@@ -16,21 +16,30 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
+import com.tecknobit.nova.helpers.utils.download.AssetDownloader
 import com.tecknobit.nova.ui.theme.NovaTheme
 import kotlinx.coroutines.delay
 
 @SuppressLint("CustomSplashScreen")
 class Splashscreen : ComponentActivity() {
 
+    companion object {
+
+        lateinit var assetDownloader: AssetDownloader
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
             StrictMode.setThreadPolicy(policy)
+            assetDownloader = AssetDownloader(LocalContext.current)
             NovaTheme {
                 Column (
                     modifier = Modifier

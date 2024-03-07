@@ -72,6 +72,7 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ALLOWED_ASSETS_TYPE
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Latest
@@ -84,6 +85,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.Release
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Issue
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.LayoutChange
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.assetDownloader
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
@@ -164,7 +166,7 @@ class ReleaseActivity : ComponentActivity() {
                             actions = {
                                 IconButton(
                                     onClick = {
-                                        // TODO: MAKE THE REAL WORKFLOW
+                                        // TODO: MAKE REQUEST THEN
                                     }
                                 ) {
                                     Icon(
@@ -191,7 +193,7 @@ class ReleaseActivity : ComponentActivity() {
                             var showFilePicker by remember { mutableStateOf(false) }
                             MultipleFilePicker(
                                 show = showFilePicker,
-                                fileExtensions = Release.ALLOWED_ASSETS_TYPE
+                                fileExtensions = ALLOWED_ASSETS_TYPE
                             ) { assets ->
                                 if(!assets.isNullOrEmpty()) {
                                     // TODO: MAKE REQUEST THEN
@@ -348,7 +350,9 @@ class ReleaseActivity : ComponentActivity() {
                                                     ) {
                                                         Button(
                                                             onClick = {
-                                                                // TODO: MAKE THE REAL WORKFLOW
+                                                                event.assetUrl.forEach { url ->
+                                                                    assetDownloader.downloadAsset(url)
+                                                                }
                                                             }
                                                         ) {
                                                             // TODO: FIND A SUITABLE TEXT

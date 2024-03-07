@@ -19,7 +19,7 @@
             android:exported="true"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Nova.Fullscreen"
-            tools:ignore="LockedOrientationActivity">
+            tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -31,20 +31,27 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Nova"
-            tools:ignore="LockedOrientationActivity" />
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".ui.activities.session.ProjectActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Nova"
-            tools:ignore="LockedOrientationActivity" />
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".ui.activities.session.ReleaseActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Nova"
             android:windowSoftInputMode="adjustResize"
-            tools:ignore="LockedOrientationActivity" />
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
+
+        <receiver android:name=".helpers.utils.download.DownloadCompletedReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
