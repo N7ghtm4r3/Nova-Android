@@ -4,6 +4,7 @@ package com.tecknobit.nova.ui.activities.session
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -12,6 +13,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,11 +35,13 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -53,6 +58,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,14 +68,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.WriterException
+import com.google.zxing.qrcode.QRCodeWriter
 import com.meetup.twain.MarkdownEditor
 import com.meetup.twain.MarkdownText
 import com.tecknobit.nova.R
@@ -87,11 +103,16 @@ import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_error
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
 class ProjectActivity : ComponentActivity() {
 
     private lateinit var project: MutableState<Project>
+
+    private lateinit var displayAddMembers: MutableState<Boolean>
 
     private lateinit var displayAddRelease: MutableState<Boolean>
 
@@ -109,6 +130,7 @@ class ProjectActivity : ComponentActivity() {
                     mutableStateOf(intent.getSerializableExtra(PROJECT_KEY)!! as Project)
             }
             val showDeleteProject = remember { mutableStateOf(false) }
+            displayAddMembers = remember { mutableStateOf(false) }
             displayAddRelease = remember { mutableStateOf(false) }
             displayMembers = remember { mutableStateOf(false) }
             NovaTheme {
@@ -152,9 +174,7 @@ class ProjectActivity : ComponentActivity() {
                             },
                             actions = {
                                 IconButton(
-                                    onClick = {
-                                        // TODO: MAKE REAL WORKFLOW
-                                    }
+                                    onClick = { displayAddMembers.value = true }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.QrCode,
@@ -162,6 +182,7 @@ class ProjectActivity : ComponentActivity() {
                                         tint = Color.White
                                     )
                                 }
+                                CreateQrcode()
                                 IconButton(
                                     onClick = { displayMembers.value = true }
                                 ) {
@@ -339,6 +360,88 @@ class ProjectActivity : ComponentActivity() {
         })
     }
 
+    @Composable
+    private fun CreateQrcode() {
+        val mailingList = remember { mutableStateOf("") }
+        val mailingListIsError = remember { mutableStateOf(false) }
+        var displayQrcode by remember { mutableStateOf(false) }
+        val resetLayout = {
+            mailingList.value = ""
+            mailingListIsError.value = false
+            displayQrcode = false
+            displayAddMembers.value = false
+        }
+        NovaAlertDialog(
+            show = displayAddMembers,
+            onDismissAction = resetLayout,
+            icon = Icons.Default.PersonAdd,
+            title = stringResource(R.string.project_members),
+            message = {
+                if(displayQrcode) {
+                    Column (
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .size(175.dp),
+                            painter = rememberQrBitmapPainter(
+                                JSONObject().put("data", "datafromserver").toString()
+                            ),
+                            contentDescription = null,
+                            contentScale = ContentScale.FillBounds
+                        )
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = mailingList.value,
+                        onValueChange = {
+                            mailingListIsError.value = it.isEmpty() && mailingList.value.isNotEmpty()
+                            mailingList.value = it
+                        },
+                        placeholder = {
+                            Text(
+                                text = stringResource(R.string.separate_emails_with_a_comma),
+                                fontSize = 14.sp
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.mailing_list)
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { mailingList.value = "" }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        isError = mailingListIsError.value
+                    )
+                }
+            },
+            dismissAction = resetLayout,
+            confirmAction = {
+                if(displayQrcode)
+                    resetLayout()
+                else {
+                    if(mailingList.value.isNotEmpty()) {
+                        mailingList.value = mailingList.value.replace(" ", "")
+                        // TODO: MAKE REQUEST THEN
+                        displayQrcode = true
+                    } else
+                        mailingListIsError.value = true
+                }
+            }
+        )
+    }
+
     @SuppressLint("UnrememberedMutableState")
     @Composable
     private fun AddRelease() {
@@ -497,6 +600,77 @@ class ProjectActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun rememberQrBitmapPainter(
+        content: String,
+        size: Dp = 150.dp,
+        padding: Dp = 0.dp
+    ): BitmapPainter {
+        var showProgress by remember { mutableStateOf(true) }
+        if (showProgress) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .size(85.dp),
+                    strokeWidth = 2.dp
+                )
+            }
+        }
+        val density = LocalDensity.current
+        val sizePx = with(density) { size.roundToPx() }
+        val paddingPx = with(density) { padding.roundToPx() }
+        var bitmap by remember(content) { mutableStateOf<Bitmap?>(null) }
+        LaunchedEffect(bitmap) {
+            if (bitmap != null) return@LaunchedEffect
+            launch(Dispatchers.IO) {
+                val qrCodeWriter = QRCodeWriter()
+                val encodeHints = mutableMapOf<EncodeHintType, Any?>()
+                    .apply {
+                        this[EncodeHintType.MARGIN] = paddingPx
+                    }
+                val bitmapMatrix = try {
+                    qrCodeWriter.encode(
+                        content, BarcodeFormat.QR_CODE,
+                        sizePx, sizePx, encodeHints
+                    )
+                } catch (ex: WriterException) {
+                    null
+                }
+                val matrixWidth = bitmapMatrix?.width ?: sizePx
+                val matrixHeight = bitmapMatrix?.height ?: sizePx
+                val newBitmap = Bitmap.createBitmap(
+                    bitmapMatrix?.width ?: sizePx,
+                    bitmapMatrix?.height ?: sizePx,
+                    Bitmap.Config.ARGB_8888,
+                )
+                for (x in 0 until matrixWidth) {
+                    for (y in 0 until matrixHeight) {
+                        val shouldColorPixel = bitmapMatrix?.get(x, y) ?: false
+                        val pixelColor = if (shouldColorPixel)
+                            md_theme_light_primary.toArgb()
+                        else
+                            Color.Transparent.toArgb()
+                        newBitmap.setPixel(x, y, pixelColor)
+                    }
+                }
+                bitmap = newBitmap
+            }
+        }
+        return remember(bitmap) {
+            val currentBitmap = bitmap ?: Bitmap.createBitmap(
+                sizePx, sizePx,
+                Bitmap.Config.ARGB_8888,
+            ).apply { eraseColor(android.graphics.Color.TRANSPARENT) }
+            showProgress = false
+            BitmapPainter(currentBitmap.asImageBitmap())
         }
     }
 

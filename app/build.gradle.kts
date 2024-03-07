@@ -72,4 +72,5 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("io.github.pushpalroy:jetlime:2.1.0")
     implementation("com.meetup:twain:0.2.2")
+    implementation("com.google.zxing:core:3.5.1")
 }

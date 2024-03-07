@@ -37,4 +37,7 @@
     <string name="no_projects_yet">No projects yet</string>
     <string name="add_project">Add project</string>
     <string name="name">Name</string>
+    <string name="separate_emails_with_a_comma">Separate emails with a comma</string>
+    <string name="mailing_list">Mailing list</string>
+    <string name="project_members">Project members</string>
 </resources>
