@@ -83,8 +83,8 @@ public class Release extends NovaItem {
                         - A third-level heading"""), System.currentTimeMillis(), new ArrayList<>(
                         List.of(
                                 new ReleaseStandardEvent(ReleaseStatus.Latest),
-                                new ReleaseStandardEvent(ReleaseStatus.Alpha),
                                 new ReleaseStandardEvent(ReleaseStatus.Beta),
+                                new ReleaseStandardEvent(ReleaseStatus.Alpha),
                                 new ReleaseStandardEvent(ReleaseStatus.Approved),
                                 new AssetUploadingEvent(),
                                 new RejectedReleaseEvent(),

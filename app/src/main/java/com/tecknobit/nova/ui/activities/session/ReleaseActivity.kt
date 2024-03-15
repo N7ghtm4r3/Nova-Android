@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -43,6 +44,7 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,6 +53,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -68,18 +71,39 @@ import com.pushpal.jetlime.JetLimeColumn
 import com.pushpal.jetlime.JetLimeDefaults
 import com.pushpal.jetlime.JetLimeEventDefaults
 import com.pushpal.jetlime.JetLimeExtendedEvent
-import com.tecknobit.nova.R
+import com.tecknobit.nova.R.string
+import com.tecknobit.nova.R.string.approve
+import com.tecknobit.nova.R.string.close
+import com.tecknobit.nova.R.string.comment
+import com.tecknobit.nova.R.string.comment_the_asset
+import com.tecknobit.nova.R.string.confirm
+import com.tecknobit.nova.R.string.delete_release
+import com.tecknobit.nova.R.string.delete_release_alert_message
+import com.tecknobit.nova.R.string.dismiss
+import com.tecknobit.nova.R.string.new_asset_has_been_uploaded
+import com.tecknobit.nova.R.string.no_events_yet
+import com.tecknobit.nova.R.string.promote_alpha_release_alert_message
+import com.tecknobit.nova.R.string.promote_beta_release_alert_message
+import com.tecknobit.nova.R.string.promote_latest_release_alert_message
+import com.tecknobit.nova.R.string.promote_release
+import com.tecknobit.nova.R.string.promote_release_as_beta
+import com.tecknobit.nova.R.string.promote_release_as_latest
+import com.tecknobit.nova.R.string.reject
+import com.tecknobit.nova.R.string.tags
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ALLOWED_ASSETS_TYPE
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Alpha
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Latest
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Rejected
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.AssetUploadingEvent
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedReleaseEvent
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedTag
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Bug
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Issue
@@ -224,8 +248,8 @@ class ReleaseActivity : ComponentActivity() {
                     NovaAlertDialog(
                         show = showDeleteRelease,
                         icon = Icons.Default.Warning,
-                        title = R.string.delete_release,
-                        message = R.string.delete_release_alert_message,
+                        title = delete_release,
+                        message = delete_release_alert_message,
                         confirmAction = {
                             // TODO: MAKE THE REQUEST THEN
                             showDeleteRelease.value = false
@@ -233,11 +257,76 @@ class ReleaseActivity : ComponentActivity() {
                         }
                     )
                     if(isReleaseApproved) {
+                        val lastEventStatus = getLastEventStatus()
                         NovaAlertDialog(
                             show = showPromoteRelease,
                             icon = Icons.Default.Verified,
-                            title = R.string.promote_release_as_latest,
-                            message = R.string.promoted_release_alert_message,
+                            title = when (lastEventStatus) {
+                                Approved -> promote_release
+                                Alpha -> promote_release_as_beta
+                                else -> promote_release_as_latest
+                            },
+                            message = {
+                                val resId = when(lastEventStatus) {
+                                    Approved -> { promote_release }
+                                    Alpha -> { promote_beta_release_alert_message }
+                                    else -> { promote_latest_release_alert_message }
+                                }
+                                if(lastEventStatus == Approved) {
+                                    var isAlphaSelected by remember {
+                                        mutableStateOf(true)
+                                    }
+                                    var warnText by remember {
+                                        mutableIntStateOf(promote_alpha_release_alert_message)
+                                    }
+                                    Column {
+                                        Row (
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            RadioButton(
+                                                selected = isAlphaSelected,
+                                                onClick = {
+                                                    if(!isAlphaSelected) {
+                                                        isAlphaSelected = true
+                                                        warnText = promote_alpha_release_alert_message
+                                                    }
+                                                }
+                                            )
+                                            Text(
+                                                text = Alpha.name
+                                            )
+                                            RadioButton(
+                                                selected = !isAlphaSelected,
+                                                onClick = {
+                                                    if(isAlphaSelected) {
+                                                        isAlphaSelected = false
+                                                        warnText = promote_latest_release_alert_message
+                                                    }
+                                                }
+                                            )
+                                            Text(
+                                                text = Latest.name
+                                            )
+                                        }
+                                        Text(
+                                            modifier = Modifier
+                                                .align(Alignment.CenterHorizontally),
+                                            text = getString(warnText),
+                                            textAlign = TextAlign.Justify
+                                        )
+                                    }
+                                } else {
+                                    Text(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        text = getString(resId),
+                                        textAlign = TextAlign.Justify
+                                    )
+                                }
+                            },
                             confirmAction = {
                                 // TODO: MAKE THE REQUEST TO PROMOTE THE RELEASE AS LATEST THEN
                                 showPromoteRelease.value = false
@@ -299,7 +388,7 @@ class ReleaseActivity : ComponentActivity() {
                                         )
                                         if(event !is RejectedReleaseEvent) {
                                             val message = if(isAssetUploadingEvent)
-                                                R.string.new_asset_has_been_uploaded
+                                                new_asset_has_been_uploaded
                                             else
                                                 (event as ReleaseStandardEvent).getMessage()
                                             Text(
@@ -323,7 +412,7 @@ class ReleaseActivity : ComponentActivity() {
                                                         show = showCommentAsset,
                                                         icon = Icons.AutoMirrored.Filled.Comment,
                                                         onDismissAction = closeAction,
-                                                        title = R.string.comment_the_asset,
+                                                        title = comment_the_asset,
                                                         message = commentReleaseMessage(
                                                             isApproved = isApproved,
                                                             reasons = reasons,
@@ -364,7 +453,7 @@ class ReleaseActivity : ComponentActivity() {
                                                             onClick = { showCommentAsset.value = true }
                                                         ) {
                                                             Text(
-                                                                text = getString(R.string.comment)
+                                                                text = getString(comment)
                                                             )
                                                         }
                                                     }
@@ -416,7 +505,7 @@ class ReleaseActivity : ComponentActivity() {
                     } else {
                         EmptyList(
                             icon = Icons.Default.EventBusy,
-                            description = R.string.no_events_yet
+                            description = no_events_yet
                         )
                     }
                 }
@@ -472,7 +561,7 @@ class ReleaseActivity : ComponentActivity() {
                     }
                 ) {
                     Text(
-                        text = stringResource(R.string.approve)
+                        text = stringResource(approve)
                     )
                 }
                 OutlinedButton(
@@ -498,7 +587,7 @@ class ReleaseActivity : ComponentActivity() {
                     }
                 ) {
                     Text(
-                        text = stringResource(R.string.reject)
+                        text = stringResource(reject)
                     )
                 }
             }
@@ -511,7 +600,7 @@ class ReleaseActivity : ComponentActivity() {
                     },
                     label = {
                         Text(
-                            text = getString(R.string.reasons)
+                            text = getString(string.reasons)
                         )
                     },
                     trailingIcon = {
@@ -530,7 +619,7 @@ class ReleaseActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.Start),
-                    text = getString(R.string.tags),
+                    text = getString(tags),
                     fontSize = 20.sp
                 )
                 LazyHorizontalGrid(
@@ -612,7 +701,7 @@ class ReleaseActivity : ComponentActivity() {
                         onClick = { show.value = false }
                     ) {
                         Text(
-                            text = stringResource(R.string.dismiss)
+                            text = stringResource(dismiss)
                         )
                     }
                 }
@@ -658,7 +747,7 @@ class ReleaseActivity : ComponentActivity() {
                                     },
                                     label = {
                                         Text(
-                                            text = stringResource(R.string.description)
+                                            text = stringResource(string.description)
                                         )
                                     },
                                     trailingIcon = {
@@ -691,9 +780,9 @@ class ReleaseActivity : ComponentActivity() {
                             }
                         ) {
                             val buttonText = if(isInputMode)
-                                R.string.confirm
+                                confirm
                             else
-                                R.string.close
+                                close
                             Text(
                                 text = stringResource(buttonText)
                             )
@@ -702,6 +791,25 @@ class ReleaseActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    private fun getLastEventStatus() : ReleaseStatus {
+        val releaseEvents = mutableListOf<ReleaseEvent>()
+        releaseEvents.addAll(release.value.releaseEvents)
+        releaseEvents.reverse()
+        var lastEventStatus = Alpha
+        releaseEvents.forEachIndexed { index, event ->
+            val eventValue = event as ReleaseStandardEvent
+            if (eventValue.status == Approved) {
+                val nextIndex = index + 1
+                lastEventStatus = if(nextIndex >= releaseEvents.size)
+                    Approved
+                else
+                    (releaseEvents[index + 1] as ReleaseStandardEvent).status
+            }
+        }
+        Log.d("gagagagagaga", lastEventStatus.name)
+        return lastEventStatus
     }
 
 }

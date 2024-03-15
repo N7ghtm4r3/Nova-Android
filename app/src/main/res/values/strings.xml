@@ -15,8 +15,12 @@
     <string name="delete_release_alert_message">If you confirm, the release will be deleted and the related data will no longer be available</string>
     <string name="confirm">Confirm</string>
     <string name="dismiss">Dismiss</string>
+    <string name="promote_release">Promote the release</string>
+    <string name="promote_release_as_beta">Promote as the Beta</string>
     <string name="promote_release_as_latest">Promote as the latest</string>
-    <string name="promoted_release_alert_message">If you confirm, the version will be promoted as the latest available and no more changes will be allowed on it</string>
+    <string name="promote_alpha_release_alert_message">If you confirm, the version will be promoted as the alpha version</string>
+    <string name="promote_beta_release_alert_message">If you confirm, the version will be promoted as the beta version</string>
+    <string name="promote_latest_release_alert_message">If you confirm, the version will be promoted as the latest available and no more changes will be allowed on it</string>
     <string name="comment">Comment</string>
     <string name="comment_the_asset">Comment the asset</string>
     <string name="approve">Approve</string>
@@ -40,4 +44,6 @@
     <string name="separate_emails_with_a_comma">Separate emails with a comma</string>
     <string name="mailing_list">Mailing list</string>
     <string name="project_members">Project members</string>
+    <string name="leave_from_project">Leave from project?</string>
+    <string name="leave_project_alert_message">If you confirm, you will not be more allowed to access to the related data</string>
 </resources>

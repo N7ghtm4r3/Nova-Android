@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
@@ -106,6 +107,7 @@ import com.tecknobit.nova.ui.theme.thinFontFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.util.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 class ProjectActivity : ComponentActivity() {
@@ -118,6 +120,8 @@ class ProjectActivity : ComponentActivity() {
 
     private lateinit var displayMembers: MutableState<Boolean>
 
+    private var isProjectAuthor: Boolean = false
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -129,7 +133,9 @@ class ProjectActivity : ComponentActivity() {
                 else
                     mutableStateOf(intent.getSerializableExtra(PROJECT_KEY)!! as Project)
             }
-            val showDeleteProject = remember { mutableStateOf(false) }
+            // TODO: MAKE THE REAL WORKFLOW TO GET IF THE USER IS OR NOT THE PROJECT AUTHOR
+            isProjectAuthor = Random().nextBoolean()
+            val showWorkOnProject = remember { mutableStateOf(false) }
             displayAddMembers = remember { mutableStateOf(false) }
             displayAddRelease = remember { mutableStateOf(false) }
             displayMembers = remember { mutableStateOf(false) }
@@ -173,6 +179,7 @@ class ProjectActivity : ComponentActivity() {
                                 }
                             },
                             actions = {
+                                // TODO: MAKE THE WORKFLOW TO HIDE IF THE MEMBER IS NOT A VENDOR OR THE AUTHOR
                                 IconButton(
                                     onClick = { displayAddMembers.value = true }
                                 ) {
@@ -194,22 +201,31 @@ class ProjectActivity : ComponentActivity() {
                                 }
                                 ProjectMembers()
                                 IconButton(
-                                    onClick = { showDeleteProject.value = true }
+                                    onClick = { showWorkOnProject.value = true }
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.DeleteForever,
+                                        imageVector = if(isProjectAuthor)
+                                            Icons.Default.DeleteForever
+                                        else
+                                            Icons.AutoMirrored.Filled.ExitToApp,
                                         contentDescription = null,
                                         tint = Color.White
                                     )
                                 }
                                 NovaAlertDialog(
-                                    show = showDeleteProject,
+                                    show = showWorkOnProject,
                                     icon = Icons.Default.Warning,
-                                    title = R.string.delete_project,
-                                    message = R.string.delete_project_alert_message,
+                                    title = if(isProjectAuthor)
+                                        R.string.delete_project
+                                    else
+                                        R.string.leave_from_project,
+                                    message = if(isProjectAuthor)
+                                        R.string.delete_project_alert_message
+                                    else
+                                        R.string.leave_project_alert_message,
                                     confirmAction = {
                                         // TODO: MAKE THE REQUEST THEN
-                                        showDeleteProject.value = false
+                                        showWorkOnProject.value = false
                                         startActivity(navBackIntent)
                                     }
                                 )
@@ -583,16 +599,18 @@ class ProjectActivity : ComponentActivity() {
                                 )
                             },
                             trailingContent = {
-                                // TODO: MAKE THE REAL WORKFLOW TO HIDE THE POSSIBILITY TO REMOVE OR REMOVED FROM THE GROUP
-                                IconButton(
-                                    onClick = {
-                                        /*TODO MAKE THE REQUEST THEN*/
+                                if(isProjectAuthor) {
+                                    // TODO: MAKE THE REAL WORKFLOW TO HIDE THE POSSIBILITY TO BE REMOVED BY SELF
+                                    IconButton(
+                                        onClick = {
+                                            /*TODO MAKE THE REQUEST THEN*/
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PersonRemove,
+                                            contentDescription = null
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.PersonRemove,
-                                        contentDescription = null
-                                    )
                                 }
                             }
                         )
