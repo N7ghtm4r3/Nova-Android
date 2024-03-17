@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val LightColors = lightColorScheme(
@@ -200,11 +201,12 @@ val BlueSchemeColors = lightColorScheme(
 
 @Composable
 fun NovaTheme(
-    content: @Composable () -> Unit
+    systemBarColor: Color = md_theme_light_primary,
+    content: @Composable () -> Unit,
 ) {
     val systemUiController = rememberSystemUiController()
     systemUiController.setSystemBarsColor(
-        color = md_theme_light_primary
+        color = systemBarColor
     )
     MaterialTheme(
         colorScheme = LightColors,

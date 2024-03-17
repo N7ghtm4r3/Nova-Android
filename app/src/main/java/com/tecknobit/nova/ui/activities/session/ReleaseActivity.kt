@@ -808,7 +808,6 @@ class ReleaseActivity : ComponentActivity() {
                     (releaseEvents[index + 1] as ReleaseStandardEvent).status
             }
         }
-        Log.d("gagagagagaga", lastEventStatus.name)
         return lastEventStatus
     }
 

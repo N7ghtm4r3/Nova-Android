@@ -46,4 +46,12 @@
     <string name="project_members">Project members</string>
     <string name="leave_from_project">Leave from project?</string>
     <string name="leave_project_alert_message">If you confirm, you will not be more allowed to access to the related data</string>
+    <string name="title_activity_profile">ProfileActivity</string>
+    <string name="password">Password</string>
+    <string name="email">Email</string>
+    <string name="uid">UID</string>
+    <string name="logout">Logout</string>
+    <string name="delete_account">Delete account</string>
+    <string name="language">Language</string>
+    <string name="edit">Edit</string>
 </resources>

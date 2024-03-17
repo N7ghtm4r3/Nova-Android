@@ -7,7 +7,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -555,7 +554,6 @@ class ProjectActivity : ComponentActivity() {
                         releaseVersion = releaseVersion.removePrefix("v.")
                         if(!releaseVersion.startsWith(" "))
                             releaseVersion = " $releaseVersion"
-                        Log.d("gagagagagaga", "v.$releaseVersion")
                         // TODO: MAKE THE REQUEST THEN
                         resetLayout()
                     } else

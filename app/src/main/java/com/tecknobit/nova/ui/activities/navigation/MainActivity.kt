@@ -11,13 +11,12 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,12 +27,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOff
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -56,14 +55,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
+import com.tecknobit.nova.ui.activities.session.ProfileActivity
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
@@ -71,7 +74,6 @@ import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
-
 
 class MainActivity : ComponentActivity() {
 
@@ -111,13 +113,42 @@ class MainActivity : ComponentActivity() {
                     Column (
                         modifier = Modifier
                             .background(md_theme_light_primary)
-                            .fillMaxSize(),
+                            .fillMaxSize()
                     ) {
-                        Spacer(modifier = Modifier.height(125.dp))
-                        Card (
+                        Column (
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .fillMaxHeight(),
+                                .height(200.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            AsyncImage(
+                                modifier = Modifier
+                                    .border(
+                                        width = 2.dp,
+                                        color = Color.White,
+                                        shape = CircleShape
+                                    )
+                                    .shadow(
+                                        elevation = 5.dp,
+                                        shape = CircleShape
+                                    )
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        startActivity(
+                                            Intent(this@MainActivity, ProfileActivity::class.java)
+                                        )
+                                    }
+                                    .size(150.dp),
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(user.profilePicUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        Card (
                             shape = RoundedCornerShape(
                                 topStart = 35.dp,
                                 topEnd = 35.dp
@@ -196,7 +227,7 @@ class MainActivity : ComponentActivity() {
                                                     Icon(
                                                         modifier = Modifier
                                                             .size(30.dp),
-                                                        imageVector = Icons.Default.KeyboardArrowRight,
+                                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                                         contentDescription = null
                                                     )
                                                 }
