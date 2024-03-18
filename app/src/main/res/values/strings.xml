@@ -68,4 +68,5 @@
     <string name="sign_in">Sign In</string>
     <string name="have_an_account">Have an account?</string>
     <string name="are_you_new_to_nova">Are you new to Nova?</string>
+    <string name="authenticate_as_a_customer">Authenticate as a customer</string>
 </resources>

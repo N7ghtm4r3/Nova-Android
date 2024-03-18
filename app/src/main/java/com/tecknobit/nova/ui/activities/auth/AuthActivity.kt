@@ -1,18 +1,27 @@
 package com.tecknobit.nova.ui.activities.auth
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -26,12 +35,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -41,123 +53,78 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
+import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 
 class AuthActivity : ComponentActivity() {
 
+    private lateinit var name: MutableState<String>
+
+    private lateinit var nameError: MutableState<Boolean>
+
+    private lateinit var surname: MutableState<String>
+
+    private lateinit var surnameError: MutableState<Boolean>
+
+    private lateinit var email: MutableState<String>
+
+    private lateinit var emailError: MutableState<Boolean>
+
+    private lateinit var password: MutableState<String>
+
+    private lateinit var passwordError: MutableState<Boolean>
+
+    private lateinit var isPasswordHidden: MutableState<Boolean>
+
+    private lateinit var isRegisterOpe: MutableState<Boolean>
+
+
+    @ExperimentalFoundationApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             NovaTheme {
-                var isRegisterOpe by remember { mutableStateOf(true) }
-                Column (
+                val pagerState = rememberPagerState(pageCount = { 2 })
+                name = remember { mutableStateOf("") }
+                nameError = remember { mutableStateOf(false) }
+                surname = remember { mutableStateOf("") }
+                surnameError = remember { mutableStateOf(false) }
+                email = remember { mutableStateOf("") }
+                emailError = remember { mutableStateOf(false) }
+                password = remember { mutableStateOf("") }
+                passwordError = remember { mutableStateOf(false) }
+                isPasswordHidden = remember { mutableStateOf(true) }
+                isRegisterOpe = remember { mutableStateOf(true) }
+                HorizontalPager(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(md_theme_light_primary)
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .padding(
-                                top = 50.dp,
-                                start = 30.dp
-                            ),
-                        text = stringResource(R.string.hello),
-                        fontSize = 45.sp,
-                        color = Color.White
-                    )
-                    Text(
-                        modifier = Modifier
-                            .padding(
-                                start = 30.dp
-                            ),
-                        text = stringResource(R.string.authenticate_on_a_server),
-                        fontSize = 20.sp,
-                        color = Color.White
-                    )
-                    Card (
-                        modifier = Modifier
-                            .padding(
-                                top = 75.dp
-                            ),
-                        shape = RoundedCornerShape(
-                            topStart = 0.dp,
-                            topEnd = 60.dp
-                        ),
-                        colors = CardDefaults.cardColors(
-                            containerColor = gray_background
-                        ),
-                        elevation = CardDefaults.cardElevation(10.dp),
-                    ) {
-                        Column (
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(
-                                    top = 30.dp,
-                                    bottom = 25.dp
-                                ),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            var host by remember { mutableStateOf("") }
-                            var hostError by remember { mutableStateOf(false) }
-                            var serverSecret by remember { mutableStateOf("") }
-                            var serverSecretError by remember { mutableStateOf(false) }
-                            var name by remember { mutableStateOf("") }
-                            var nameError by remember { mutableStateOf(false) }
-                            var surname by remember { mutableStateOf("") }
-                            var surnameError by remember { mutableStateOf(false) }
-                            var email by remember { mutableStateOf("") }
-                            var emailError by remember { mutableStateOf(false) }
-                            var password by remember { mutableStateOf("") }
-                            var passwordError by remember { mutableStateOf(false) }
-                            var isPasswordHidden by remember { mutableStateOf(true) }
-                            OutlinedTextField(
-                                singleLine = true,
-                                value = host,
-                                onValueChange = {
-                                    hostError = it.isEmpty() && host.isNotEmpty()
-                                    host = it
-                                },
-                                label = {
-                                    Text(
-                                        text = stringResource(R.string.host)
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = { host = "" }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = null
-                                        )
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                isError = hostError
-                            )
-                            if(isRegisterOpe) {
+                        .fillMaxSize(),
+                    state = pagerState
+                ) { page ->
+                    if(page == 0) {
+                        UIContainer(
+                            subtitle = R.string.authenticate_on_a_server,
+                            content = {
+                                var host by remember { mutableStateOf("") }
+                                var hostError by remember { mutableStateOf(false) }
+                                var serverSecret by remember { mutableStateOf("") }
+                                var serverSecretError by remember { mutableStateOf(false) }
                                 OutlinedTextField(
-                                    modifier = Modifier
-                                        .padding(
-                                            top = 10.dp,
-                                        ),
                                     singleLine = true,
-                                    value = serverSecret,
+                                    value = host,
                                     onValueChange = {
-                                        serverSecretError = it.isEmpty() && serverSecret.isNotEmpty()
-                                        serverSecret = it
+                                        hostError = it.isEmpty() && host.isNotEmpty()
+                                        host = it
                                     },
                                     label = {
                                         Text(
-                                            text = stringResource(R.string.server_secret)
+                                            text = stringResource(R.string.host)
                                         )
                                     },
                                     trailingIcon = {
                                         IconButton(
-                                            onClick = { serverSecret = "" }
+                                            onClick = { host = "" }
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Clear,
@@ -166,198 +133,125 @@ class AuthActivity : ComponentActivity() {
                                         }
                                     },
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                    isError = serverSecretError
+                                    isError = hostError
                                 )
-                                OutlinedTextField(
+                                if(isRegisterOpe.value) {
+                                    OutlinedTextField(
+                                        modifier = Modifier
+                                            .padding(
+                                                top = 10.dp,
+                                            ),
+                                        singleLine = true,
+                                        value = serverSecret,
+                                        onValueChange = {
+                                            serverSecretError = it.isEmpty() && serverSecret.isNotEmpty()
+                                            serverSecret = it
+                                        },
+                                        label = {
+                                            Text(
+                                                text = stringResource(R.string.server_secret)
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            IconButton(
+                                                onClick = { serverSecret = "" }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Clear,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        },
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                        isError = serverSecretError
+                                    )
+                                    Form()
+                                } else
+                                    EmailPasswordForm()
+                                AuthButton(
+                                    authAction = {
+                                        // TODO: MAKE THE REQUEST THEN
+                                        startActivity(
+                                            Intent(this@AuthActivity,
+                                                MainActivity::class.java)
+                                        )
+                                    },
+                                    btnText = if(isRegisterOpe.value)
+                                        R.string.sign_up
+                                    else
+                                        R.string.sign_in
+                                )
+                                Row (
                                     modifier = Modifier
                                         .padding(
-                                            top = 10.dp,
+                                            top = 10.dp
                                         ),
-                                    singleLine = true,
-                                    value = name,
-                                    onValueChange = {
-                                        nameError = it.isEmpty() && name.isNotEmpty()
-                                        name = it
-                                    },
-                                    label = {
-                                        Text(
-                                            text = stringResource(R.string.name)
-                                        )
-                                    },
-                                    trailingIcon = {
-                                        IconButton(
-                                            onClick = { name = "" }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = null
-                                            )
-                                        }
-                                    },
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                    isError = nameError
-                                )
-                                OutlinedTextField(
-                                    modifier = Modifier
-                                        .padding(
-                                            top = 10.dp,
-                                        ),
-                                    singleLine = true,
-                                    value = surname,
-                                    onValueChange = {
-                                        surnameError = it.isEmpty() && surname.isNotEmpty()
-                                        surname = it
-                                    },
-                                    label = {
-                                        Text(
-                                            text = stringResource(R.string.surname)
-                                        )
-                                    },
-                                    trailingIcon = {
-                                        IconButton(
-                                            onClick = { surname = "" }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = null
-                                            )
-                                        }
-                                    },
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                    isError = surnameError
-                                )
-                            }
-                            OutlinedTextField(
-                                modifier = Modifier
-                                    .padding(
-                                        top = 10.dp,
-                                    ),
-                                singleLine = true,
-                                value = email,
-                                onValueChange = {
-                                    emailError = it.isEmpty() && email.isNotEmpty()
-                                    email = it
-                                },
-                                label = {
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
                                     Text(
-                                        text = stringResource(R.string.email)
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = { email = "" }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = null
-                                        )
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Email,
-                                    imeAction = ImeAction.Next
-                                ),
-                                isError = emailError
-                            )
-                            OutlinedTextField(
-                                modifier = Modifier
-                                    .padding(
-                                        top = 10.dp,
-                                    ),
-                                singleLine = true,
-                                value = password,
-                                visualTransformation = if (isPasswordHidden)
-                                    VisualTransformation.None
-                                else
-                                    PasswordVisualTransformation(),
-                                onValueChange = {
-                                    passwordError = it.isEmpty() && password.isNotEmpty()
-                                    password = it
-                                },
-                                leadingIcon = {
-                                    IconButton(
-                                        onClick = { password = "" }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = null
-                                        )
-                                    }
-                                },
-                                label = {
-                                    Text(
-                                        text = stringResource(R.string.password)
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = { isPasswordHidden = !isPasswordHidden }
-                                    ) {
-                                        Icon(
-                                            imageVector = if(isPasswordHidden)
-                                                Icons.Default.Visibility
+                                        text = stringResource(
+                                            if(isRegisterOpe.value)
+                                                R.string.have_an_account
                                             else
-                                                Icons.Default.VisibilityOff,
-                                            contentDescription = null
-                                        )
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Password,
-                                    imeAction = ImeAction.Done
-                                ),
-                                isError = passwordError
-                            )
-                            Button(
-                                modifier = Modifier
-                                    .padding(
-                                        top = 15.dp
+                                                R.string.are_you_new_to_nova
+                                        ),
+                                        fontSize = 14.sp
                                     )
-                                    .width(280.dp)
-                                    .height(60.dp),
-                                shape = RoundedCornerShape(10.dp),
-                                onClick = { /*TODO*/ }
-                            ) {
-                                Text(
-                                    text = stringResource(
-                                        if(isRegisterOpe)
-                                            R.string.sign_up
-                                        else
-                                            R.string.sign_in
-                                    ),
-                                    fontSize = 18.sp
+                                    Text(
+                                        modifier = Modifier
+                                            .clickable { isRegisterOpe.value = !isRegisterOpe.value},
+                                        text = stringResource(
+                                            if(isRegisterOpe.value)
+                                                R.string.sign_in
+                                            else
+                                                R.string.sign_up
+                                        ),
+                                        fontSize = 14.sp,
+                                        color = md_theme_light_primary
+                                    )
+                                }
+                            }
+                        )
+                    } else {
+                        UIContainer(
+                            subtitle = R.string.authenticate_as_a_customer,
+                            content = {
+                                Form()
+                                AuthButton(
+                                    authAction = {
+                                        // TODO: SAVE IN LOCAL THEN
+                                        startActivity(
+                                            Intent(this@AuthActivity,
+                                                MainActivity::class.java)
+                                        )
+                                    },
+                                    btnText = R.string.confirm
                                 )
                             }
-                            Row (
-                                modifier = Modifier
-                                    .padding(
-                                        top = 10.dp
-                                    ),
-                                horizontalArrangement = Arrangement.spacedBy(5.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(
-                                        if(isRegisterOpe)
-                                            R.string.have_an_account
-                                        else
-                                            R.string.are_you_new_to_nova
-                                    ),
-                                    fontSize = 14.sp
-                                )
-                                Text(
-                                    modifier = Modifier
-                                        .clickable { isRegisterOpe = !isRegisterOpe},
-                                    text = stringResource(
-                                        if(isRegisterOpe)
-                                            R.string.sign_in
-                                        else
-                                            R.string.sign_up
-                                    ),
-                                    fontSize = 14.sp,
-                                    color = md_theme_light_primary
-                                )
-                            }
-                        }
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .fillMaxWidth()
+                        .padding(
+                            top = 10.dp
+                        ),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    repeat(pagerState.pageCount) { iteration ->
+                        val color = if (pagerState.currentPage == iteration)
+                            gray_background
+                        else
+                            Color.LightGray
+                        Box(
+                            modifier = Modifier
+                                .padding(2.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(color)
+                                .size(14.dp)
+                        )
                     }
                 }
             }
@@ -367,6 +261,241 @@ class AuthActivity : ComponentActivity() {
                 finishAffinity()
             }
         })
+    }
+
+    @Composable
+    private fun UIContainer(
+        subtitle: Int,
+        content: @Composable ColumnScope.() -> Unit
+    ) {
+        Column (
+            modifier = Modifier
+                .fillMaxSize()
+                .background(md_theme_light_primary)
+        ) {
+            Text(
+                modifier = Modifier
+                    .padding(
+                        top = 50.dp,
+                        start = 30.dp
+                    ),
+                text = stringResource(R.string.hello),
+                fontSize = 45.sp,
+                color = Color.White
+            )
+            Text(
+                modifier = Modifier
+                    .padding(
+                        start = 30.dp
+                    ),
+                text = stringResource(subtitle),
+                fontSize = 20.sp,
+                color = Color.White
+            )
+            Card (
+                modifier = Modifier
+                    .padding(
+                        top = 75.dp
+                    ),
+                shape = if(subtitle == R.string.authenticate_on_a_server) {
+                    RoundedCornerShape(
+                        topStart = 0.dp,
+                        topEnd = 60.dp
+                    )
+                } else {
+                    RoundedCornerShape(
+                        topStart = 60.dp,
+                        topEnd = 0.dp
+                    )
+                },
+                colors = CardDefaults.cardColors(
+                    containerColor = gray_background
+                ),
+                elevation = CardDefaults.cardElevation(10.dp)
+            ) {
+                Column (
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            top = 30.dp,
+                            bottom = 25.dp
+                        ),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    content = content
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun Form() {
+        OutlinedTextField(
+            modifier = Modifier
+                .padding(
+                    top = 10.dp,
+                ),
+            singleLine = true,
+            value = name.value,
+            onValueChange = {
+                nameError.value = it.isEmpty() && name.value.isNotEmpty()
+                name.value = it
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.name)
+                )
+            },
+            trailingIcon = {
+                IconButton(
+                    onClick = { name.value = "" }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = null
+                    )
+                }
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            isError = nameError.value
+        )
+        OutlinedTextField(
+            modifier = Modifier
+                .padding(
+                    top = 10.dp,
+                ),
+            singleLine = true,
+            value = surname.value,
+            onValueChange = {
+                surnameError.value = it.isEmpty() && surname.value.isNotEmpty()
+                surname.value = it
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.surname)
+                )
+            },
+            trailingIcon = {
+                IconButton(
+                    onClick = { surname.value = "" }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = null
+                    )
+                }
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            isError = surnameError.value
+        )
+        EmailPasswordForm()
+    }
+
+    @Composable
+    private fun EmailPasswordForm() {
+        OutlinedTextField(
+            modifier = Modifier
+                .padding(
+                    top = 10.dp,
+                ),
+            singleLine = true,
+            value = email.value,
+            onValueChange = {
+                emailError.value = it.isEmpty() && email.value.isNotEmpty()
+                email.value = it
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.email)
+                )
+            },
+            trailingIcon = {
+                IconButton(
+                    onClick = { email.value = "" }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = null
+                    )
+                }
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            isError = emailError.value
+        )
+        OutlinedTextField(
+            modifier = Modifier
+                .padding(
+                    top = 10.dp,
+                ),
+            singleLine = true,
+            value = password.value,
+            visualTransformation = if (isPasswordHidden.value)
+                VisualTransformation.None
+            else
+                PasswordVisualTransformation(),
+            onValueChange = {
+                passwordError.value = it.isEmpty() && password.value.isNotEmpty()
+                password.value = it
+            },
+            leadingIcon = {
+                IconButton(
+                    onClick = { password.value = "" }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = null
+                    )
+                }
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.password)
+                )
+            },
+            trailingIcon = {
+                IconButton(
+                    onClick = { isPasswordHidden.value = !isPasswordHidden.value }
+                ) {
+                    Icon(
+                        imageVector = if(isPasswordHidden.value)
+                            Icons.Default.Visibility
+                        else
+                            Icons.Default.VisibilityOff,
+                        contentDescription = null
+                    )
+                }
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            isError = passwordError.value
+        )
+    }
+
+    @Composable
+    private fun AuthButton(
+        authAction: () -> Unit,
+        btnText: Int
+    ) {
+        Button(
+            modifier = Modifier
+                .padding(
+                    top = 15.dp
+                )
+                .width(280.dp)
+                .height(60.dp),
+            shape = RoundedCornerShape(10.dp),
+            onClick = authAction
+        ) {
+            Text(
+                text = stringResource(btnText),
+                fontSize = 18.sp
+            )
+        }
     }
 
 }
