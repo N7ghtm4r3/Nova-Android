@@ -54,4 +54,9 @@
     <string name="delete_account">Delete account</string>
     <string name="language">Language</string>
     <string name="edit">Edit</string>
+    <string name="change_email">Change email</string>
+    <string name="please_enter_the_new_email_address">Please enter the new email address</string>
+    <string name="please_enter_the_new_password">Please enter the new password</string>
+    <string name="change_password">Change password</string>
+    <string name="change_language">Change language</string>
 </resources>

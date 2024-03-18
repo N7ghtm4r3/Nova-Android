@@ -3,7 +3,11 @@ package com.tecknobit.nova.ui.activities.session
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,9 +19,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Password
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -25,6 +38,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,14 +54,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tecknobit.nova.R
+import com.tecknobit.nova.R.string.please_enter_the_new_email_address
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
+import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
@@ -60,24 +80,71 @@ class ProfileActivity : ComponentActivity() {
 
     }
 
+    // TODO: CHECK WHAT LANGUAGES REALLY USE
+    private val languagesAvailable = listOf(
+        "RUSSIAN",
+        "ENGLISH",
+        "ARABIC",
+        "AZERBAIJANI",
+        "CATALAN",
+        "CHINESE",
+        "CZECH",
+        "DANISH",
+        "DUTCH",
+        "ESPERANTO",
+        "FINNISH",
+        "FRENCH",
+        "GERMAN",
+        "GREEK",
+        "HEBREW",
+        "HINDI",
+        "HUNGARIAN",
+        "INDONESIAN",
+        "IRISH",
+        "ITALIAN",
+        "JAPANESE",
+        "KOREAN",
+        "PERSIAN",
+        "POLISH",
+        "PORTUGUESE",
+        "SLOVAK",
+        "SPANISH",
+        "SWEDISH",
+        "TURKISH",
+        "UKRAINIAN"
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             NovaTheme {
+                var profilePic by remember { mutableStateOf(user.profilePicUrl) }
+                val showChangeEmail = remember { mutableStateOf(false) }
+                val showChangePassword = remember { mutableStateOf(false) }
+                val showChangeLanguage = remember { mutableStateOf(false) }
                 var userPassword by remember {
                     mutableStateOf(PASSWORD_HIDDEN)
                 }
                 Box {
                     Box {
+                        val photoPickerLauncher = rememberLauncherForActivityResult(
+                            contract = PickVisualMedia(),
+                            onResult = { uri ->
+                                if(uri != null) {
+                                    profilePic = uri.toString()
+                                    // TODO: MAKE THE REQUEST THEN
+                                }
+                            }
+                        )
                         AsyncImage(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(275.dp)
                                 .clickable {
-                                    // TODO: CHOSE PIC THE MAKE THE REQUEST TO CHANGE IT
+                                    photoPickerLauncher.launch(PickVisualMediaRequest(ImageOnly))
                                 },
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data(user.profilePicUrl)
+                                .data(profilePic)
                                 .crossfade(true)
                                 .build(),
                             contentDescription = null,
@@ -146,10 +213,59 @@ class ProfileActivity : ComponentActivity() {
                             UserInfo(
                                 header = R.string.email,
                                 info = user.email,
-                                editAction = {
-                                    // TODO: CREATE THE ALERT TO MAKE THE REQUEST
-                                }
+                                editAction = { showChangeEmail.value = true }
                             )
+                            if(showChangeEmail.value) {
+                                var email by remember { mutableStateOf("") }
+                                var emailError by remember { mutableStateOf(false) }
+                                NovaAlertDialog(
+                                    show = showChangeEmail,
+                                    icon = Icons.Default.Email,
+                                    title = stringResource(R.string.change_email),
+                                    message = {
+                                        Column {
+                                            Text(
+                                                text = stringResource(please_enter_the_new_email_address)
+                                            )
+                                            OutlinedTextField(
+                                                singleLine = true,
+                                                value = email,
+                                                onValueChange = {
+                                                    emailError = it.isEmpty() && email.isNotEmpty()
+                                                    email = it
+                                                },
+                                                label = {
+                                                    Text(
+                                                        text = stringResource(R.string.email)
+                                                    )
+                                                },
+                                                trailingIcon = {
+                                                    IconButton(
+                                                        onClick = { email = "" }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Clear,
+                                                            contentDescription = null
+                                                        )
+                                                    }
+                                                },
+                                                keyboardOptions = KeyboardOptions(
+                                                    keyboardType = KeyboardType.Email
+                                                ),
+                                                isError = emailError
+                                            )
+                                        }
+                                    },
+                                    confirmAction = {
+                                        if(email.isNotEmpty()) {
+                                            // TODO: MAKE REQUEST THEN
+                                            email = email.lowercase()
+                                            showChangeEmail.value = false
+                                        } else
+                                            emailError = true
+                                    }
+                                )
+                            }
                             UserInfo(
                                 header = R.string.password,
                                 info = userPassword,
@@ -159,18 +275,120 @@ class ProfileActivity : ComponentActivity() {
                                     else
                                         PASSWORD_HIDDEN
                                 },
-                                editAction = {
-                                    // TODO: CREATE THE ALERT TO MAKE THE REQUEST
-                                }
+                                editAction = { showChangePassword.value = true }
                             )
+                            if(showChangePassword.value) {
+                                var password by remember { mutableStateOf("") }
+                                var passwordError by remember { mutableStateOf(false) }
+                                var isPasswordHidden by remember { mutableStateOf(true) }
+                                NovaAlertDialog(
+                                    show = showChangePassword,
+                                    icon = Icons.Default.Password,
+                                    title = stringResource(R.string.change_password),
+                                    message = {
+                                        Column {
+                                            Text(
+                                                text = stringResource(R.string.please_enter_the_new_password)
+                                            )
+                                            OutlinedTextField(
+                                                singleLine = true,
+                                                value = password,
+                                                visualTransformation = if (isPasswordHidden)
+                                                    VisualTransformation.None
+                                                else
+                                                    PasswordVisualTransformation(),
+                                                onValueChange = {
+                                                    passwordError = it.isEmpty() && password.isNotEmpty()
+                                                    password = it
+                                                },
+                                                leadingIcon = {
+                                                    IconButton(
+                                                        onClick = { password = "" }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Clear,
+                                                            contentDescription = null
+                                                        )
+                                                    }
+                                                },
+                                                label = {
+                                                    Text(
+                                                        text = stringResource(R.string.password)
+                                                    )
+                                                },
+                                                trailingIcon = {
+                                                    IconButton(
+                                                        onClick = { isPasswordHidden = !isPasswordHidden }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if(isPasswordHidden)
+                                                                Icons.Default.Visibility
+                                                            else
+                                                                Icons.Default.VisibilityOff,
+                                                            contentDescription = null
+                                                        )
+                                                    }
+                                                },
+                                                keyboardOptions = KeyboardOptions(
+                                                    keyboardType = KeyboardType.Password
+                                                ),
+                                                isError = passwordError
+                                            )
+                                        }
+                                    },
+                                    confirmAction = {
+                                        if(password.isNotEmpty()) {
+                                            // TODO: MAKE REQUEST THEN
+                                            showChangePassword.value = false
+                                        } else
+                                            passwordError = true
+                                    }
+                                )
+                            }
                             UserInfo(
                                 header = R.string.language,
                                 info = user.language,
-                                editAction = {
-                                    // TODO: CREATE THE ALERT TO MAKE THE REQUEST
-                                },
+                                editAction = { showChangeLanguage.value = true },
                                 isLast = true
                             )
+                            if(showChangeLanguage.value) {
+                                var selectedLanguage by remember { mutableStateOf(user.language) }
+                                NovaAlertDialog(
+                                    show = showChangeLanguage,
+                                    icon = Icons.Default.Language,
+                                    title = stringResource(R.string.change_language),
+                                    message = {
+                                        Column {
+                                            LazyColumn (
+                                                modifier = Modifier
+                                                    .height(150.dp)
+                                                    .fillMaxWidth()
+                                            ) {
+                                                items(
+                                                    key = { it },
+                                                    items = languagesAvailable
+                                                ) { language ->
+                                                    Row (
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        RadioButton(
+                                                            selected = language == selectedLanguage,
+                                                            onClick = { selectedLanguage = language }
+                                                        )
+                                                        Text(
+                                                            text = language
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    confirmAction = {
+                                        // TODO: MAKE REQUEST THEN
+                                        showChangeLanguage.value = false
+                                    }
+                                )
+                            }
                             Spacer(modifier = Modifier.height(10.dp))
                             ActionButton(
                                 action = {

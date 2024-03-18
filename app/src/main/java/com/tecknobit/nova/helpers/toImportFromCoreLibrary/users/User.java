@@ -26,7 +26,7 @@ public class User extends PublicUser {
         super(name, surname);
         this.token = UUID.randomUUID().toString().replace("-", "");
         this.password = UUID.randomUUID().toString().replace("-", "");
-        this.language = "ITA";
+        this.language = "ITALIAN";
     }
 
     public User(String id, String name, String surname, String email, String profilePicUrl,
