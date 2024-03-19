@@ -21,9 +21,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,12 +95,16 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Alpha
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Beta
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
+import com.tecknobit.nova.ui.components.createColor
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_error
@@ -181,17 +188,18 @@ class ProjectActivity : ComponentActivity() {
                                 }
                             },
                             actions = {
-                                // TODO: MAKE THE WORKFLOW TO HIDE IF THE MEMBER IS NOT A VENDOR OR THE AUTHOR
-                                IconButton(
-                                    onClick = { displayAddMembers.value = true }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.QrCode,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
+                                if(user.isVendor) {
+                                    IconButton(
+                                        onClick = { displayAddMembers.value = true }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.QrCode,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    }
+                                    CreateQrcode()
                                 }
-                                CreateQrcode()
                                 IconButton(
                                     onClick = { displayMembers.value = true }
                                 ) {
@@ -321,7 +329,7 @@ class ProjectActivity : ComponentActivity() {
                                                     fontFamily = thinFontFamily
                                                 )
                                             }
-                                            if(release.status == ReleaseStatus.Approved) {
+                                            if(release.status == Approved) {
                                                 Row (
                                                     modifier = Modifier
                                                         .fillMaxWidth(),
@@ -583,14 +591,55 @@ class ProjectActivity : ComponentActivity() {
                         key = { member -> member.id},
                         items = project.value.members
                     ) { member ->
+                        val badgeColor = if(member.isCustomer)
+                            Alpha.createColor()
+                        else
+                            Beta.createColor()
                         ListItem(
                             leadingContent = { Logo(member.profilePicUrl) },
                             headlineContent = {
-                                Text(
-                                    text = "${member.name} ${member.surname}",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Row (
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${member.name} ${member.surname}",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    OutlinedCard (
+                                        modifier = Modifier
+                                            .requiredWidthIn(
+                                                min = 65.dp,
+                                                max = 100.dp
+                                            )
+                                            .wrapContentWidth()
+                                            .height(25.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = gray_background
+                                        ),
+                                        border = BorderStroke(
+                                            width = 1.dp,
+                                            color = badgeColor
+                                        )
+                                    ) {
+                                        Column (
+                                            modifier = Modifier
+                                                .padding(
+                                                    start = 10.dp,
+                                                    end = 10.dp
+                                                ),
+                                            verticalArrangement = Arrangement.Center,
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = member.role.name,
+                                                fontWeight = FontWeight.Bold,
+                                                color = badgeColor
+                                            )
+                                        }
+                                    }
+                                }
                             },
                             colors = ListItemDefaults.colors(
                                 containerColor = gray_background
@@ -602,8 +651,7 @@ class ProjectActivity : ComponentActivity() {
                                 )
                             },
                             trailingContent = {
-                                if(isProjectAuthor) {
-                                    // TODO: MAKE THE REAL WORKFLOW TO HIDE THE POSSIBILITY TO BE REMOVED BY SELF
+                                if(isProjectAuthor && member.id != user.id) {
                                     IconButton(
                                         onClick = {
                                             /*TODO MAKE THE REQUEST THEN*/

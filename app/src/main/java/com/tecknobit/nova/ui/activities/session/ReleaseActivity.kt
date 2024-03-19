@@ -109,6 +109,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.Release
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.LayoutChange
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.assetDownloader
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
@@ -213,8 +214,7 @@ class ReleaseActivity : ComponentActivity() {
                         )
                     },
                     floatingActionButton = {
-                        // TODO: MAKE THE WORKFLOW TO HIDE WHEN MEMBER IS THE CLIENT
-                        if(releaseCurrentStatus != Latest) {
+                        if(releaseCurrentStatus != Latest && user.isVendor) {
                             var showFilePicker by remember { mutableStateOf(false) }
                             MultipleFilePicker(
                                 show = showFilePicker,
@@ -395,7 +395,6 @@ class ReleaseActivity : ComponentActivity() {
                                             Text(
                                                 text = getString(message),
                                             )
-                                            // TODO: MAKE THE WORKFLOW TO HIDE WHEN MEMBER IS NOT THE CLIENT
                                             if((isAssetUploadingEvent && ((releaseCurrentStatus != Approved)
                                                         && (releaseCurrentStatus != Latest)))) {
                                                 if(!(event as AssetUploadingEvent).isCommented) {
@@ -450,12 +449,14 @@ class ReleaseActivity : ComponentActivity() {
                                                                 text = "Test"
                                                             )
                                                         }
-                                                        Button(
-                                                            onClick = { showCommentAsset.value = true }
-                                                        ) {
-                                                            Text(
-                                                                text = getString(comment)
-                                                            )
+                                                        if(user.isCustomer) {
+                                                            Button(
+                                                                onClick = { showCommentAsset.value = true }
+                                                            ) {
+                                                                Text(
+                                                                    text = getString(comment)
+                                                                )
+                                                            }
                                                         }
                                                     }
                                                 }

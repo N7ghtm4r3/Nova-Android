@@ -28,6 +28,7 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.Releas
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.theme.fromHexToColor
 
 @Composable
@@ -144,9 +145,8 @@ fun ReleaseTagBadge(
         width = 1.dp,
         color = textColor
     )
-    // TODO: MAKE THE REAL WORKFLOW TO SELECT THE CORRECT BADGE IF IS THE CLIENT SHOW ONCLICK POSSIBILITY ELSE HIDE TO THE VENDOR
-    val isVendor = false
-    if(isVendor) {
+    // TODO: MAKE THE WORKFLOW TO LOCK THE POSSIBILITY IF IS NOT THE LAST EVENT
+    if(user.isVendor && tag.comment.isEmpty()) {
         OutlinedCard(
             modifier = modifier,
             colors = colors,

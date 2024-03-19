@@ -71,6 +71,7 @@ import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
+import com.tecknobit.novacore.InputValidator.LANGUAGES_SUPPORTED
 import com.tecknobit.novacore.InputValidator.isEmailValid
 import com.tecknobit.novacore.InputValidator.isPasswordValid
 
@@ -81,40 +82,6 @@ class ProfileActivity : ComponentActivity() {
         private const val PASSWORD_HIDDEN = "****";
 
     }
-
-    // TODO: CHECK WHAT LANGUAGES REALLY USE
-    private val languagesAvailable = listOf(
-        "RUSSIAN",
-        "ENGLISH",
-        "ARABIC",
-        "AZERBAIJANI",
-        "CATALAN",
-        "CHINESE",
-        "CZECH",
-        "DANISH",
-        "DUTCH",
-        "ESPERANTO",
-        "FINNISH",
-        "FRENCH",
-        "GERMAN",
-        "GREEK",
-        "HEBREW",
-        "HINDI",
-        "HUNGARIAN",
-        "INDONESIAN",
-        "IRISH",
-        "ITALIAN",
-        "JAPANESE",
-        "KOREAN",
-        "PERSIAN",
-        "POLISH",
-        "PORTUGUESE",
-        "SLOVAK",
-        "SPANISH",
-        "SWEDISH",
-        "TURKISH",
-        "UKRAINIAN"
-    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -368,7 +335,7 @@ class ProfileActivity : ComponentActivity() {
                                             ) {
                                                 items(
                                                     key = { it },
-                                                    items = languagesAvailable
+                                                    items = LANGUAGES_SUPPORTED
                                                 ) { language ->
                                                     Row (
                                                         verticalAlignment = Alignment.CenterVertically

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOff
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -99,16 +100,36 @@ class MainActivity : ComponentActivity() {
                 displayAddProject = remember { mutableStateOf(false) }
                 Scaffold (
                     floatingActionButton = {
-                        FloatingActionButton(
-                            onClick = { displayAddProject.value = true },
-                            containerColor = md_theme_light_primary
+                        Column (
+                            verticalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null
-                            )
+                            if(user.isVendor) {
+                                FloatingActionButton(
+                                    onClick = { displayAddProject.value = true },
+                                    containerColor = md_theme_light_primary
+                                ) {
+                                    Icon(
+                                        imageVector = if(user.isVendor)
+                                            Icons.Default.Add
+                                        else
+                                            Icons.Default.QrCodeScanner,
+                                        contentDescription = null
+                                    )
+                                }
+                                AddProject()
+                            }
+                            FloatingActionButton(
+                                onClick = {
+                                    // TODO: OPEN QRCODE SCAN TO JOIN IN A PROJECT
+                                },
+                                containerColor = md_theme_light_primary
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.QrCodeScanner,
+                                    contentDescription = null
+                                )
+                            }
                         }
-                        AddProject()
                     }
                 ) {
                     Column (
@@ -148,6 +169,11 @@ class MainActivity : ComponentActivity() {
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop
                             )
+                            /*Text(
+                                text = user.role.name.uppercase(),
+                                fontSize = 30.sp,
+                                color = Color.White
+                            )*/
                         }
                         Card (
                             shape = RoundedCornerShape(
