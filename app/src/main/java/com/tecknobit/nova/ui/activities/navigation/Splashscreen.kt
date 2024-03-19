@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User
 import com.tecknobit.nova.helpers.utils.download.AssetDownloader
-import com.tecknobit.nova.ui.activities.auth.AuthActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
 import kotlinx.coroutines.delay
 
@@ -85,7 +84,7 @@ class Splashscreen : ComponentActivity() {
                     delay(500)
                     // TODO: MAKE THE REAL WORKFLOW
                     user = User("Manuel", "Maurizio")
-                    startActivity(Intent(this@Splashscreen, AuthActivity::class.java))
+                    startActivity(Intent(this@Splashscreen, MainActivity::class.java))
                 }
             }
         }

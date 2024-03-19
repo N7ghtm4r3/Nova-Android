@@ -71,6 +71,8 @@ import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
+import com.tecknobit.novacore.InputValidator.isEmailValid
+import com.tecknobit.novacore.InputValidator.isPasswordValid
 
 class ProfileActivity : ComponentActivity() {
 
@@ -257,7 +259,7 @@ class ProfileActivity : ComponentActivity() {
                                         }
                                     },
                                     confirmAction = {
-                                        if(email.isNotEmpty()) {
+                                        if(isEmailValid(email)) {
                                             // TODO: MAKE REQUEST THEN
                                             email = email.lowercase()
                                             showChangeEmail.value = false
@@ -337,7 +339,7 @@ class ProfileActivity : ComponentActivity() {
                                         }
                                     },
                                     confirmAction = {
-                                        if(password.isNotEmpty()) {
+                                        if(isPasswordValid(password)) {
                                             // TODO: MAKE REQUEST THEN
                                             showChangePassword.value = false
                                         } else

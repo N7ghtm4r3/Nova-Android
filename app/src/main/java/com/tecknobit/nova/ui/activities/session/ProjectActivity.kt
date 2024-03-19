@@ -103,6 +103,9 @@ import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_error
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
+import com.tecknobit.novacore.InputValidator.areReleaseNotesValid
+import com.tecknobit.novacore.InputValidator.isMailingListValid
+import com.tecknobit.novacore.InputValidator.isReleaseVersionValid
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -413,7 +416,8 @@ class ProjectActivity : ComponentActivity() {
                     OutlinedTextField(
                         value = mailingList.value,
                         onValueChange = {
-                            mailingListIsError.value = it.isEmpty() && mailingList.value.isNotEmpty()
+                            mailingListIsError.value = !isMailingListValid(mailingList.value) &&
+                                    mailingList.value.isNotEmpty()
                             mailingList.value = it
                         },
                         placeholder = {
@@ -446,7 +450,7 @@ class ProjectActivity : ComponentActivity() {
                 if(displayQrcode)
                     resetLayout()
                 else {
-                    if(mailingList.value.isNotEmpty()) {
+                    if(isMailingListValid(mailingList.value)) {
                         mailingList.value = mailingList.value.replace(" ", "")
                         // TODO: MAKE REQUEST THEN
                         displayQrcode = true
@@ -486,7 +490,8 @@ class ProjectActivity : ComponentActivity() {
                         singleLine = true,
                         value = releaseVersion,
                         onValueChange = {
-                            releaseVersionError = it.isEmpty() && releaseVersion.isNotEmpty()
+                            releaseVersionError = !isReleaseVersionValid(releaseVersion) &&
+                                    releaseVersion.isNotEmpty()
                             releaseVersion = it
                         },
                         label = {
@@ -533,7 +538,7 @@ class ProjectActivity : ComponentActivity() {
                                 .fillMaxWidth(),
                             value = releaseNotes.value,
                             onValueChange = { value ->
-                                releaseNotesError = value.text.isEmpty()
+                                releaseNotesError = !areReleaseNotesValid(releaseNotes.value.text)
                                 releaseNotes.value = value.copy(text = value.text)
                             },
                             setView = {
@@ -548,8 +553,8 @@ class ProjectActivity : ComponentActivity() {
             },
             dismissAction = { resetLayout() },
             confirmAction = {
-                if(releaseVersion.isNotEmpty()) {
-                    if(releaseNotes.value.text.isNotEmpty()) {
+                if(isReleaseVersionValid(releaseVersion)) {
+                    if(areReleaseNotesValid(releaseNotes.value.text)) {
                         // TODO: MOVE THIS CHECK ON SERVER
                         releaseVersion = releaseVersion.removePrefix("v.")
                         if(!releaseVersion.startsWith(" "))

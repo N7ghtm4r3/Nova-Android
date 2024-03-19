@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -125,6 +124,8 @@ import com.tecknobit.nova.ui.theme.VioletSchemeColors
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
+import com.tecknobit.novacore.InputValidator.areRejectionReasonsValid
+import com.tecknobit.novacore.InputValidator.isTagCommentValid
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeApi::class)
 class ReleaseActivity : ComponentActivity() {
@@ -424,7 +425,7 @@ class ReleaseActivity : ComponentActivity() {
                                                                 // TODO: MAKE THE REQUEST THEN
                                                                 closeAction()
                                                             } else {
-                                                                if(reasons.value.isNotEmpty()) {
+                                                                if(areRejectionReasonsValid(reasons.value)) {
                                                                     // TODO: MAKE THE REQUEST THEN
                                                                     closeAction()
                                                                 } else
@@ -595,7 +596,7 @@ class ReleaseActivity : ComponentActivity() {
                 OutlinedTextField(
                     value = reasons.value,
                     onValueChange = {
-                        isError.value = it.isEmpty() && reasons.value.isNotEmpty()
+                        isError.value = !areRejectionReasonsValid(reasons.value) && reasons.value.isNotEmpty()
                         reasons.value = it
                     },
                     label = {
@@ -742,7 +743,8 @@ class ReleaseActivity : ComponentActivity() {
                                 OutlinedTextField(
                                     value = description.value,
                                     onValueChange = {
-                                        isError.value = it.isEmpty() && description.value.isNotEmpty()
+                                        isError.value = !isTagCommentValid(description.value) &&
+                                                description.value.isNotEmpty()
                                         description.value = it
                                     },
                                     label = {
@@ -770,7 +772,7 @@ class ReleaseActivity : ComponentActivity() {
                         TextButton(
                             onClick = {
                                 if(isInputMode) {
-                                    if(description.value.isNotEmpty()) {
+                                    if(isTagCommentValid(description.value)) {
                                         // TODO: MAKE REQUEST THEN
                                         show.value = false
                                     } else

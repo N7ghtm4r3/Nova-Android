@@ -69,4 +69,10 @@
     <string name="have_an_account">Have an account?</string>
     <string name="are_you_new_to_nova">Are you new to Nova?</string>
     <string name="authenticate_as_a_customer">Authenticate as a customer</string>
+    <string name="wrong_password">Password is not valid</string>
+    <string name="wrong_email">Email is not valid</string>
+    <string name="wrong_surname">Surname is not valid</string>
+    <string name="name_is_not_valid">Name is not valid</string>
+    <string name="wrong_host_address">The host address is not valid</string>
+    <string name="wrong_server_secret">The server secret is not valid</string>
 </resources>

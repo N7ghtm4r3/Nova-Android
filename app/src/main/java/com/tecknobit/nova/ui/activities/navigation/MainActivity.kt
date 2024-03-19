@@ -74,6 +74,7 @@ import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
+import com.tecknobit.novacore.InputValidator.isProjectNameValid
 
 class MainActivity : ComponentActivity() {
 
@@ -338,7 +339,7 @@ class MainActivity : ComponentActivity() {
             },
             dismissAction = resetLayout,
             confirmAction = {
-                if(projectName.isNotEmpty()) {
+                if(isProjectNameValid(projectName)) {
                     // TODO: MAKE REQUEST THEN
                     resetLayout()
                 } else
