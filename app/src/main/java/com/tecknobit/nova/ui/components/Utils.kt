@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -26,12 +27,13 @@ import coil.request.ImageRequest
 
 @Composable
 fun Logo(
+    size: Dp = 60.dp,
     url: String
 ) {
     AsyncImage(
         modifier = Modifier
             .clip(RoundedCornerShape(15.dp))
-            .size(60.dp),
+            .size(size),
         model = ImageRequest.Builder(LocalContext.current)
             .data(url)
             .crossfade(true)

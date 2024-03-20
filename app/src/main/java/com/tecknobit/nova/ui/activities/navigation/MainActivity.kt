@@ -169,11 +169,15 @@ class MainActivity : ComponentActivity() {
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop
                             )
-                            /*Text(
+                            Text(
+                                modifier = Modifier
+                                    .padding(
+                                        top = 5.dp
+                                    ),
                                 text = user.role.name.uppercase(),
-                                fontSize = 30.sp,
+                                fontSize = 25.sp,
                                 color = Color.White
-                            )*/
+                            )
                         }
                         Card (
                             shape = RoundedCornerShape(
@@ -232,7 +236,7 @@ class MainActivity : ComponentActivity() {
                                                 colors = ListItemDefaults.colors(
                                                     containerColor = Color.White
                                                 ),
-                                                leadingContent = { Logo(project.logoUrl) },
+                                                leadingContent = { Logo(url = project.logoUrl) },
                                                 headlineContent = {
                                                     Text(
                                                         text = project.name,

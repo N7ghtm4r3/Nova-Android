@@ -74,5 +74,10 @@ public class User extends PublicUser {
     public boolean isCustomer() {
         return role == Role.Customer;
     }
-    
+
+    // TODO: 20/03/2024 MOVE TO LOCAL USER
+    public String getHostAddress() {
+        return "http://192.4.56.2";
+    }
+
 }

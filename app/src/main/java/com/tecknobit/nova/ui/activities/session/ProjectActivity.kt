@@ -19,14 +19,13 @@ import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -95,16 +94,16 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Alpha
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Beta
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role.Customer
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role.Vendor
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
-import com.tecknobit.nova.ui.components.createColor
+import com.tecknobit.nova.ui.components.UserRoleBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_error
@@ -397,6 +396,8 @@ class ProjectActivity : ComponentActivity() {
             displayQrcode = false
             displayAddMembers.value = false
         }
+        val customerSelected = remember { mutableStateOf(true) }
+        val vendorSelected = remember { mutableStateOf(false) }
         NovaAlertDialog(
             show = displayAddMembers,
             onDismissAction = resetLayout,
@@ -421,36 +422,67 @@ class ProjectActivity : ComponentActivity() {
                         )
                     }
                 } else {
-                    OutlinedTextField(
-                        value = mailingList.value,
-                        onValueChange = {
-                            mailingListIsError.value = !isMailingListValid(mailingList.value) &&
-                                    mailingList.value.isNotEmpty()
-                            mailingList.value = it
-                        },
-                        placeholder = {
-                            Text(
-                                text = stringResource(R.string.separate_emails_with_a_comma),
-                                fontSize = 14.sp
+                    Column (
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row (
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            UserRoleBadge(
+                                role = Customer,
+                                selected = customerSelected,
+                                onClick = {
+                                    if(!customerSelected.value) {
+                                        customerSelected.value = true
+                                        vendorSelected.value = false
+                                    }
+                                }
                             )
-                        },
-                        label = {
-                            Text(
-                                text = stringResource(R.string.mailing_list)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            UserRoleBadge(
+                                role = Vendor,
+                                selected = vendorSelected,
+                                onClick = {
+                                    if(!vendorSelected.value) {
+                                        customerSelected.value = false
+                                        vendorSelected.value = true
+                                    }
+                                }
                             )
-                        },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { mailingList.value = "" }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = null
+                        }
+                        OutlinedTextField(
+                            value = mailingList.value,
+                            onValueChange = {
+                                mailingListIsError.value = !isMailingListValid(mailingList.value) &&
+                                        mailingList.value.isNotEmpty()
+                                mailingList.value = it
+                            },
+                            placeholder = {
+                                Text(
+                                    text = stringResource(R.string.separate_emails_with_a_comma),
+                                    fontSize = 14.sp
                                 )
-                            }
-                        },
-                        isError = mailingListIsError.value
-                    )
+                            },
+                            label = {
+                                Text(
+                                    text = stringResource(R.string.mailing_list)
+                                )
+                            },
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = { mailingList.value = "" }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            isError = mailingListIsError.value
+                        )
+                    }
                 }
             },
             dismissAction = resetLayout,
@@ -460,6 +492,10 @@ class ProjectActivity : ComponentActivity() {
                 else {
                     if(isMailingListValid(mailingList.value)) {
                         mailingList.value = mailingList.value.replace(" ", "")
+                        val role = if(customerSelected.value)
+                            Customer
+                        else
+                            Vendor
                         // TODO: MAKE REQUEST THEN
                         displayQrcode = true
                     } else
@@ -591,12 +627,8 @@ class ProjectActivity : ComponentActivity() {
                         key = { member -> member.id},
                         items = project.value.members
                     ) { member ->
-                        val badgeColor = if(member.isCustomer)
-                            Alpha.createColor()
-                        else
-                            Beta.createColor()
                         ListItem(
-                            leadingContent = { Logo(member.profilePicUrl) },
+                            leadingContent = { Logo(url = member.profilePicUrl) },
                             headlineContent = {
                                 Row (
                                     horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -607,38 +639,9 @@ class ProjectActivity : ComponentActivity() {
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    OutlinedCard (
-                                        modifier = Modifier
-                                            .requiredWidthIn(
-                                                min = 65.dp,
-                                                max = 100.dp
-                                            )
-                                            .wrapContentWidth()
-                                            .height(25.dp),
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = gray_background
-                                        ),
-                                        border = BorderStroke(
-                                            width = 1.dp,
-                                            color = badgeColor
-                                        )
-                                    ) {
-                                        Column (
-                                            modifier = Modifier
-                                                .padding(
-                                                    start = 10.dp,
-                                                    end = 10.dp
-                                                ),
-                                            verticalArrangement = Arrangement.Center,
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(
-                                                text = member.role.name,
-                                                fontWeight = FontWeight.Bold,
-                                                color = badgeColor
-                                            )
-                                        }
-                                    }
+                                    UserRoleBadge(
+                                        role = member.role
+                                    )
                                 }
                             },
                             colors = ListItemDefaults.colors(

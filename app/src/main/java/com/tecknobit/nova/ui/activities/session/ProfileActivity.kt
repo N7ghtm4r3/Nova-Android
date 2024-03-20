@@ -26,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Password
@@ -38,6 +39,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -48,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -63,10 +67,13 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.please_enter_the_new_email_address
+import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.NovaSession.mySessions
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
+import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
+import com.tecknobit.nova.ui.components.UserRoleBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
@@ -91,9 +98,7 @@ class ProfileActivity : ComponentActivity() {
                 val showChangeEmail = remember { mutableStateOf(false) }
                 val showChangePassword = remember { mutableStateOf(false) }
                 val showChangeLanguage = remember { mutableStateOf(false) }
-                var userPassword by remember {
-                    mutableStateOf(PASSWORD_HIDDEN)
-                }
+                var userPassword by remember { mutableStateOf(PASSWORD_HIDDEN) }
                 Box {
                     Box {
                         val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -200,7 +205,8 @@ class ProfileActivity : ComponentActivity() {
                                                 singleLine = true,
                                                 value = email,
                                                 onValueChange = {
-                                                    emailError = it.isEmpty() && email.isNotEmpty()
+                                                    emailError = !isEmailValid(email) &&
+                                                            email.isNotEmpty()
                                                     email = it
                                                 },
                                                 label = {
@@ -267,7 +273,8 @@ class ProfileActivity : ComponentActivity() {
                                                 else
                                                     PasswordVisualTransformation(),
                                                 onValueChange = {
-                                                    passwordError = it.isEmpty() && password.isNotEmpty()
+                                                    passwordError = !isPasswordValid(it) &&
+                                                            password.isNotEmpty()
                                                     password = it
                                                 },
                                                 leadingIcon = {
@@ -358,23 +365,103 @@ class ProfileActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                            Spacer(modifier = Modifier.height(10.dp))
-                            ActionButton(
-                                action = {
-                                    // TODO: MAKE REQUEST THEN
-                                    startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
-                                },
-                                text = R.string.logout
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            ActionButton(
-                                color = com.tecknobit.nova.ui.theme.tagstheme.bug.md_theme_light_primary,
-                                action = {
-                                    // TODO: MAKE REQUEST THEN
-                                    startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
-                                },
-                                text = R.string.delete_account
-                            )
+                            if(mySessions.size > 1) {
+                                Text(
+                                    modifier = Modifier
+                                        .padding(
+                                            top = 5.dp
+                                        ),
+                                    text = stringResource(R.string.my_sessions),
+                                    fontSize = 22.sp
+                                )
+                                LazyColumn (
+                                    modifier = Modifier
+                                        .padding(
+                                            top = 5.dp
+                                        ),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                                    contentPadding = PaddingValues(
+                                        top = 5.dp,
+                                        bottom = 5.dp
+                                    )
+                                ) {
+                                    items(
+                                        key = { it.hostAddress },
+                                        items = mySessions
+                                    ) { session ->
+                                        val isCurrentSession = user.hostAddress == session.hostAddress
+                                        ListItem(
+                                            modifier = Modifier
+                                                .shadow(
+                                                    elevation = 5.dp,
+                                                    shape = RoundedCornerShape(15.dp)
+                                                )
+                                                .clickable(!isCurrentSession) {
+                                                    // TODO: SELECT NEW SESSION THEN
+                                                    startActivity(
+                                                        Intent(this@ProfileActivity,
+                                                            Splashscreen::class.java)
+                                                    )
+                                                }
+                                                .clip(RoundedCornerShape(15.dp)),
+                                            colors = ListItemDefaults.colors(
+                                                containerColor = Color.White
+                                            ),
+                                            leadingContent = {
+                                                Logo(
+                                                    size = 80.dp,
+                                                    url = session.profilePicUrl
+                                                )
+                                            },
+                                            overlineContent = {
+                                                Row (
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                ) {
+                                                    UserRoleBadge(
+                                                        background = Color.White,
+                                                        role = session.role
+                                                    )
+                                                    if(isCurrentSession) {
+                                                        Text(
+                                                            text = stringResource(R.string.current)
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            headlineContent = {
+                                                Text(
+                                                    text = session.hostAddress,
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            },
+                                            supportingContent = {
+                                                Text(
+                                                    text = session.email,
+                                                    fontSize = 16.sp,
+                                                )
+                                            },
+                                            trailingContent = {
+                                                IconButton(
+                                                    onClick = {
+                                                        // TODO: REMOVE IN LOCAL THEN
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Delete,
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    }
+                                    item {
+                                        ActionButtons()
+                                    }
+                                }
+                            } else
+                                ActionButtons()
                         }
                     }
                 }
@@ -462,6 +549,27 @@ class ProfileActivity : ComponentActivity() {
                 fontSize = 18.sp
             )
         }
+    }
+
+    @Composable
+    private fun ActionButtons() {
+        Spacer(modifier = Modifier.height(10.dp))
+        ActionButton(
+            action = {
+                // TODO: MAKE REQUEST THEN
+                startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
+            },
+            text = R.string.logout
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        ActionButton(
+            color = com.tecknobit.nova.ui.theme.tagstheme.bug.md_theme_light_primary,
+            action = {
+                // TODO: MAKE REQUEST THEN
+                startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
+            },
+            text = R.string.delete_account
+        )
     }
 
 }
