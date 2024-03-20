@@ -77,4 +77,7 @@
     <string name="wrong_server_secret">The server secret is not valid</string>
     <string name="my_sessions">My sessions</string>
     <string name="current">Current</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_qrcode">QRCodeActivity</string>
+    <string name="scan_to_join_in_a_project">Scan to join in a project</string>
 </resources>

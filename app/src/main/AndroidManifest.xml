@@ -15,11 +15,16 @@
         android:theme="@style/Theme.Nova"
         tools:targetApi="31">
         <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity"
+            tools:replace="screenOrientation" />
+        <activity
             android:name=".ui.activities.auth.AuthActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustPan"
             android:theme="@style/Theme.Nova"
+            android:windowSoftInputMode="adjustPan"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".ui.activities.session.ProfileActivity"

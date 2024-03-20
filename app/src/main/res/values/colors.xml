@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- SCANNER COLORS -->
+    <color name="zxing_viewfinder_laser">#ffffff</color>
+    <color name="zxing_possible_result_points">#e88f13</color>
+    <color name="zxing_transparent">#00000000</color>
+    <color name="zxing_viewfinder_mask">#e88f13</color>
+
+</resources>

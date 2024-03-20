@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
@@ -63,7 +64,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import com.tecknobit.nova.R
+import com.tecknobit.nova.R.string.scan_to_join_in_a_project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
@@ -88,9 +92,19 @@ class MainActivity : ComponentActivity() {
             Project("Glider", "1.0.5")
         )
 
+        private var scanOptions = ScanOptions()
+            .setBeepEnabled(false)
+            .setOrientationLocked(false)
+
     }
 
     private lateinit var displayAddProject: MutableState<Boolean>
+
+    private val barcodeLauncher: ActivityResultLauncher<ScanOptions> =
+        registerForActivityResult(ScanContract()) { result ->
+            val content = result.contents
+
+        }
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,6 +112,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             NovaTheme {
                 displayAddProject = remember { mutableStateOf(false) }
+                scanOptions.setPrompt(LocalContext.current.getString(scan_to_join_in_a_project))
                 Scaffold (
                     floatingActionButton = {
                         Column (
@@ -119,9 +134,7 @@ class MainActivity : ComponentActivity() {
                                 AddProject()
                             }
                             FloatingActionButton(
-                                onClick = {
-                                    // TODO: OPEN QRCODE SCAN TO JOIN IN A PROJECT
-                                },
+                                onClick = { barcodeLauncher.launch(scanOptions) },
                                 containerColor = md_theme_light_primary
                             ) {
                                 Icon(
