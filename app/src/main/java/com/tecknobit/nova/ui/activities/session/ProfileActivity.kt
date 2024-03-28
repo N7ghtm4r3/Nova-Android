@@ -205,7 +205,7 @@ class ProfileActivity : ComponentActivity() {
                                                 singleLine = true,
                                                 value = email,
                                                 onValueChange = {
-                                                    emailError = !isEmailValid(email) &&
+                                                    emailError = !isEmailValid(it) &&
                                                             email.isNotEmpty()
                                                     email = it
                                                 },
@@ -507,12 +507,12 @@ class ProfileActivity : ComponentActivity() {
             }
         }
         Text(
-            modifier = if(onInfoClick != null) {
-                Modifier.clickable {
-                    onInfoClick()
-                }
-            } else
-                Modifier,
+            modifier = Modifier
+                .clickable(
+                    enabled = onInfoClick != null
+                ) {
+                    onInfoClick!!()
+                },
             text = info,
             fontSize = 17.sp
         )

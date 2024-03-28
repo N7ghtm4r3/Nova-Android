@@ -358,7 +358,7 @@ class MainActivity : ComponentActivity() {
                         singleLine = true,
                         value = projectName,
                         onValueChange = {
-                            projectNameError = it.isEmpty() && projectName.isNotEmpty()
+                            projectNameError = !isProjectNameValid(it) && projectName.isNotEmpty()
                             projectName = it
                         },
                         label = {

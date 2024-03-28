@@ -597,7 +597,7 @@ class ReleaseActivity : ComponentActivity() {
                 OutlinedTextField(
                     value = reasons.value,
                     onValueChange = {
-                        isError.value = !areRejectionReasonsValid(reasons.value) && reasons.value.isNotEmpty()
+                        isError.value = !areRejectionReasonsValid(it) && reasons.value.isNotEmpty()
                         reasons.value = it
                     },
                     label = {
@@ -744,7 +744,7 @@ class ReleaseActivity : ComponentActivity() {
                                 OutlinedTextField(
                                     value = description.value,
                                     onValueChange = {
-                                        isError.value = !isTagCommentValid(description.value) &&
+                                        isError.value = !isTagCommentValid(it) &&
                                                 description.value.isNotEmpty()
                                         description.value = it
                                     },

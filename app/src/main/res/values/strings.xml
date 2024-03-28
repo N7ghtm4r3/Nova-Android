@@ -80,4 +80,5 @@
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_qrcode">QRCodeActivity</string>
     <string name="scan_to_join_in_a_project">Scan to join in a project</string>
+    <string name="generate_a_join_code_also">Generate a join code also</string>
 </resources>

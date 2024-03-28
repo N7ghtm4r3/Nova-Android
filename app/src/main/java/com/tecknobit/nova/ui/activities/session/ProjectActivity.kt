@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -69,6 +71,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -79,6 +83,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -389,10 +394,12 @@ class ProjectActivity : ComponentActivity() {
     private fun CreateQrcode() {
         val mailingList = remember { mutableStateOf("") }
         val mailingListIsError = remember { mutableStateOf(false) }
+        var generateJoinCode by remember { mutableStateOf(true) }
         var displayQrcode by remember { mutableStateOf(false) }
         val resetLayout = {
             mailingList.value = ""
             mailingListIsError.value = false
+            generateJoinCode = true
             displayQrcode = false
             displayAddMembers.value = false
         }
@@ -413,16 +420,33 @@ class ProjectActivity : ComponentActivity() {
                     ) {
                         Image(
                             modifier = Modifier
-                                .size(175.dp),
+                                .shadow(
+                                    elevation = 5.dp,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .clip(RoundedCornerShape(10.dp))
+                                .size(130.dp),
                             painter = rememberQrBitmapPainter(
+                                // TODO: USE THE REAL DATA
                                 JSONObject().put("data", "datafromserver").toString()
                             ),
                             contentDescription = null,
-                            contentScale = ContentScale.FillBounds
+                            contentScale = ContentScale.Crop
+                        )
+                        //TODO: USE THE REAL DATA FROM THE RESPONSE
+                        Text(
+                            modifier = Modifier
+                                .padding(
+                                    top = 10.dp
+                                ),
+                            text = "1FABCE",
+                            letterSpacing = 10.sp,
+                            fontSize = 20.sp
                         )
                     }
                 } else {
                     Column (
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row (
@@ -453,9 +477,11 @@ class ProjectActivity : ComponentActivity() {
                             )
                         }
                         OutlinedTextField(
+                            modifier = Modifier
+                                .width(240.dp),
                             value = mailingList.value,
                             onValueChange = {
-                                mailingListIsError.value = !isMailingListValid(mailingList.value) &&
+                                mailingListIsError.value = !isMailingListValid(it) &&
                                         mailingList.value.isNotEmpty()
                                 mailingList.value = it
                             },
@@ -480,8 +506,25 @@ class ProjectActivity : ComponentActivity() {
                                     )
                                 }
                             },
-                            isError = mailingListIsError.value
+                            isError = mailingListIsError.value,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email
+                            )
                         )
+                        Row (
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = generateJoinCode,
+                                onCheckedChange = { generateJoinCode = it }
+                            )
+                            Text(
+                                text = stringResource(R.string.generate_a_join_code_also)
+                            )
+                        }
                     }
                 }
             },
@@ -534,8 +577,7 @@ class ProjectActivity : ComponentActivity() {
                         singleLine = true,
                         value = releaseVersion,
                         onValueChange = {
-                            releaseVersionError = !isReleaseVersionValid(releaseVersion) &&
-                                    releaseVersion.isNotEmpty()
+                            releaseVersionError = !isReleaseVersionValid(it) && releaseVersion.isNotEmpty()
                             releaseVersion = it
                         },
                         label = {
@@ -582,7 +624,7 @@ class ProjectActivity : ComponentActivity() {
                                 .fillMaxWidth(),
                             value = releaseNotes.value,
                             onValueChange = { value ->
-                                releaseNotesError = !areReleaseNotesValid(releaseNotes.value.text)
+                                releaseNotesError = !areReleaseNotesValid(value.text)
                                 releaseNotes.value = value.copy(text = value.text)
                             },
                             setView = {
@@ -678,7 +720,7 @@ class ProjectActivity : ComponentActivity() {
     @Composable
     private fun rememberQrBitmapPainter(
         content: String,
-        size: Dp = 150.dp,
+        size: Dp = 100.dp,
         padding: Dp = 0.dp
     ): BitmapPainter {
         var showProgress by remember { mutableStateOf(true) }
@@ -727,9 +769,9 @@ class ProjectActivity : ComponentActivity() {
                     for (y in 0 until matrixHeight) {
                         val shouldColorPixel = bitmapMatrix?.get(x, y) ?: false
                         val pixelColor = if (shouldColorPixel)
-                            md_theme_light_primary.toArgb()
+                            Color.Black.toArgb()
                         else
-                            Color.Transparent.toArgb()
+                            Color.White.toArgb()
                         newBitmap.setPixel(x, y, pixelColor)
                     }
                 }

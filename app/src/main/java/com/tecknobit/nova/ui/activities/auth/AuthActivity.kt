@@ -145,7 +145,7 @@ class AuthActivity : ComponentActivity() {
                                         singleLine = true,
                                         value = host,
                                         onValueChange = {
-                                            hostError.value = !isHostValid(host) && host.isNotEmpty()
+                                            hostError.value = !isHostValid(it) && host.isNotEmpty()
                                             host = it
                                         },
                                         label = {
@@ -175,7 +175,7 @@ class AuthActivity : ComponentActivity() {
                                             singleLine = true,
                                             value = serverSecret,
                                             onValueChange = {
-                                                serverSecretError.value = !isServerSecretValid(serverSecret)
+                                                serverSecretError.value = !isServerSecretValid(it)
                                                         && serverSecret.isNotEmpty()
                                                 serverSecret = it
                                             },
