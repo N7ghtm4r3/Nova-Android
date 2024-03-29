@@ -1,6 +1,6 @@
 package com.tecknobit.nova.helpers.toImportFromCoreLibrary.users;
 
-import static com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.*;
+import static com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +40,10 @@ public class NovaSession {
         //mySessions.clear();
     }
 
+    private final String id;
+
+    private final String token;
+
     private final String profilePicUrl;
 
     private final String email;
@@ -50,17 +54,27 @@ public class NovaSession {
 
     // TODO: 20/03/2024 TO REMOVE
     public NovaSession(String hostAddress, Role role) {
-        this("https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg",
+        this(null, null, "https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg",
                 "prova@gmail.com",
                 hostAddress,
                 role);
     }
 
-    public NovaSession(String profilePicUrl, String email, String hostAddress, Role role) {
+    public NovaSession(String id, String token, String profilePicUrl, String email, String hostAddress, Role role) {
+        this.id = id;
+        this.token = token;
         this.profilePicUrl = profilePicUrl;
         this.email = email;
         this.hostAddress = hostAddress;
         this.role = role;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getToken() {
+        return token;
     }
 
     public String getProfilePicUrl() {

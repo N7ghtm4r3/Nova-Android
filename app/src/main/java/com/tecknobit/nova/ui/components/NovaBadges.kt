@@ -23,11 +23,57 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.Releas
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role.Customer
 import com.tecknobit.nova.ui.theme.gray_background
+import com.tecknobit.novacore.records.User
 
 private val customerColor = Alpha.createColor()
 
 private val vendorColor = Beta.createColor()
 
+@Composable
+fun UserRoleBadge(
+    background: Color = gray_background,
+    role: User.Role
+) {
+    val badgeColor = if(role == User.Role.Customer)
+        customerColor
+    else
+        vendorColor
+    OutlinedCard (
+        modifier = Modifier
+            .requiredWidthIn(
+                min = 65.dp,
+                max = 100.dp
+            )
+            .wrapContentWidth()
+            .height(25.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = background
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = badgeColor
+        )
+    ) {
+        Column (
+            modifier = Modifier
+                .padding(
+                    start = 10.dp,
+                    end = 10.dp
+                )
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = role.name,
+                fontWeight = FontWeight.Bold,
+                color = badgeColor
+            )
+        }
+    }
+}
+
+// TODO: TO REPLACE WITH THE OFFICIAL
 @Composable
 fun UserRoleBadge(
     background: Color = gray_background,

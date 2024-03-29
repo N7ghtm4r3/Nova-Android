@@ -13,9 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -48,17 +46,6 @@ fun EmptyList(
     icon: ImageVector,
     description: Int
 ) {
-    EmptyList(
-        icon = rememberVectorPainter(icon),
-        description = description
-    )
-}
-
-@Composable
-fun EmptyList(
-    icon: Painter,
-    description: Int
-) {
     Column (
         modifier = Modifier
             .fillMaxSize(),
@@ -68,7 +55,7 @@ fun EmptyList(
         Icon(
             modifier = Modifier
                 .size(125.dp),
-            painter = icon,
+            imageVector = icon,
             contentDescription = null,
             tint = Color(200, 203, 210)
         )

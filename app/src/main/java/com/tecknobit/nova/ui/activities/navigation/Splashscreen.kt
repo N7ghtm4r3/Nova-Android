@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
+import com.tecknobit.nova.helpers.storage.LocalSessionHelper
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User
 import com.tecknobit.nova.helpers.utils.download.AssetDownloader
 import com.tecknobit.nova.ui.theme.NovaTheme
@@ -35,6 +36,8 @@ class Splashscreen : ComponentActivity() {
 
         lateinit var assetDownloader: AssetDownloader
 
+        lateinit var localSessionHelper: LocalSessionHelper
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,6 +46,7 @@ class Splashscreen : ComponentActivity() {
             val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
             StrictMode.setThreadPolicy(policy)
             assetDownloader = AssetDownloader(LocalContext.current)
+            localSessionHelper = LocalSessionHelper(LocalContext.current)
             NovaTheme {
                 Column (
                     modifier = Modifier

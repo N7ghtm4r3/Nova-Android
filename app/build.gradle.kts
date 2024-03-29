@@ -44,7 +44,7 @@ android {
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "**/*"
         }
     }
 }
@@ -76,4 +76,8 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     //TO-DO: TO REMOVE FOR TESTING PURPOSES ONLY
     implementation("com.tecknobit.novacore:Nova-core:1.0.0")
+}
+
+configurations.all {
+    exclude("commons-logging", "commons-logging")
 }

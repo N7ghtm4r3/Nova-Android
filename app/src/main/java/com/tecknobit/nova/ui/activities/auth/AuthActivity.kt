@@ -206,8 +206,9 @@ class AuthActivity : ComponentActivity() {
                                                 if(isRegisterOpe.value) {
                                                     if(isServerSecretValid(serverSecret)) {
                                                         execAuth {
-                                                            // TODO: MAKE REQUEST THEN
                                                             email.value = email.value.lowercase()
+                                                            // TODO: MAKE REQUEST THEN
+                                                            // TODO: INSERT IN LOCAL
                                                             startActivity(
                                                                 Intent(this@AuthActivity,
                                                                     MainActivity::class.java)
@@ -222,7 +223,9 @@ class AuthActivity : ComponentActivity() {
                                                 } else {
                                                     if(isEmailValid(email.value)) {
                                                         if(isPasswordValid(password.value)) {
+                                                            email.value = email.value.lowercase()
                                                             // TODO: MAKE REQUEST THEN
+                                                            // TODO: INSERT IN LOCAL
                                                             startActivity(
                                                                 Intent(this@AuthActivity,
                                                                     MainActivity::class.java)
@@ -582,9 +585,9 @@ class AuthActivity : ComponentActivity() {
         if(isNameValid(name.value)) {
             if(isSurnameValid(surname.value)) {
                 if(isEmailValid(email.value)) {
-                    if(isPasswordValid(password.value))
+                    if(isPasswordValid(password.value)) {
                         authAction()
-                    else {
+                    } else {
                         snackbarLauncher.showSnackError(
                             R.string.wrong_password,
                             passwordError

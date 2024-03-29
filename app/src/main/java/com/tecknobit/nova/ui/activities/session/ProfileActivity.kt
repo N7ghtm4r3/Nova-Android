@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,6 +47,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -61,15 +63,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.please_enter_the_new_email_address
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.NovaSession.mySessions
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionHelper
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
@@ -81,6 +84,7 @@ import com.tecknobit.nova.ui.theme.thinFontFamily
 import com.tecknobit.novacore.InputValidator.LANGUAGES_SUPPORTED
 import com.tecknobit.novacore.InputValidator.isEmailValid
 import com.tecknobit.novacore.InputValidator.isPasswordValid
+import com.tecknobit.novacore.helpers.LocalSessionUtils
 
 class ProfileActivity : ComponentActivity() {
 
@@ -99,6 +103,8 @@ class ProfileActivity : ComponentActivity() {
                 val showChangePassword = remember { mutableStateOf(false) }
                 val showChangeLanguage = remember { mutableStateOf(false) }
                 var userPassword by remember { mutableStateOf(PASSWORD_HIDDEN) }
+                val mySessions = remember { mutableStateListOf<LocalSessionUtils.NovaSession>() }
+                mySessions.addAll(localSessionHelper.sessions)
                 Box {
                     Box {
                         val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -386,7 +392,7 @@ class ProfileActivity : ComponentActivity() {
                                     )
                                 ) {
                                     items(
-                                        key = { it.hostAddress },
+                                        key = { it.id },
                                         items = mySessions
                                     ) { session ->
                                         val isCurrentSession = user.hostAddress == session.hostAddress
@@ -399,8 +405,10 @@ class ProfileActivity : ComponentActivity() {
                                                 .clickable(!isCurrentSession) {
                                                     // TODO: SELECT NEW SESSION THEN
                                                     startActivity(
-                                                        Intent(this@ProfileActivity,
-                                                            Splashscreen::class.java)
+                                                        Intent(
+                                                            this@ProfileActivity,
+                                                            Splashscreen::class.java
+                                                        )
                                                     )
                                                 }
                                                 .clip(RoundedCornerShape(15.dp)),
@@ -432,20 +440,25 @@ class ProfileActivity : ComponentActivity() {
                                             headlineContent = {
                                                 Text(
                                                     text = session.hostAddress,
-                                                    fontSize = 18.sp,
+                                                    fontSize = 15.sp,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             },
                                             supportingContent = {
                                                 Text(
                                                     text = session.email,
-                                                    fontSize = 16.sp,
+                                                    fontSize = 13.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
                                                 )
                                             },
                                             trailingContent = {
                                                 IconButton(
+                                                    modifier = Modifier
+                                                        .size(22.dp),
                                                     onClick = {
-                                                        // TODO: REMOVE IN LOCAL THEN
+                                                        localSessionHelper.deleteSession(session.id)
+                                                        mySessions.remove(session)
                                                     }
                                                 ) {
                                                     Icon(
@@ -557,6 +570,7 @@ class ProfileActivity : ComponentActivity() {
         ActionButton(
             action = {
                 // TODO: MAKE REQUEST THEN
+                localSessionHelper.deleteAllSessions()
                 startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
             },
             text = R.string.logout
@@ -566,6 +580,7 @@ class ProfileActivity : ComponentActivity() {
             color = com.tecknobit.nova.ui.theme.tagstheme.bug.md_theme_light_primary,
             action = {
                 // TODO: MAKE REQUEST THEN
+                localSessionHelper.deleteAllSessions()
                 startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
             },
             text = R.string.delete_account

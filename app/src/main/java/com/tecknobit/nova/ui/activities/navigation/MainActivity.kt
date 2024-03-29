@@ -70,6 +70,7 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.scan_to_join_in_a_project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionHelper
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.activities.session.ProfileActivity
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
@@ -80,6 +81,7 @@ import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.novacore.InputValidator.isProjectNameValid
+import java.util.Random
 
 class MainActivity : ComponentActivity() {
 
@@ -103,7 +105,18 @@ class MainActivity : ComponentActivity() {
     private val barcodeLauncher: ActivityResultLauncher<ScanOptions> =
         registerForActivityResult(ScanContract()) { result ->
             val content = result.contents
-
+            // TODO: MAKE THE REAL WORKFLOW
+            localSessionHelper.insertSession(
+                "Prova" + Random().nextInt(),
+                "prprp",
+                "https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg",
+                "prova.mailokay8000@gmail.com",
+                "https://192.168.1.8",
+                listOf(
+                    com.tecknobit.novacore.records.User.Role.Vendor,
+                    com.tecknobit.novacore.records.User.Role.Customer
+                )[Random().nextInt(2)]
+            )
         }
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
