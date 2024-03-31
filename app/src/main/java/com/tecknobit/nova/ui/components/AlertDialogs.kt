@@ -11,6 +11,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.tecknobit.nova.R
 
+/**
+ * Function to create an [AlertDialog] customized for Nova
+ *
+ * @param show: whether show the alert
+ * @param icon: the icon of the dialog
+ * @param onDismissAction: the action to execute when the alert has been dismissed
+ * @param title: the title of the alert
+ * @param message: the message of the alert
+ * @param dismissAction: the action to execute when the user request to dismiss the requested action
+ * @param confirmAction: the action to execute when the user request to confirm the requested action
+ */
 @Composable
 fun NovaAlertDialog(
     show: MutableState<Boolean>,
@@ -41,6 +52,17 @@ fun NovaAlertDialog(
     )
 }
 
+/**
+ * Function to create an [AlertDialog] customized for Nova
+ *
+ * @param show: whether show the alert
+ * @param icon: the icon of the dialog
+ * @param onDismissAction: the action to execute when the alert has been dismissed
+ * @param title: the title of the alert
+ * @param message: the message of the alert
+ * @param dismissAction: the action to execute when the user request to dismiss the requested action
+ * @param confirmAction: the action to execute when the user request to confirm the requested action
+ */
 @Composable
 fun NovaAlertDialog(
     show: MutableState<Boolean>,
@@ -66,6 +88,17 @@ fun NovaAlertDialog(
     )
 }
 
+/**
+ * Function to create an [AlertDialog] customized for Nova
+ *
+ * @param show: whether show the alert
+ * @param icon: the icon of the dialog
+ * @param onDismissAction: the action to execute when the alert has been dismissed
+ * @param title: the title of the alert
+ * @param message: the message of the alert
+ * @param dismissAction: the action to execute when the user request to dismiss the requested action
+ * @param confirmAction: the action to execute when the user request to confirm the requested action
+ */
 @Composable
 fun NovaAlertDialog(
     show: MutableState<Boolean>,
@@ -91,6 +124,17 @@ fun NovaAlertDialog(
     )
 }
 
+/**
+ * Function to create an [AlertDialog] customized for Nova
+ *
+ * @param show: whether show the alert
+ * @param icon: the icon of the dialog
+ * @param onDismissAction: the action to execute when the alert has been dismissed
+ * @param title: the title of the alert
+ * @param message: the message of the alert
+ * @param dismissAction: the action to execute when the user request to dismiss the requested action
+ * @param confirmAction: the action to execute when the user request to confirm the requested action
+ */
 @Composable
 fun NovaAlertDialog(
     show: MutableState<Boolean>,

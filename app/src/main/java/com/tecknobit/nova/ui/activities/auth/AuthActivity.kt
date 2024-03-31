@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -68,30 +69,80 @@ import com.tecknobit.novacore.InputValidator.isPasswordValid
 import com.tecknobit.novacore.InputValidator.isServerSecretValid
 import com.tecknobit.novacore.InputValidator.isSurnameValid
 
+/**
+ * The {@code AuthActivity} activity is used to execute the auth operations sign up and sign in taking
+ * the data from the related forms
+ *
+ * @author N7ghtm4r3 - Tecknobit
+ * @see ComponentActivity
+ */
 class AuthActivity : ComponentActivity() {
 
+    /**
+     * **snackbarLauncher** -> the launcher used to display the [Snackbar]
+     */
     private lateinit var snackbarLauncher: SnackbarLauncher
 
+    /**
+     * **name** -> the state used to store the name of the user
+     */
     private lateinit var name: MutableState<String>
 
+    /**
+     * **nameError** -> whether the name inserted is not valid
+     */
     private lateinit var nameError: MutableState<Boolean>
 
+    /**
+     * **surname** -> the state used to store the surname of the user
+     */
     private lateinit var surname: MutableState<String>
 
+    /**
+     * **surnameError** -> whether the surname inserted is not valid
+     */
     private lateinit var surnameError: MutableState<Boolean>
 
+    /**
+     * **email** -> the state used to store the email of the user
+     */
     private lateinit var email: MutableState<String>
 
+    /**
+     * **emailError** -> whether the email inserted is not valid
+     */
     private lateinit var emailError: MutableState<Boolean>
 
+    /**
+     * **password** -> the state used to store the password of the user
+     */
     private lateinit var password: MutableState<String>
 
+    /**
+     * **passwordError** -> whether the password inserted is not valid
+     */
     private lateinit var passwordError: MutableState<Boolean>
 
+    /**
+     * **isPasswordHidden** -> whether the password is not displayed but hide -> ****
+     */
     private lateinit var isPasswordHidden: MutableState<Boolean>
 
+    /**
+     * **isRegisterOpe** -> whether the current auth operation is the sign-up of the user
+     */
     private lateinit var isRegisterOpe: MutableState<Boolean>
 
+    /**
+     * On create method
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     * If your ComponentActivity is annotated with {@link ContentView}, this will
+     * call {@link #setContentView(int)} for you.
+     */
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @ExperimentalFoundationApi
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -344,6 +395,12 @@ class AuthActivity : ComponentActivity() {
         })
     }
 
+    /**
+     * Function to display the auth form requested by the current operation
+     *
+     * @param subtitle: the supporting text of the title
+     * @param content: the content to display
+     */
     @Composable
     private fun UIContainer(
         subtitle: Int,
@@ -409,6 +466,11 @@ class AuthActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Function to create and display a total auth form
+     *
+     * No-any params required
+     */
     @Composable
     private fun Form() {
         OutlinedTextField(
@@ -472,6 +534,11 @@ class AuthActivity : ComponentActivity() {
         EmailPasswordForm()
     }
 
+    /**
+     * Function to create and display an auth form with the email and password fields
+     *
+     * No-any params required
+     */
     @Composable
     private fun EmailPasswordForm() {
         OutlinedTextField(
@@ -557,6 +624,12 @@ class AuthActivity : ComponentActivity() {
         )
     }
 
+    /**
+     * Function to display the button to execute the auth operation
+     *
+     * @param authAction: the action to execute when the button is clicked
+     * @param btnText: the text displayed on the button
+     */
     @Composable
     private fun AuthButton(
         authAction: () -> Unit,
@@ -579,6 +652,11 @@ class AuthActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Function to execute the auth action requested
+     *
+     * @param authAction: the auth action to execute
+     */
     private fun execAuth(
         authAction: () -> Unit
     ) {

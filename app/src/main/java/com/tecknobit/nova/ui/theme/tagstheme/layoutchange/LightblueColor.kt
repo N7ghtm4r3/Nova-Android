@@ -1,6 +1,9 @@
 package com.tecknobit.nova.ui.theme.tagstheme.layoutchange
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Set of default layout change light theme colors
+ */
 val md_theme_light_primary = Color(0xFF00658C)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
 val md_theme_light_primaryContainer = Color(0xFFC5E7FF)
@@ -32,6 +35,9 @@ val md_theme_light_surfaceTint = Color(0xFF00658C)
 val md_theme_light_outlineVariant = Color(0xFFC1C7CE)
 val md_theme_light_scrim = Color(0xFF000000)
 
+/**
+ * Set of default layout change dark theme colors
+ */
 val md_theme_dark_primary = Color(0xFF7FD0FF)
 val md_theme_dark_onPrimary = Color(0xFF00344A)
 val md_theme_dark_primaryContainer = Color(0xFF004C6A)

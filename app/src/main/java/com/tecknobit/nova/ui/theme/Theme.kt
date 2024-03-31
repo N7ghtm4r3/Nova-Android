@@ -7,6 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
+/**
+ * **LightColors** default light colors scheme
+ */
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
     onPrimary = md_theme_light_onPrimary,
@@ -39,6 +42,9 @@ private val LightColors = lightColorScheme(
     scrim = md_theme_light_scrim,
 )
 
+/**
+ * **DarkColors** default dark colors scheme
+ */
 private val DarkColors = darkColorScheme(
     primary = md_theme_dark_primary,
     onPrimary = md_theme_dark_onPrimary,
@@ -71,6 +77,9 @@ private val DarkColors = darkColorScheme(
     scrim = md_theme_dark_scrim,
 )
 
+/**
+ * **RedSchemeColors** red light colors scheme
+ */
 val RedSchemeColors = lightColorScheme(
     primary = com.tecknobit.nova.ui.theme.tagstheme.bug.md_theme_light_primary,
     onPrimary = com.tecknobit.nova.ui.theme.tagstheme.bug.md_theme_light_onPrimary,
@@ -103,6 +112,9 @@ val RedSchemeColors = lightColorScheme(
     scrim = com.tecknobit.nova.ui.theme.tagstheme.bug.md_theme_light_scrim,
 )
 
+/**
+ * **VioletSchemeColors** violet light colors scheme
+ */
 val VioletSchemeColors = lightColorScheme(
     primary = com.tecknobit.nova.ui.theme.tagstheme.issue.md_theme_light_primary,
     onPrimary = com.tecknobit.nova.ui.theme.tagstheme.issue.md_theme_light_onPrimary,
@@ -135,6 +147,9 @@ val VioletSchemeColors = lightColorScheme(
     scrim = com.tecknobit.nova.ui.theme.tagstheme.issue.md_theme_light_scrim,
 )
 
+/**
+ * **LightblueSchemeColors** light blue colors scheme
+ */
 val LightblueSchemeColors = lightColorScheme(
     primary = com.tecknobit.nova.ui.theme.tagstheme.layoutchange.md_theme_light_primary,
     onPrimary = com.tecknobit.nova.ui.theme.tagstheme.layoutchange.md_theme_light_onPrimary,
@@ -167,6 +182,9 @@ val LightblueSchemeColors = lightColorScheme(
     scrim = com.tecknobit.nova.ui.theme.tagstheme.layoutchange.md_theme_light_scrim,
 )
 
+/**
+ * **BlueSchemeColors** blue light colors scheme
+ */
 val BlueSchemeColors = lightColorScheme(
     primary = com.tecknobit.nova.ui.theme.tagstheme.tip.md_theme_light_primary,
     onPrimary = com.tecknobit.nova.ui.theme.tagstheme.tip.md_theme_light_onPrimary,
@@ -199,6 +217,12 @@ val BlueSchemeColors = lightColorScheme(
     scrim = com.tecknobit.nova.ui.theme.tagstheme.tip.md_theme_light_scrim,
 )
 
+/**
+ * Function to set the Nova theme to the content
+ *
+ * @param systemBarColor: the color to use for the system bar
+ * @param content: the content to display
+ */
 @Composable
 fun NovaTheme(
     systemBarColor: Color = md_theme_light_primary,

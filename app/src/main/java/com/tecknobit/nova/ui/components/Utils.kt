@@ -23,6 +23,12 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 
+/**
+ * Function to display an image as logo
+ *
+ * @param size: the size of the logo, default value 60.[dp]
+ * @param url: the url of the image to display
+ */
 @Composable
 fun Logo(
     size: Dp = 60.dp,
@@ -41,6 +47,12 @@ fun Logo(
     )
 }
 
+/**
+ * Function to display an UI element when a list of values is empty
+ *
+ * @param icon: the icon to display
+ * @param description: the description to display
+ */
 @Composable
 fun EmptyList(
     icon: ImageVector,

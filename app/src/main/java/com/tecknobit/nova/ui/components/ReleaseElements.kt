@@ -31,6 +31,12 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.Release
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.theme.fromHexToColor
 
+/**
+ * Function to create a badge for a [ReleaseStatus]
+ *
+ * @param releaseStatus: the status to use to create the badge
+ * @param paddingStart: the padding from the start, default value 10.[dp]
+ */
 @Composable
 fun ReleaseStatusBadge(
     releaseStatus: ReleaseStatus,
@@ -61,6 +67,13 @@ fun ReleaseStatusBadge(
     }
 }
 
+/**
+ * Function to create a badge for a [ReleaseStatus]
+ *
+ * @param releaseStatus: the status to use to create the badge
+ * @param paddingStart: the padding from the start, default value 10.[dp]
+ * @param onClick: the action to execute when the badge is clicked
+ */
 @Composable
 fun ReleaseStatusBadge(
     releaseStatus: ReleaseStatus,
@@ -93,6 +106,11 @@ fun ReleaseStatusBadge(
     }
 }
 
+/**
+ * Function to display the content of the [ReleaseStatusBadge]
+ *
+ * @param releaseStatus: the status to use to create the badge
+ */
 @Composable
 private fun ReleaseStatusBadgeContent(
     releaseStatus: ReleaseStatus
@@ -114,10 +132,21 @@ private fun ReleaseStatusBadgeContent(
     }
 }
 
+/**
+ * Function to create a specific color from the [ReleaseStatus]
+ *
+ * @return the specific color as [Color]
+ */
 fun ReleaseStatus.createColor(): Color {
     return fromHexToColor(color)
 }
 
+/**
+ * Function to create a badge for a [RejectedTag]
+ *
+ * @param tag: the tag to use to create the badge
+ * @param onClick: the action to execute when the badge is clicked
+ */
 @Composable
 fun ReleaseTagBadge(
     tag: RejectedTag,
@@ -172,6 +201,12 @@ fun ReleaseTagBadge(
     }
 }
 
+/**
+ * Function to display the content of the [ReleaseTagBadge]
+ *
+ * @param tag: the tag to use to create the badge
+ * @param textColor: the color of the text
+ */
 @Composable
 private fun ReleaseTagContent(
     tag: ReleaseTag,
@@ -197,10 +232,20 @@ private fun ReleaseTagContent(
     }
 }
 
+/**
+ * Function to create a specific color from the [ReleaseTag]
+ *
+ * @return the specific color as [Color]
+ */
 fun ReleaseTag.createColor(): Color {
     return fromHexToColor(color)
 }
 
+/**
+ * Function to get the specific message for a [ReleaseStandardEvent]
+ *
+ * @return the specific message as [Int]
+ */
 fun ReleaseStandardEvent.getMessage(): Int {
     return when(this.status) {
         Approved -> R.string.approved_timeline_message

@@ -1,6 +1,9 @@
 package com.tecknobit.nova.ui.theme.tagstheme.bug
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Set of default bug light theme colors
+ */
 val md_theme_light_primary = Color(0xFFB4252B)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
 val md_theme_light_primaryContainer = Color(0xFFFFDAD7)

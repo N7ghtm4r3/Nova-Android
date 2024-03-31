@@ -86,14 +86,35 @@ import com.tecknobit.novacore.InputValidator.isEmailValid
 import com.tecknobit.novacore.InputValidator.isPasswordValid
 import com.tecknobit.novacore.helpers.LocalSessionUtils
 
+/**
+ * The {@code ProfileActivity} activity is used to manage and display the [User] details and execute
+ * the operations like the change of the profile pic, change of the email, change of the password
+ * and the change of the current local session
+ *
+ * @author N7ghtm4r3 - Tecknobit
+ * @see ComponentActivity
+ */
 class ProfileActivity : ComponentActivity() {
 
     companion object {
 
+        /**
+         * **PASSWORD_HIDDEN** -> constant value for an hidden password
+         */
         private const val PASSWORD_HIDDEN = "****";
 
     }
 
+    /**
+     * On create method
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     * If your ComponentActivity is annotated with {@link ContentView}, this will
+     * call {@link #setContentView(int)} for you.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -482,6 +503,16 @@ class ProfileActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Function to display a specific [user] detail
+     *
+     * @param header: the header of the section, so the detail displayed
+     * @param editAction: the edit action to execute, if is an editable data
+     * @param info: the info detail to display
+     * @param onInfoClick: the action to execute when the info is clicked, for example hidden/unhidden
+     * the password data
+     * @param isLast: whether the section displayed is the last to display
+     */
     @Composable
     private fun UserInfo(
         header: Int,
@@ -537,6 +568,13 @@ class ProfileActivity : ComponentActivity() {
             Spacer(modifier = Modifier.height(5.dp))
     }
 
+    /**
+     * Function to create and display a button to execute an action like logout and delete of the account
+     *
+     * @param action: the action to execute when the button is clicked
+     * @param text: the text to display on the button
+     * @param color: the color of the button, default value [md_theme_light_primary]
+     */
     @Composable
     private fun ActionButton(
         action: () -> Unit,
@@ -564,6 +602,11 @@ class ProfileActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Function to create and display the action buttons section
+     *
+     * No-any params required
+     */
     @Composable
     private fun ActionButtons() {
         Spacer(modifier = Modifier.height(10.dp))

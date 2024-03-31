@@ -128,13 +128,35 @@ import com.tecknobit.nova.ui.theme.thinFontFamily
 import com.tecknobit.novacore.InputValidator.areRejectionReasonsValid
 import com.tecknobit.novacore.InputValidator.isTagCommentValid
 
+/**
+ * The {@code ReleaseActivity} activity is used to manage and display the [Release] details
+ *
+ * @author N7ghtm4r3 - Tecknobit
+ * @see ComponentActivity
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeApi::class)
 class ReleaseActivity : ComponentActivity() {
 
+    /**
+     * **release** -> the release displayed
+     */
     private lateinit var release: MutableState<Release>
 
+    /**
+     * **navBackIntent** -> the intent reached when navigate back
+     */
     private var navBackIntent: Intent? = null
 
+    /**
+     * On create method
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     * If your ComponentActivity is annotated with {@link ContentView}, this will
+     * call {@link #setContentView(int)} for you.
+     */
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -520,6 +542,13 @@ class ReleaseActivity : ComponentActivity() {
         })
     }
 
+    /**
+     * Function to create and display the UI to comment a release
+     *
+     * @param isApproved: state to indicate whether the release is approved
+     * @param reasons: the rejection reasons
+     * @param isError: state to indicate whether an error occurred
+     */
     private fun commentReleaseMessage(
         isApproved: MutableState<Boolean>,
         reasons: MutableState<String>,
@@ -681,6 +710,13 @@ class ReleaseActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Function to display a [NovaAlertDialog] with the comment of a [RejectedTag]
+     *
+     * @param show: whether show or not the alert
+     * @param tag: the tag used to display the alert
+     * @param date: the date when the tag has been commented
+     */
     @Composable
     private fun TagInformation(
         show: MutableState<Boolean>,
@@ -796,6 +832,13 @@ class ReleaseActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Function to get the last event occurred in the current [release]
+     *
+     * No-any params required
+     *
+     * @return the last status of the last event occurred as [ReleaseStatus]
+     */
     private fun getLastEventStatus() : ReleaseStatus {
         val releaseEvents = mutableListOf<ReleaseEvent>()
         releaseEvents.addAll(release.value.releaseEvents)

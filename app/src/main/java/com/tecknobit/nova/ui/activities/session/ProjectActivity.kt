@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package com.tecknobit.nova.ui.activities.session
 
 import android.annotation.SuppressLint
@@ -11,7 +9,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -122,19 +119,50 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.Random
 
+/**
+ * The {@code ProjectActivity} activity is used to manage and display a [Project] details
+ *
+ * @author N7ghtm4r3 - Tecknobit
+ * @see ComponentActivity
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 class ProjectActivity : ComponentActivity() {
 
+    /**
+     * **project** -> the project displayed
+     */
     private lateinit var project: MutableState<Project>
 
+    /**
+     * **displayAddMembers** -> state used to display the [CreateQrcode] UI
+     */
     private lateinit var displayAddMembers: MutableState<Boolean>
 
+    /**
+     * **displayAddRelease** -> state used to display the [AddRelease] UI
+     */
     private lateinit var displayAddRelease: MutableState<Boolean>
 
+    /**
+     * **displayMembers** -> state used to display the [ProjectMembers] UI
+     */
     private lateinit var displayMembers: MutableState<Boolean>
 
+    /**
+     * **isProjectAuthor** -> whether the current [user] is the author of the current [project]
+     */
     private var isProjectAuthor: Boolean = false
 
+    /**
+     * On create method
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     * If your ComponentActivity is annotated with {@link ContentView}, this will
+     * call {@link #setContentView(int)} for you.
+     */
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -390,6 +418,11 @@ class ProjectActivity : ComponentActivity() {
         })
     }
 
+    /**
+     * Function to create and display the UI to create a qrcode to add members to the current [project]
+     *
+     * No-any params required
+     */
     @Composable
     private fun CreateQrcode() {
         val mailingList = remember { mutableStateOf("") }
@@ -548,6 +581,11 @@ class ProjectActivity : ComponentActivity() {
         )
     }
 
+    /**
+     * Function to create and display the UI to add a new release to the current [project]
+     *
+     * No-any params required
+     */
     @SuppressLint("UnrememberedMutableState")
     @Composable
     private fun AddRelease() {
@@ -655,6 +693,11 @@ class ProjectActivity : ComponentActivity() {
         )
     }
 
+    /**
+     * Function to create and display the UI to show the current members of the current [project]
+     *
+     * No-any params required
+     */
     @Composable
     private fun ProjectMembers() {
         val sheetState = rememberModalBottomSheetState()
@@ -717,6 +760,13 @@ class ProjectActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Function to create the [BitmapPainter] to display the qrcode created
+     *
+     * @param content: the content to display
+     * @param size: the size of the container which contains the qrcode created, default value is 100.[dp]
+     * @param padding: the padding of the container, default value is 0.[dp]
+     */
     @Composable
     private fun rememberQrBitmapPainter(
         content: String,

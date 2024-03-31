@@ -25,10 +25,22 @@ import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role.Custom
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.novacore.records.User
 
+/**
+ * **customerColor** -> color for the [Role.Customer]
+ */
 private val customerColor = Alpha.createColor()
 
+/**
+ * **vendorColor** -> color for the [Role.Vendor]
+ */
 private val vendorColor = Beta.createColor()
 
+/**
+ * Function to create a badge for a [Role]
+ *
+ * @param background: the background color to use, default is [gray_background]
+ * @param role: the role to use to create the badge
+ */
 @Composable
 fun UserRoleBadge(
     background: Color = gray_background,
@@ -118,6 +130,13 @@ fun UserRoleBadge(
     }
 }
 
+/**
+ * Function to create a badge for a [Role]
+ *
+ * @param role: the role to use to create the badge
+ * @param selected: whether the badge is selected or not
+ * @param onClick: the action to execute when the badge is clicked
+ */
 @Composable
 fun UserRoleBadge(
     role: Role,

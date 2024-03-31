@@ -83,10 +83,20 @@ import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.novacore.InputValidator.isProjectNameValid
 import java.util.Random
 
+/**
+ * The {@code MainActivity} activity is used to display and manage the user's projects and navigate
+ * to the [ProfileActivity]
+ *
+ * @author N7ghtm4r3 - Tecknobit
+ * @see ComponentActivity
+ */
 class MainActivity : ComponentActivity() {
 
     companion object {
 
+        /**
+         * **projects** -> list of the user's projects
+         */
         // TODO: TO LOAD CORRECTLY
         private val projects = mutableListOf(
             Project("Nova"),
@@ -94,14 +104,24 @@ class MainActivity : ComponentActivity() {
             Project("Glider", "1.0.5")
         )
 
+        /**
+         * **scanOptions** -> the options used when the scan to join in a [Project] starts
+         */
         private var scanOptions = ScanOptions()
             .setBeepEnabled(false)
             .setOrientationLocked(false)
 
     }
 
+    /**
+     * **displayAddProject** -> whether display the button to add a project, this happens
+     * when the current user is a [User.Role.Vendor]
+     */
     private lateinit var displayAddProject: MutableState<Boolean>
 
+    /**
+     * **barcodeLauncher** -> the launcher used to start the scan and use the [scanOptions]
+     */
     private val barcodeLauncher: ActivityResultLauncher<ScanOptions> =
         registerForActivityResult(ScanContract()) { result ->
             val content = result.contents
@@ -111,6 +131,7 @@ class MainActivity : ComponentActivity() {
                 "prprp",
                 "https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg",
                 "prova.mailokay8000@gmail.com",
+                "prova1234",
                 "https://192.168.1.8",
                 listOf(
                     com.tecknobit.novacore.records.User.Role.Vendor,
@@ -119,6 +140,16 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+    /**
+     * On create method
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     * If your ComponentActivity is annotated with {@link ContentView}, this will
+     * call {@link #setContentView(int)} for you.
+     */
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -310,6 +341,11 @@ class MainActivity : ComponentActivity() {
         })
     }
 
+    /**
+     * Function to display the UI to add a new project
+     *
+     * No-any params required
+     */
     @Composable
     private fun AddProject() {
         var projectName by remember { mutableStateOf("") }

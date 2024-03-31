@@ -27,19 +27,46 @@ import com.tecknobit.nova.helpers.utils.download.AssetDownloader
 import com.tecknobit.nova.ui.theme.NovaTheme
 import kotlinx.coroutines.delay
 
+/**
+ * The {@code Splashscreen} activity is used to retrieve and load the session data and enter in
+ * the application's workflow
+ *
+ * @author N7ghtm4r3 - Tecknobit
+ * @see ComponentActivity
+ */
 @SuppressLint("CustomSplashScreen")
 class Splashscreen : ComponentActivity() {
 
     companion object {
 
+        /**
+         * **user** -> the user of the current session
+         */
         lateinit var user: User
 
+        /**
+         * **user** -> helper to manage the assets downloading
+         */
         lateinit var assetDownloader: AssetDownloader
 
+        /**
+         * **localSessionHelper** -> the helper to manage the local sessions stored locally in
+         * the device
+         */
         lateinit var localSessionHelper: LocalSessionHelper
 
     }
 
+    /**
+     * On create method
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     *
+     * If your ComponentActivity is annotated with {@link ContentView}, this will
+     * call {@link #setContentView(int)} for you.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

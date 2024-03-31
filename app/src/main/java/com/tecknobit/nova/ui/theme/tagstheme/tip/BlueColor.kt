@@ -1,6 +1,9 @@
 package com.tecknobit.nova.ui.theme.tagstheme.tip
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Set of default tip light theme colors
+ */
 val md_theme_light_primary = Color(0xFF2759BE)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
 val md_theme_light_primaryContainer = Color(0xFFDAE2FF)
@@ -32,6 +35,9 @@ val md_theme_light_surfaceTint = Color(0xFF2759BE)
 val md_theme_light_outlineVariant = Color(0xFFC5C6D0)
 val md_theme_light_scrim = Color(0xFF000000)
 
+/**
+ * Set of default tip dark theme colors
+ */
 val md_theme_dark_primary = Color(0xFFB2C5FF)
 val md_theme_dark_onPrimary = Color(0xFF002C72)
 val md_theme_dark_primaryContainer = Color(0xFF0040A0)

@@ -1,6 +1,9 @@
 package com.tecknobit.nova.ui.theme
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Set of default light theme colors
+ */
 val md_theme_light_primary = Color(232, 143, 19)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
 val md_theme_light_primaryContainer = Color(0xFFFFDCBC)
@@ -32,6 +35,9 @@ val md_theme_light_surfaceTint = Color(0xFF885200)
 val md_theme_light_outlineVariant = Color(0xFFD5C4B5)
 val md_theme_light_scrim = Color(0xFF000000)
 
+/**
+ * Set of default dark theme colors
+ */
 val md_theme_dark_primary = Color(0xFFFFB86A)
 val md_theme_dark_onPrimary = Color(0xFF492900)
 val md_theme_dark_primaryContainer = Color(0xFF683D00)
@@ -65,6 +71,10 @@ val md_theme_dark_scrim = Color(0xFF000000)
 
 
 val seed = Color(0xFFF2A242)
+
+/**
+ * **gray_background** color used as background color
+ */
 val gray_background = Color(248,249,251)
 
 /**

@@ -3,6 +3,7 @@ package com.tecknobit.nova.helpers.storage;
 import static com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.HOST_ADDRESS_KEY;
 import static com.tecknobit.novacore.records.NovaItem.IDENTIFIER_KEY;
 import static com.tecknobit.novacore.records.User.EMAIL_KEY;
+import static com.tecknobit.novacore.records.User.PASSWORD_KEY;
 import static com.tecknobit.novacore.records.User.PROFILE_PIC_URL_KEY;
 import static com.tecknobit.novacore.records.User.ROLE_KEY;
 import static com.tecknobit.novacore.records.User.TOKEN_KEY;
@@ -21,39 +22,79 @@ import com.tecknobit.novacore.records.User.Role;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The {@code LocalSessionHelper} class is useful to manage the local sessions of the user, so manage the credentials
+ * of the user and all his/her personal data like profile pic, email and password
+ *
+ * @author N7ghtm4r3 - Tecknobit
+ * @see SQLiteOpenHelper
+ * @see LocalSessionUtils
+ */
 public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSessionUtils {
 
+    /**
+     * {@code DATABASE_VERSION} the version of the local database
+     */
     private static final int DATABASE_VERSION = 1;
 
+    /**
+     * Constructor to init the {@link LocalSessionHelper} class
+     *
+     * @param context: the context where the helper has been invoked
+     */
     public LocalSessionHelper(@Nullable Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_SESSIONS_TABLE);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + SESSIONS_TABLE);
         onCreate(db);
     }
 
+    /**
+     * Method to insert a new session
+     *
+     * @param id: the identifier of the user in that session
+     * @param token: the token of the user in that session
+     * @param profilePicUrl: the profile pic url of the user in that session
+     * @param email: the email of the user in that session
+     * @param password: the password of the user in that session
+     * @param hostAddress: the host address used in that session
+     * @param role: the identifier of the user in that session
+     */
     @Override
     public void insertSession(String id, String token, String profilePicUrl, String email,
-                              String hostAddress, Role role) {
+                              String password, String hostAddress, Role role) {
         SQLiteDatabase database = getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(IDENTIFIER_KEY, id);
         values.put(TOKEN_KEY, token);
         values.put(PROFILE_PIC_URL_KEY, profilePicUrl);
         values.put(EMAIL_KEY, email);
+        values.put(PASSWORD_KEY, password);
         values.put(HOST_ADDRESS_KEY, hostAddress);
         values.put(ROLE_KEY, role.name());
         database.insert(SESSIONS_TABLE, null, values);
     }
 
+    /**
+     * Method to list all the local sessions of the user. <br>
+     * No-any params required
+     *
+     * @return the list of the local sessions of the user as {@link List} of {@link NovaSession}
+     */
     @Override
     public List<NovaSession> getSessions() {
         SQLiteDatabase database = getReadableDatabase();
@@ -65,6 +106,12 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
         return sessions;
     }
 
+    /**
+     * Method to get the local session specified by the identifier of the user in that session
+     *
+     * @param id: the user identifier to fetch the local session
+     * @return the local session as {@link NovaSession}
+     */
     @Override
     public NovaSession getSession(String id) {
         SQLiteDatabase database = getReadableDatabase();
@@ -78,23 +125,37 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
         return session;
     }
 
+    /**
+     * Method to fill an local session instance
+     * @param cursor: the cursor obtained by the query
+     * @return the local session instantiated as {@link NovaSession}
+     */
     private NovaSession fillNovaSession(Cursor cursor) {
         return new NovaSession(
                 cursor.getString(cursor.getColumnIndexOrThrow(IDENTIFIER_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(TOKEN_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(PROFILE_PIC_URL_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(EMAIL_KEY)),
+                cursor.getString(cursor.getColumnIndexOrThrow(PASSWORD_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(HOST_ADDRESS_KEY)),
                 Role.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(ROLE_KEY)))
         );
     }
 
+    /**
+     * Method to delete all the local sessions, used when the user executes a logout or the account deletion <br>
+     * No-any params required
+     */
     @Override
     public void deleteAllSessions() {
         SQLiteDatabase database = getWritableDatabase();
         database.delete(SESSIONS_TABLE, null, null);
     }
 
+    /**
+     * Method to delete a specific local session specified by the identifier of the user in that session
+     * @param id: the user identifier to delete the local session
+     */
     @Override
     public void deleteSession(String id) {
         SQLiteDatabase database = getWritableDatabase();

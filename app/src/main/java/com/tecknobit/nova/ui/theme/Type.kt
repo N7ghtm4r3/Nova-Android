@@ -9,13 +9,17 @@ import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
 
 /**
- * **fontFamily** -> the Pandoro's font family
+ * **fontFamily** -> the Nova's font family
  */
 val fontFamily = FontFamily(Font(R.font.robold))
+
+/**
+ * **thinFontFamily** -> the Nova's thin font family
+ */
 val thinFontFamily = FontFamily(Font(R.font.robothin))
 
 /**
- * **Typography** -> the Pandoro's Typography
+ * **Typography** -> the Nova's Typography
  */
 val Typography = Typography(
     displayLarge = TextStyle(
