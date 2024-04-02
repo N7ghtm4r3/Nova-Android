@@ -23,8 +23,9 @@ import android.media.RingtoneManager;
 
 import androidx.annotation.NonNull;
 import androidx.work.Constraints;
+import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
@@ -34,11 +35,7 @@ import com.tecknobit.nova.helpers.storage.LocalSessionHelper;
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen;
 import com.tecknobit.novacore.helpers.LocalSessionUtils;
 import com.tecknobit.novacore.records.NovaNotification;
-import com.tecknobit.novacore.records.User;
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URL;
@@ -47,8 +44,19 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The {@code NotificationsReceiver} class is useful to receive the
+ * {@link Intent#ACTION_BOOT_COMPLETED} action and then make the routine to check if there are
+ * any notifications to send to the user
+ *
+ * @author N7ghtm4r3 - Tecknobit
+ * @see BroadcastReceiver
+ */
 public class NotificationsReceiver extends BroadcastReceiver {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onReceive(Context context, Intent intent) {
         if(Objects.equals(intent.getAction(), Intent.ACTION_BOOT_COMPLETED)) {
@@ -57,26 +65,59 @@ public class NotificationsReceiver extends BroadcastReceiver {
         }
     }
 
+    /**
+     * The {@code NotificationsHelper} class is useful to send the notifications to the user
+     *
+     * @author N7ghtm4r3 - Tecknobit
+     */
     public static class NotificationsHelper {
 
+        /**
+         * {@code WORKER_NAME} the name assigned to the {@link #periodicRequest}
+         */
         private static final String WORKER_NAME = "notificationsChecker";
 
+        /**
+         * {@code NOVA_NOTIFICATIONS_CHANNEL_ID} the identifier of the notifications channel
+         */
         private static final String NOVA_NOTIFICATIONS_CHANNEL_ID = NOTIFICATIONS_KEY;
 
-        private static final OneTimeWorkRequest workerRequest = new OneTimeWorkRequest.Builder(
-                NotificationsWorker.class)
-                .setConstraints(new Constraints.Builder()
+        /**
+         * {@code periodicRequest} the periodic request to execute to check if there are any notification
+         * to send, the check it is schedule every 15 minutes
+         */
+        private static final PeriodicWorkRequest periodicRequest = new PeriodicWorkRequest.Builder(
+                NotificationsWorker.class,
+                PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS,
+                TimeUnit.MILLISECONDS,
+                PeriodicWorkRequest.MIN_PERIODIC_FLEX_MILLIS,
+                TimeUnit.MILLISECONDS
+        ).setConstraints(new Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
                         .build())
                 .addTag(WORKER_NAME)
                 .build();
 
+        /**
+         * {@code notificationManager} the manager which manage and send the notifications
+         */
         private final NotificationManager notificationManager;
 
+        /**
+         * {@code context} the context where the {@link NotificationsHelper} has been invoked
+         */
         private final Context context;
 
+        /**
+         * {@code workManager} the manager who execute and schedule the {@link #periodicRequest}
+         */
         private final WorkManager workManager;
 
+        /**
+         * Constructor to init the {@link NotificationsHelper} class
+         *
+         * @param context: the context where the {@link NotificationsHelper} has been invoked
+         */
         public NotificationsHelper(Context context) {
             this.context = context;
             workManager = WorkManager.getInstance(context);
@@ -84,6 +125,11 @@ public class NotificationsReceiver extends BroadcastReceiver {
             createNotificationsChannel();
         }
 
+        /**
+         * Method to create the notifications channel <br>
+         *
+         * No-any params required
+         */
         private void createNotificationsChannel() {
             if(notificationManager.getNotificationChannel(NOVA_NOTIFICATIONS_CHANNEL_ID) == null) {
                 NotificationChannel channel = new NotificationChannel(
@@ -100,32 +146,36 @@ public class NotificationsReceiver extends BroadcastReceiver {
             }
         }
 
+        /**
+         * Method to schedule and exec the notifications check. <br>
+         * The {@link #scheduleRoutine()} and the {@link #execCheckRoutine()} methods will be invoked <br>
+         *
+         * No-any params required
+         */
         public void scheduleAndExec() {
             scheduleRoutine();
             execCheckRoutine();
         }
 
+        /**
+         * Method to schedule the routine using the {@link #workManager} <br>
+         *
+         * No-any params required
+         */
         public void scheduleRoutine() {
-            workManager.enqueue(workerRequest);
+            workManager.enqueueUniquePeriodicWork(
+                    WORKER_NAME,
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    periodicRequest
+            );
         }
 
+        /**
+         * Method to exec the routine to check if there are any notifications to send <br>
+         *
+         * No-any params required
+         */
         public void execCheckRoutine() {
-            // TODO: TO REMOVE
-            NovaNotification notificationt = null;
-            try {
-                notificationt = new NovaNotification(
-                        "oor",
-                        "https://www.vaielettrico.it/wp-content/uploads/2023/04/IMG_0118-1.jpg",
-                        new User(new JSONObject().put("role", User.Role.Vendor.name())),
-                        "gagag",
-                        ReleaseStatus.Approved,
-                        "v. 1.0.0",
-                        false
-                );
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
-            }
-            sendNotification(notificationt, getDestination(notificationt));
             try(LocalSessionHelper localSessionHelper = new LocalSessionHelper(context)) {
                 for (LocalSessionUtils.NovaSession session : localSessionHelper.getSessions()) {
                     //TODO: MAKE THE REQUEST TO FETCH THE NOTIFICATIONS THEN
@@ -137,6 +187,12 @@ public class NotificationsReceiver extends BroadcastReceiver {
             }
         }
 
+        /**
+         * Method to get the destination to reach after the user clicked on a specific {@link Notification}
+         *
+         * @param notification: the notification from get the correct details to get the destination
+         * @return the destination to reach as {@link Intent}
+         */
         private Intent getDestination(NovaNotification notification) {
             Intent destination = new Intent(context, Splashscreen.class);
             if(notification.getReleaseId() == null)
@@ -148,6 +204,12 @@ public class NotificationsReceiver extends BroadcastReceiver {
             return destination;
         }
 
+        /**
+         * Method to create and send a notification
+         *
+         * @param notification: the notification details to send and create the related {@link Notification}
+         * @param destination: the destination to reach after user clicked on the {@link Notification}
+         */
         private void sendNotification(NovaNotification notification, Intent destination) {
             Notification.Builder builder = new Notification.Builder(context, NOVA_NOTIFICATIONS_CHANNEL_ID);
             // TODO: 02/04/2024 USE THE REAL APPLICATION ICON
@@ -171,6 +233,14 @@ public class NotificationsReceiver extends BroadcastReceiver {
             notificationManager.notify(new Random().nextInt(), builder.build());
         }
 
+        /**
+         * Function to get the correct text to use in the notification UI message
+         *
+         * @param releaseId: the release identifier
+         * @param releaseStatus: the release status
+         *
+         * @return the correct text to use as int
+         */
         private int getContentText(String releaseId, ReleaseStatus releaseStatus) {
             if(releaseStatus == null) {
                 if(releaseId == null)
@@ -193,26 +263,42 @@ public class NotificationsReceiver extends BroadcastReceiver {
         
     }
 
+    /**
+     * The {@code NotificationsWorker} class is useful to execute the {@link NotificationsHelper#periodicRequest}
+     *
+     * @author N7ghtm4r3 - Tecknobit
+     * @see Worker
+     */
     public static class NotificationsWorker extends Worker {
 
+        /**
+         * {@code notificationsHelper} the helper used to send the notifications
+         */
         private final NotificationsHelper notificationsHelper;
 
+        /**
+         * Constructor to init the {@link NotificationsWorker} class
+         *
+         * @param context: the context where the {@link NotificationsWorker} has been invoked
+         * @param workerParams: the params for the worker
+         */
         public NotificationsWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
             super(context, workerParams);
             notificationsHelper = new NotificationsHelper(context);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @NonNull
         @Override
         public Result doWork() {
             try {
-                Thread.sleep(TimeUnit.MINUTES.toMillis(5));
                 notificationsHelper.execCheckRoutine();
-                doWork();
-            } catch (InterruptedException e) {
-                return Result.retry();
+                return Result.success();
+            } catch (Throwable e) {
+                return Result.failure();
             }
-            return Result.success();
         }
 
     }

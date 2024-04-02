@@ -43,6 +43,9 @@ class Splashscreen : ComponentActivity() {
 
     companion object {
 
+        /**
+         * {@code DESTINATION_KEY} the key for the <b>"destination"</b> field
+         */
         const val DESTINATION_KEY = "destination";
 
         /**
@@ -81,7 +84,7 @@ class Splashscreen : ComponentActivity() {
             assetDownloader = AssetDownloader(LocalContext.current)
             localSessionHelper = LocalSessionHelper(LocalContext.current)
             val notificationsHelper = NotificationsHelper(LocalContext.current)
-            notificationsHelper.scheduleAndExec()
+            notificationsHelper.scheduleRoutine()
             NovaTheme {
                 Column (
                     modifier = Modifier
