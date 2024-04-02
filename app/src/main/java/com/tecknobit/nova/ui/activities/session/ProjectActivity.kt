@@ -40,6 +40,8 @@ import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -168,11 +170,23 @@ class ProjectActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val navBackIntent = Intent(this@ProjectActivity, MainActivity::class.java)
         setContent {
+            var projectFromExtra: Project?
             project = remember {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                    mutableStateOf(intent.getSerializableExtra(PROJECT_KEY, Project::class.java)!!)
-                else
-                    mutableStateOf(intent.getSerializableExtra(PROJECT_KEY)!! as Project)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    projectFromExtra = intent.getSerializableExtra(PROJECT_KEY, Project::class.java)
+                    if(projectFromExtra != null)
+                        mutableStateOf(projectFromExtra!!)
+                    else
+                    // TODO: MAKE THE REQUEST OR CHECK HOW TO AVOID A REQUEST
+                        mutableStateOf(Project("Glider", "1.0.0"))
+                } else {
+                    projectFromExtra = intent.getSerializableExtra(PROJECT_KEY) as Project?
+                    if(projectFromExtra != null)
+                        mutableStateOf(projectFromExtra!!)
+                    else
+                    // TODO: MAKE THE REQUEST OR CHECK HOW TO AVOID A REQUEST
+                        mutableStateOf(Project("Glider", "1.0.0"))
+                }
             }
             // TODO: MAKE THE REAL WORKFLOW TO GET IF THE USER IS OR NOT THE PROJECT AUTHOR
             isProjectAuthor = Random().nextBoolean()
@@ -319,49 +333,55 @@ class ProjectActivity : ComponentActivity() {
                                         startActivity(intent)
                                     }
                                 ) {
-                                    Column (
-                                        modifier = Modifier
-                                            .padding(16.dp)
-                                            .fillMaxSize()
-                                    ) {
-                                        Row (
-                                            modifier = Modifier
-                                                .fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = release.releaseVersion,
-                                                fontSize = 20.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            ReleaseStatusBadge(
-                                                releaseStatus = release.status
-                                            )
+                                    BadgedBox(
+                                        badge = {
+                                            // TODO: USE THE REAL NOTIFICATIONS LIST OF THE user
+                                            // val notifications = release.getNotifications()
+                                            val notifications = Random().nextInt(22)
+                                            if(notifications > 0) {
+                                                Badge (
+                                                    modifier = Modifier
+                                                        .padding(
+                                                            top = 10.dp
+                                                        )
+                                                        .size(
+                                                            width = 40.dp,
+                                                            height = 25.dp
+                                                        )
+                                                ) {
+                                                    Text(
+                                                        text = "$notifications"
+                                                    )
+                                                }
+                                            }
                                         }
+                                    ) {
                                         Column (
                                             modifier = Modifier
-                                                .padding(
-                                                    top = 5.dp,
-                                                    start = 5.dp
-                                                ),
+                                                .padding(16.dp)
+                                                .fillMaxSize()
                                         ) {
                                             Row (
                                                 modifier = Modifier
                                                     .fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Text(
-                                                    text = getString(R.string.creation_date),
-                                                    fontSize = 16.sp
+                                                    text = release.releaseVersion,
+                                                    fontSize = 20.sp,
+                                                    fontWeight = FontWeight.Bold
                                                 )
-                                                Text(
-                                                    text = release.creationDate,
-                                                    fontSize = 16.sp,
-                                                    fontFamily = thinFontFamily
+                                                ReleaseStatusBadge(
+                                                    releaseStatus = release.status
                                                 )
                                             }
-                                            if(release.status == Approved) {
+                                            Column (
+                                                modifier = Modifier
+                                                    .padding(
+                                                        top = 5.dp,
+                                                        start = 5.dp
+                                                    ),
+                                            ) {
                                                 Row (
                                                     modifier = Modifier
                                                         .fillMaxWidth(),
@@ -369,35 +389,53 @@ class ProjectActivity : ComponentActivity() {
                                                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                                                 ) {
                                                     Text(
-                                                        text = getString(R.string.approbation_date),
+                                                        text = getString(R.string.creation_date),
                                                         fontSize = 16.sp
                                                     )
                                                     Text(
-                                                        text = release.approbationDate,
+                                                        text = release.creationDate,
                                                         fontSize = 16.sp,
                                                         fontFamily = thinFontFamily
                                                     )
                                                 }
+                                                if(release.status == Approved) {
+                                                    Row (
+                                                        modifier = Modifier
+                                                            .fillMaxWidth(),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = getString(R.string.approbation_date),
+                                                            fontSize = 16.sp
+                                                        )
+                                                        Text(
+                                                            text = release.approbationDate,
+                                                            fontSize = 16.sp,
+                                                            fontFamily = thinFontFamily
+                                                        )
+                                                    }
+                                                }
                                             }
+                                            Text(
+                                                modifier = Modifier
+                                                    .padding(
+                                                        top = 5.dp
+                                                    ),
+                                                text = getString(R.string.release_notes),
+                                                fontSize = 20.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            MarkdownText(
+                                                modifier = Modifier
+                                                    .padding(
+                                                        top = 5.dp
+                                                    )
+                                                    .fillMaxWidth(),
+                                                markdown = release.releaseNotes.content,
+                                                fontSize = 16.sp
+                                            )
                                         }
-                                        Text(
-                                            modifier = Modifier
-                                                .padding(
-                                                    top = 5.dp
-                                                ),
-                                            text = getString(R.string.release_notes),
-                                            fontSize = 20.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        MarkdownText(
-                                            modifier = Modifier
-                                                .padding(
-                                                    top = 5.dp
-                                                )
-                                                .fillMaxWidth(),
-                                            markdown = release.releaseNotes.content,
-                                            fontSize = 16.sp
-                                        )
                                     }
                                 }
                             }

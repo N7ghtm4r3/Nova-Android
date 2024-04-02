@@ -35,6 +35,8 @@ import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -293,7 +295,24 @@ class MainActivity : ComponentActivity() {
                                                 colors = ListItemDefaults.colors(
                                                     containerColor = Color.White
                                                 ),
-                                                leadingContent = { Logo(url = project.logoUrl) },
+                                                leadingContent = {
+                                                    BadgedBox(
+                                                        badge = {
+                                                            // TODO: USE THE REAL NOTIFICATIONS LIST OF THE user
+                                                            // val notifications = project.getNotifications()
+                                                            val notifications = Random().nextInt(22)
+                                                            if(notifications > 0) {
+                                                                Badge {
+                                                                    Text(
+                                                                        text = "$notifications"
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    ) {
+                                                        Logo(url = project.logoUrl)
+                                                    }
+                                                },
                                                 headlineContent = {
                                                     Text(
                                                         text = project.name,

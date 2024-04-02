@@ -81,4 +81,15 @@
     <string name="title_activity_qrcode">QRCodeActivity</string>
     <string name="scan_to_join_in_a_project">Scan to join in a project</string>
     <string name="generate_a_join_code_also">Generate a join code also</string>
+    <string name="release_events">Release events</string>
+    <string name="notifications_channel_description">Notifications relating to events that occur in releases</string>
+    <string name="new_release_has_been_created">New release has been created!</string>
+    <string name="new_assets_are_ready_to_be_tested">New assets are ready to be tested</string>
+    <string name="the_release_has_been_rejected">The release has been rejected…</string>
+    <string name="the_release_has_been_approved">The release has been approved!</string>
+    <string name="the_release_has_been_promoted_to_alpha">The release has been promoted to Alpha!</string>
+    <string name="the_release_has_been_promoted_to_beta">The release has been promoted to Beta!</string>
+    <string name="the_release_has_been_promoted_to_latest">The release has been promoted to Latest!</string>
+    <string name="the_release_has_been_deleted">The release has been deleted</string>
+    <string name="the_project_has_been_deleted">The project has been deleted</string>
 </resources>

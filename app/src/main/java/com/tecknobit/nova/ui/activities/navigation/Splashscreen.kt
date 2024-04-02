@@ -24,7 +24,11 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.storage.LocalSessionHelper
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User
 import com.tecknobit.nova.helpers.utils.download.AssetDownloader
+import com.tecknobit.nova.helpers.utils.ui.NotificationsReceiver.NotificationsHelper
+import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
+import com.tecknobit.novacore.records.User.PROJECTS_KEY
+import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import kotlinx.coroutines.delay
 
 /**
@@ -38,6 +42,8 @@ import kotlinx.coroutines.delay
 class Splashscreen : ComponentActivity() {
 
     companion object {
+
+        const val DESTINATION_KEY = "destination";
 
         /**
          * **user** -> the user of the current session
@@ -74,6 +80,8 @@ class Splashscreen : ComponentActivity() {
             StrictMode.setThreadPolicy(policy)
             assetDownloader = AssetDownloader(LocalContext.current)
             localSessionHelper = LocalSessionHelper(LocalContext.current)
+            val notificationsHelper = NotificationsHelper(LocalContext.current)
+            notificationsHelper.scheduleAndExec()
             NovaTheme {
                 Column (
                     modifier = Modifier
@@ -112,10 +120,19 @@ class Splashscreen : ComponentActivity() {
                     }
                 }
                 LaunchedEffect(key1 = true) {
-                    delay(500)
+                    delay(250)
                     // TODO: MAKE THE REAL WORKFLOW
                     user = User("Manuel", "Maurizio")
-                    startActivity(Intent(this@Splashscreen, MainActivity::class.java))
+                    val intentDestination: Class<*> = when(intent.getStringExtra(DESTINATION_KEY)) {
+                        PROJECTS_KEY -> MainActivity::class.java
+                        PROJECT_KEY -> ProjectActivity::class.java
+                        else -> {
+                            // TODO: MAKE THE REAL WORKFLOW
+                            MainActivity::class.java
+                        }
+                    }
+                    // TODO: SET THE ACTIVE LOCAL SESSION FETCHING THE intent.getStringExtra(IDENTIFIER_KEY);
+                    startActivity(Intent(this@Splashscreen, intentDestination))
                 }
             }
         }
