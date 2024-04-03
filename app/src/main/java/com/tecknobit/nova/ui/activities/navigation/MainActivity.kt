@@ -72,8 +72,8 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.scan_to_join_in_a_project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
-import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionHelper
-import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionsHelper
 import com.tecknobit.nova.ui.activities.session.ProfileActivity
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.components.EmptyList
@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(ScanContract()) { result ->
             val content = result.contents
             // TODO: MAKE THE REAL WORKFLOW
-            localSessionHelper.insertSession(
+            localSessionsHelper.insertSession(
                 "Prova" + Random().nextInt(),
                 "prprp",
                 "https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg",
@@ -164,16 +164,13 @@ class MainActivity : ComponentActivity() {
                         Column (
                             verticalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            if(user.isVendor) {
+                            if(activeLocalSession.isVendor) {
                                 FloatingActionButton(
                                     onClick = { displayAddProject.value = true },
                                     containerColor = md_theme_light_primary
                                 ) {
                                     Icon(
-                                        imageVector = if(user.isVendor)
-                                            Icons.Default.Add
-                                        else
-                                            Icons.Default.QrCodeScanner,
+                                        imageVector = Icons.Default.Add,
                                         contentDescription = null
                                     )
                                 }
@@ -222,7 +219,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                     .size(150.dp),
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(user.profilePicUrl)
+                                    .data(activeLocalSession.profilePicUrl)
                                     .crossfade(true)
                                     .build(),
                                 contentDescription = null,
@@ -233,7 +230,7 @@ class MainActivity : ComponentActivity() {
                                     .padding(
                                         top = 5.dp
                                     ),
-                                text = user.role.name.uppercase(),
+                                text = activeLocalSession.role.name.uppercase(),
                                 fontSize = 25.sp,
                                 color = Color.White
                             )

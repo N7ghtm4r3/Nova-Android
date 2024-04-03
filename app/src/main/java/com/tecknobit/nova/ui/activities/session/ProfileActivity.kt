@@ -72,7 +72,7 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.please_enter_the_new_email_address
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen
-import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionHelper
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionsHelper
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
@@ -125,7 +125,7 @@ class ProfileActivity : ComponentActivity() {
                 val showChangeLanguage = remember { mutableStateOf(false) }
                 var userPassword by remember { mutableStateOf(PASSWORD_HIDDEN) }
                 val mySessions = remember { mutableStateListOf<LocalSessionUtils.NovaSession>() }
-                mySessions.addAll(localSessionHelper.sessions)
+                mySessions.addAll(localSessionsHelper.sessions)
                 Box {
                     Box {
                         val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -369,7 +369,7 @@ class ProfileActivity : ComponentActivity() {
                                             ) {
                                                 items(
                                                     key = { it },
-                                                    items = LANGUAGES_SUPPORTED
+                                                    items = LANGUAGES_SUPPORTED.values.toList()
                                                 ) { language ->
                                                     Row (
                                                         verticalAlignment = Alignment.CenterVertically
@@ -425,7 +425,7 @@ class ProfileActivity : ComponentActivity() {
                                                 )
                                                 .clickable(!isCurrentSession) {
                                                     // TODO: SELECT NEW SESSION THEN
-                                                    localSessionHelper.changeActiveSession(session.id)
+                                                    localSessionsHelper.changeActiveSession(session.id)
                                                     startActivity(
                                                         Intent(
                                                             this@ProfileActivity,
@@ -480,7 +480,7 @@ class ProfileActivity : ComponentActivity() {
                                                         modifier = Modifier
                                                             .size(22.dp),
                                                         onClick = {
-                                                            localSessionHelper.deleteSession(session.id)
+                                                            localSessionsHelper.deleteSession(session.id)
                                                             mySessions.remove(session)
                                                         }
                                                     ) {
@@ -616,7 +616,7 @@ class ProfileActivity : ComponentActivity() {
         ActionButton(
             action = {
                 // TODO: MAKE REQUEST THEN
-                localSessionHelper.deleteAllSessions()
+                localSessionsHelper.deleteAllSessions()
                 startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
             },
             text = R.string.logout
@@ -626,7 +626,7 @@ class ProfileActivity : ComponentActivity() {
             color = com.tecknobit.nova.ui.theme.tagstheme.bug.md_theme_light_primary,
             action = {
                 // TODO: MAKE REQUEST THEN
-                localSessionHelper.deleteAllSessions()
+                localSessionsHelper.deleteAllSessions()
                 startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
             },
             text = R.string.delete_account

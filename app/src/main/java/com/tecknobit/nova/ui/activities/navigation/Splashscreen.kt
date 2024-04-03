@@ -25,8 +25,11 @@ import com.tecknobit.nova.helpers.storage.LocalSessionHelper
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User
 import com.tecknobit.nova.helpers.utils.download.AssetDownloader
 import com.tecknobit.nova.helpers.utils.ui.NotificationsReceiver.NotificationsHelper
+import com.tecknobit.nova.ui.activities.auth.AuthActivity
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
+import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession
+import com.tecknobit.novacore.helpers.Requester
 import com.tecknobit.novacore.records.User.PROJECTS_KEY
 import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import kotlinx.coroutines.delay
@@ -46,7 +49,7 @@ class Splashscreen : ComponentActivity() {
         /**
          * {@code DESTINATION_KEY} the key for the <b>"destination"</b> field
          */
-        const val DESTINATION_KEY = "destination";
+        const val DESTINATION_KEY = "destination"
 
         /**
          * **user** -> the user of the current session
@@ -59,10 +62,20 @@ class Splashscreen : ComponentActivity() {
         lateinit var assetDownloader: AssetDownloader
 
         /**
-         * **localSessionHelper** -> the helper to manage the local sessions stored locally in
+         * **localSessionsHelper** -> the helper to manage the local sessions stored locally in
          * the device
          */
-        lateinit var localSessionHelper: LocalSessionHelper
+        lateinit var localSessionsHelper: LocalSessionHelper
+
+        /**
+         * **requester** -> the instance to manage the requests with the backend
+         */
+        lateinit var requester: Requester
+
+        /**
+         * **activeLocalSession** -> the current active session that user is using
+         */
+        lateinit var activeLocalSession: NovaSession
 
     }
 
@@ -82,7 +95,7 @@ class Splashscreen : ComponentActivity() {
             val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
             StrictMode.setThreadPolicy(policy)
             assetDownloader = AssetDownloader(LocalContext.current)
-            localSessionHelper = LocalSessionHelper(LocalContext.current)
+            localSessionsHelper = LocalSessionHelper(LocalContext.current)
             val notificationsHelper = NotificationsHelper(LocalContext.current)
             notificationsHelper.scheduleRoutine()
             NovaTheme {
@@ -124,14 +137,21 @@ class Splashscreen : ComponentActivity() {
                 }
                 LaunchedEffect(key1 = true) {
                     delay(250)
-                    // TODO: MAKE THE REAL WORKFLOW
-                    user = User("Manuel", "Maurizio")
                     val intentDestination: Class<*> = when(intent.getStringExtra(DESTINATION_KEY)) {
                         PROJECTS_KEY -> MainActivity::class.java
                         PROJECT_KEY -> ProjectActivity::class.java
                         else -> {
-                            // TODO: MAKE THE REAL WORKFLOW
-                            MainActivity::class.java
+                            val activeSession = localSessionsHelper.activeSession
+                            if(activeSession != null) {
+                                requester = Requester(
+                                    host = activeSession.hostAddress,
+                                    userId = activeSession.id,
+                                    userToken = activeSession.token
+                                )
+                                activeLocalSession = activeSession
+                                MainActivity::class.java
+                            } else 
+                                AuthActivity::class.java
                         }
                     }
                     // TODO: SET THE ACTIVE LOCAL SESSION FETCHING THE intent.getStringExtra(IDENTIFIER_KEY);

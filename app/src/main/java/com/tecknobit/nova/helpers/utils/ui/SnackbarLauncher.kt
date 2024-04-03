@@ -69,6 +69,20 @@ class SnackbarLauncher(
      * @param isError: state used to indicate whether is in error
      */
     fun showSnackError(
+        message: String,
+        isError: MutableState<Boolean>
+    ) {
+        showSnack(message)
+        isError.value = true
+    }
+
+    /**
+     * Function to display a [Snackbar] with an error message
+     *
+     * @param message: the error message to display
+     * @param isError: state used to indicate whether is in error
+     */
+    fun showSnackError(
         message: Int,
         isError: MutableState<Boolean>
     ) {

@@ -156,16 +156,16 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
     }
 
     /**
-     * Method to get the current active local session specified by the identifier of the user in that session
+     * Method to get the current active local session <br>
      *
-     * @param id: the user identifier to fetch the local session
+     * No-any params required
      * @return the local session as {@link NovaSession}
      */
     @Override
-    public NovaSession getActiveSession(String id) {
+    public NovaSession getActiveSession() {
         SQLiteDatabase database = getReadableDatabase();
         Cursor cursor = database.rawQuery("SELECT * FROM " + SESSIONS_TABLE + " WHERE "
-                + IDENTIFIER_KEY + "=?", new String[]{id});
+                + IS_ACTIVE_SESSION_KEY + "=?", new String[]{"1"});
         NovaSession activeSession = null;
         if(cursor.moveToFirst()) {
             activeSession = fillNovaSession(cursor);

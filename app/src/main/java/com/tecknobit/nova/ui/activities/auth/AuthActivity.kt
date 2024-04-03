@@ -54,20 +54,35 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.intl.Locale.Companion.current
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.utils.ui.SnackbarLauncher
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionsHelper
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
+import com.tecknobit.novacore.InputValidator.LANGUAGES_SUPPORTED
 import com.tecknobit.novacore.InputValidator.isEmailValid
 import com.tecknobit.novacore.InputValidator.isHostValid
 import com.tecknobit.novacore.InputValidator.isNameValid
 import com.tecknobit.novacore.InputValidator.isPasswordValid
 import com.tecknobit.novacore.InputValidator.isServerSecretValid
 import com.tecknobit.novacore.InputValidator.isSurnameValid
+import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.LOGGED_AS_CUSTOMER_RECORD_VALUE
+import com.tecknobit.novacore.helpers.Requester
+import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
+import com.tecknobit.novacore.records.NovaItem.IDENTIFIER_KEY
+import com.tecknobit.novacore.records.User.PROFILE_PIC_URL_KEY
+import com.tecknobit.novacore.records.User.ROLE_KEY
+import com.tecknobit.novacore.records.User.Role
+import com.tecknobit.novacore.records.User.Role.Vendor
+import com.tecknobit.novacore.records.User.TOKEN_KEY
+import java.util.UUID
 
 /**
  * The {@code AuthActivity} activity is used to execute the auth operations sign up and sign in taking
@@ -147,6 +162,9 @@ class AuthActivity : ComponentActivity() {
     @ExperimentalFoundationApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        var language = LANGUAGES_SUPPORTED[current.toLanguageTag().substringBefore("-")]
+        if(language == null)
+            language = "en"
         setContent {
             NovaTheme {
                 snackbarLauncher = SnackbarLauncher(LocalContext.current)
@@ -258,11 +276,41 @@ class AuthActivity : ComponentActivity() {
                                                     if(isServerSecretValid(serverSecret)) {
                                                         execAuth {
                                                             email.value = email.value.lowercase()
-                                                            // TODO: MAKE REQUEST THEN
-                                                            // TODO: INSERT IN LOCAL
-                                                            startActivity(
-                                                                Intent(this@AuthActivity,
-                                                                    MainActivity::class.java)
+                                                            requester = Requester(
+                                                                host = host
+                                                            )
+                                                            requester.sendRequest(
+                                                                request = {
+                                                                    requester.signUp(
+                                                                        serverSecret = serverSecret,
+                                                                        name = name.value,
+                                                                        surname = surname.value,
+                                                                        email = email.value,
+                                                                        password = password.value,
+                                                                        language = language
+                                                                    )
+                                                                },
+                                                                onSuccess = { response ->
+                                                                    localSessionsHelper.insertSession(
+                                                                        response.getString(IDENTIFIER_KEY),
+                                                                        response.getString(TOKEN_KEY),
+                                                                        "$host/${response.getString(PROFILE_PIC_URL_KEY)}",
+                                                                        email.value,
+                                                                        password.value,
+                                                                        host,
+                                                                        Vendor
+                                                                    )
+                                                                    activeLocalSession = localSessionsHelper.activeSession
+                                                                    startActivity(
+                                                                        Intent(this@AuthActivity,
+                                                                            MainActivity::class.java)
+                                                                    )
+                                                                },
+                                                                onFailure = { response ->
+                                                                    snackbarLauncher.showSnack(
+                                                                        message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                                    )
+                                                                }
                                                             )
                                                         }
                                                     } else {
@@ -275,11 +323,37 @@ class AuthActivity : ComponentActivity() {
                                                     if(isEmailValid(email.value)) {
                                                         if(isPasswordValid(password.value)) {
                                                             email.value = email.value.lowercase()
-                                                            // TODO: MAKE REQUEST THEN
-                                                            // TODO: INSERT IN LOCAL
-                                                            startActivity(
-                                                                Intent(this@AuthActivity,
-                                                                    MainActivity::class.java)
+                                                            requester = Requester(
+                                                                host = host
+                                                            )
+                                                            requester.sendRequest(
+                                                                request = {
+                                                                    requester.signIn(
+                                                                        email = email.value,
+                                                                        password = password.value
+                                                                    )
+                                                                },
+                                                                onSuccess = { response ->
+                                                                    localSessionsHelper.insertSession(
+                                                                        response.getString(IDENTIFIER_KEY),
+                                                                        response.getString(TOKEN_KEY),
+                                                                        "$host/${response.getString(PROFILE_PIC_URL_KEY)}",
+                                                                        email.value,
+                                                                        password.value,
+                                                                        host,
+                                                                        Role.valueOf(response.getString(ROLE_KEY))
+                                                                    )
+                                                                    activeLocalSession = localSessionsHelper.activeSession
+                                                                    startActivity(
+                                                                        Intent(this@AuthActivity,
+                                                                            MainActivity::class.java)
+                                                                    )
+                                                                },
+                                                                onFailure = { response ->
+                                                                    snackbarLauncher.showSnack(
+                                                                        message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                                    )
+                                                                }
                                                             )
                                                         } else {
                                                             snackbarLauncher.showSnackError(
@@ -348,7 +422,16 @@ class AuthActivity : ComponentActivity() {
                                     AuthButton(
                                         authAction = {
                                             execAuth {
-                                                // TODO: SAVE IN LOCAL THEN
+                                                localSessionsHelper.insertSession(
+                                                    UUID.randomUUID().toString().replace("-", ""),
+                                                    LOGGED_AS_CUSTOMER_RECORD_VALUE,
+                                                    LOGGED_AS_CUSTOMER_RECORD_VALUE,
+                                                    email.value,
+                                                    password.value,
+                                                    LOGGED_AS_CUSTOMER_RECORD_VALUE,
+                                                    Role.Customer
+                                                )
+                                                activeLocalSession = localSessionsHelper.activeSession
                                                 startActivity(
                                                     Intent(this@AuthActivity,
                                                         MainActivity::class.java)
