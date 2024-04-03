@@ -77,10 +77,12 @@ import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.LOGGED_AS_CU
 import com.tecknobit.novacore.helpers.Requester
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.records.NovaItem.IDENTIFIER_KEY
+import com.tecknobit.novacore.records.User.NAME_KEY
 import com.tecknobit.novacore.records.User.PROFILE_PIC_URL_KEY
 import com.tecknobit.novacore.records.User.ROLE_KEY
 import com.tecknobit.novacore.records.User.Role
 import com.tecknobit.novacore.records.User.Role.Vendor
+import com.tecknobit.novacore.records.User.SURNAME_KEY
 import com.tecknobit.novacore.records.User.TOKEN_KEY
 import java.util.UUID
 
@@ -211,6 +213,8 @@ class AuthActivity : ComponentActivity() {
                                 subtitle = R.string.authenticate_on_a_server,
                                 content = {
                                     OutlinedTextField(
+                                        modifier = Modifier
+                                            .width(275.dp),
                                         singleLine = true,
                                         value = host,
                                         onValueChange = {
@@ -238,6 +242,7 @@ class AuthActivity : ComponentActivity() {
                                     if(isRegisterOpe.value) {
                                         OutlinedTextField(
                                             modifier = Modifier
+                                                .width(275.dp)
                                                 .padding(
                                                     top = 10.dp,
                                                 ),
@@ -295,10 +300,13 @@ class AuthActivity : ComponentActivity() {
                                                                         response.getString(IDENTIFIER_KEY),
                                                                         response.getString(TOKEN_KEY),
                                                                         "$host/${response.getString(PROFILE_PIC_URL_KEY)}",
+                                                                        name.value,
+                                                                        surname.value,
                                                                         email.value,
                                                                         password.value,
                                                                         host,
-                                                                        Vendor
+                                                                        Vendor,
+                                                                        language
                                                                     )
                                                                     activeLocalSession = localSessionsHelper.activeSession
                                                                     startActivity(
@@ -338,10 +346,13 @@ class AuthActivity : ComponentActivity() {
                                                                         response.getString(IDENTIFIER_KEY),
                                                                         response.getString(TOKEN_KEY),
                                                                         "$host/${response.getString(PROFILE_PIC_URL_KEY)}",
+                                                                        response.getString(NAME_KEY),
+                                                                        response.getString(SURNAME_KEY),
                                                                         email.value,
                                                                         password.value,
                                                                         host,
-                                                                        Role.valueOf(response.getString(ROLE_KEY))
+                                                                        Role.valueOf(response.getString(ROLE_KEY)),
+                                                                        language
                                                                     )
                                                                     activeLocalSession = localSessionsHelper.activeSession
                                                                     startActivity(
@@ -426,10 +437,13 @@ class AuthActivity : ComponentActivity() {
                                                     UUID.randomUUID().toString().replace("-", ""),
                                                     LOGGED_AS_CUSTOMER_RECORD_VALUE,
                                                     LOGGED_AS_CUSTOMER_RECORD_VALUE,
+                                                    name.value,
+                                                    surname.value,
                                                     email.value,
                                                     password.value,
                                                     LOGGED_AS_CUSTOMER_RECORD_VALUE,
-                                                    Role.Customer
+                                                    Role.Customer,
+                                                    language
                                                 )
                                                 activeLocalSession = localSessionsHelper.activeSession
                                                 startActivity(
@@ -558,6 +572,7 @@ class AuthActivity : ComponentActivity() {
     private fun Form() {
         OutlinedTextField(
             modifier = Modifier
+                .width(275.dp)
                 .padding(
                     top = 10.dp,
                 ),
@@ -587,6 +602,7 @@ class AuthActivity : ComponentActivity() {
         )
         OutlinedTextField(
             modifier = Modifier
+                .width(275.dp)
                 .padding(
                     top = 10.dp,
                 ),
@@ -626,6 +642,7 @@ class AuthActivity : ComponentActivity() {
     private fun EmailPasswordForm() {
         OutlinedTextField(
             modifier = Modifier
+                .width(275.dp)
                 .padding(
                     top = 10.dp,
                 ),
@@ -658,6 +675,7 @@ class AuthActivity : ComponentActivity() {
         )
         OutlinedTextField(
             modifier = Modifier
+                .width(275.dp)
                 .padding(
                     top = 10.dp,
                 ),

@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
@@ -72,8 +73,9 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.please_enter_the_new_email_address
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionsHelper
-import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.UserRoleBadge
@@ -119,11 +121,12 @@ class ProfileActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             NovaTheme {
-                var profilePic by remember { mutableStateOf(user.profilePicUrl) }
+                var profilePic by remember { mutableStateOf(activeLocalSession.profilePicUrl) }
+                var currentEmail by remember { mutableStateOf(activeLocalSession.email) }
+                var userPassword by remember { mutableStateOf(PASSWORD_HIDDEN) }
                 val showChangeEmail = remember { mutableStateOf(false) }
                 val showChangePassword = remember { mutableStateOf(false) }
                 val showChangeLanguage = remember { mutableStateOf(false) }
-                var userPassword by remember { mutableStateOf(PASSWORD_HIDDEN) }
                 val mySessions = remember { mutableStateListOf<LocalSessionUtils.NovaSession>() }
                 mySessions.addAll(localSessionsHelper.sessions)
                 Box {
@@ -175,13 +178,13 @@ class ProfileActivity : ComponentActivity() {
                             horizontalArrangement = Arrangement.Absolute.spacedBy(5.dp)
                         ) {
                             Text(
-                                text = user.name,
+                                text = activeLocalSession.name,
                                 color = Color.White,
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = user.surname,
+                                text = activeLocalSession.surname,
                                 color = Color.White,
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold
@@ -209,11 +212,11 @@ class ProfileActivity : ComponentActivity() {
                         ) {
                             UserInfo(
                                 header = R.string.uid,
-                                info = user.id
+                                info = activeLocalSession.id
                             )
                             UserInfo(
                                 header = R.string.email,
-                                info = user.email,
+                                info = currentEmail,
                                 editAction = { showChangeEmail.value = true }
                             )
                             if(showChangeEmail.value) {
@@ -260,9 +263,20 @@ class ProfileActivity : ComponentActivity() {
                                     },
                                     confirmAction = {
                                         if(isEmailValid(email)) {
-                                            // TODO: MAKE REQUEST THEN
                                             email = email.lowercase()
-                                            showChangeEmail.value = false
+                                            requester.sendRequest(
+                                                request = {
+                                                    requester.changeEmail(
+                                                        newEmail = email
+                                                    )
+                                                },
+                                                onSuccess = {
+                                                    localSessionsHelper.changeEmail(email)
+                                                    currentEmail = email
+                                                    showChangeEmail.value = false
+                                                },
+                                                onFailure = { emailError = true }
+                                            )
                                         } else
                                             emailError = true
                                     }
@@ -273,7 +287,7 @@ class ProfileActivity : ComponentActivity() {
                                 info = userPassword,
                                 onInfoClick = {
                                     userPassword = if(userPassword == PASSWORD_HIDDEN)
-                                        user.password
+                                        activeLocalSession.password
                                     else
                                         PASSWORD_HIDDEN
                                 },
@@ -296,9 +310,9 @@ class ProfileActivity : ComponentActivity() {
                                                 singleLine = true,
                                                 value = password,
                                                 visualTransformation = if (isPasswordHidden)
-                                                    VisualTransformation.None
+                                                    PasswordVisualTransformation()
                                                 else
-                                                    PasswordVisualTransformation(),
+                                                    VisualTransformation.None ,
                                                 onValueChange = {
                                                     passwordError = !isPasswordValid(it) &&
                                                             password.isNotEmpty()
@@ -341,21 +355,35 @@ class ProfileActivity : ComponentActivity() {
                                     },
                                     confirmAction = {
                                         if(isPasswordValid(password)) {
-                                            // TODO: MAKE REQUEST THEN
-                                            showChangePassword.value = false
+                                            requester.sendRequest(
+                                                request = {
+                                                    requester.changePassword(
+                                                        newPassword = password
+                                                    )
+                                                },
+                                                onSuccess = {
+                                                    localSessionsHelper.changePassword(password)
+                                                    if(userPassword != PASSWORD_HIDDEN)
+                                                        userPassword = password
+                                                    activeLocalSession.password = password
+                                                    showChangePassword.value = false
+                                                },
+                                                onFailure = { passwordError = true }
+                                            )
                                         } else
                                             passwordError = true
                                     }
                                 )
                             }
+                            val language = activeLocalSession.language
                             UserInfo(
                                 header = R.string.language,
-                                info = user.language,
+                                info = language,
                                 editAction = { showChangeLanguage.value = true },
                                 isLast = true
                             )
                             if(showChangeLanguage.value) {
-                                var selectedLanguage by remember { mutableStateOf(user.language) }
+                                var selectedLanguage by remember { mutableStateOf(language) }
                                 NovaAlertDialog(
                                     show = showChangeLanguage,
                                     icon = Icons.Default.Language,
@@ -387,8 +415,20 @@ class ProfileActivity : ComponentActivity() {
                                         }
                                     },
                                     confirmAction = {
-                                        // TODO: MAKE REQUEST THEN
-                                        showChangeLanguage.value = false
+                                        requester.sendRequest(
+                                            request = {
+                                                requester.changeLanguage(
+                                                    newLanguage = selectedLanguage
+                                                )
+                                            },
+                                            onSuccess = {
+                                                localSessionsHelper.changeLanguage(selectedLanguage)
+                                                activeLocalSession.language = selectedLanguage
+                                                showChangeLanguage.value = false
+                                                navToSplashscreen()
+                                            },
+                                            onFailure = {showChangeLanguage.value = false }
+                                        )
                                     }
                                 )
                             }
@@ -424,14 +464,8 @@ class ProfileActivity : ComponentActivity() {
                                                     shape = RoundedCornerShape(15.dp)
                                                 )
                                                 .clickable(!isCurrentSession) {
-                                                    // TODO: SELECT NEW SESSION THEN
                                                     localSessionsHelper.changeActiveSession(session.id)
-                                                    startActivity(
-                                                        Intent(
-                                                            this@ProfileActivity,
-                                                            Splashscreen::class.java
-                                                        )
-                                                    )
+                                                    navToSplashscreen()
                                                 }
                                                 .clip(RoundedCornerShape(15.dp)),
                                             colors = ListItemDefaults.colors(
@@ -612,25 +646,60 @@ class ProfileActivity : ComponentActivity() {
      */
     @Composable
     private fun ActionButtons() {
+        val logout = remember { mutableStateOf(false) }
+        val deleteAccount = remember { mutableStateOf(false) }
         Spacer(modifier = Modifier.height(10.dp))
         ActionButton(
-            action = {
-                // TODO: MAKE REQUEST THEN
-                localSessionsHelper.deleteAllSessions()
-                startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
-            },
+            action = { logout.value = true },
             text = R.string.logout
+        )
+        NovaAlertDialog(
+            show = logout,
+            icon = Icons.AutoMirrored.Filled.Logout,
+            title = R.string.logout,
+            message = R.string.account_logout_message,
+            dismissAction = { logout.value = false },
+            confirmAction = {
+                localSessionsHelper.deleteAllSessions()
+                navToSplashscreen()
+            }
         )
         Spacer(modifier = Modifier.height(10.dp))
         ActionButton(
             color = com.tecknobit.nova.ui.theme.tagstheme.bug.md_theme_light_primary,
-            action = {
-                // TODO: MAKE REQUEST THEN
-                localSessionsHelper.deleteAllSessions()
-                startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
-            },
+            action = { deleteAccount.value = true },
             text = R.string.delete_account
         )
+        NovaAlertDialog(
+            show = deleteAccount,
+            icon = Icons.Default.Clear,
+            title = R.string.delete_account,
+            message = R.string.account_deletion_message,
+            dismissAction = { deleteAccount.value = false },
+            confirmAction = {
+                localSessionsHelper.sessions.forEach { session ->
+                    val sessionId = session.id
+                    requester.setUserCredentials(session.id, session.token)
+                    requester.changeHost(session.hostAddress)
+                    requester.sendRequest(
+                        request = { requester.deleteAccount() },
+                        onSuccess = { localSessionsHelper.deleteSession(sessionId) },
+                        onFailure = { localSessionsHelper.changeActiveSession(sessionId) }
+                    )
+                }
+                deleteAccount.value = false
+                navToSplashscreen()
+            }
+        )
+    }
+
+    /**
+     * Function to navigate to the [Splashscreen]
+     *
+     * No-any params required
+     */
+    private fun navToSplashscreen() {
+        startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
     }
 
 }

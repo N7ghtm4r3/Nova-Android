@@ -4,9 +4,12 @@ import static com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.HOST_
 import static com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.IS_ACTIVE_SESSION_KEY;
 import static com.tecknobit.novacore.records.NovaItem.IDENTIFIER_KEY;
 import static com.tecknobit.novacore.records.User.EMAIL_KEY;
+import static com.tecknobit.novacore.records.User.LANGUAGE_KEY;
+import static com.tecknobit.novacore.records.User.NAME_KEY;
 import static com.tecknobit.novacore.records.User.PASSWORD_KEY;
 import static com.tecknobit.novacore.records.User.PROFILE_PIC_URL_KEY;
 import static com.tecknobit.novacore.records.User.ROLE_KEY;
+import static com.tecknobit.novacore.records.User.SURNAME_KEY;
 import static com.tecknobit.novacore.records.User.TOKEN_KEY;
 
 import android.content.ContentValues;
@@ -70,24 +73,30 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
      * @param id: the identifier of the user in that session
      * @param token: the token of the user in that session
      * @param profilePicUrl: the profile pic url of the user in that session
+     * @param name: the name of the user
+     * @param surname: the surname of the user
      * @param email: the email of the user in that session
      * @param password: the password of the user in that session
      * @param hostAddress: the host address used in that session
      * @param role: the identifier of the user in that session
+     * @param language: the language of the user
      *
      */
     @Override
-    public void insertSession(String id, String token, String profilePicUrl, String email,
-                              String password, String hostAddress, Role role) {
+    public void insertSession(String id, String token, String profilePicUrl, String name, String surname,
+                              String email, String password, String hostAddress, Role role, String language) {
         SQLiteDatabase database = getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(IDENTIFIER_KEY, id);
         values.put(TOKEN_KEY, token);
         values.put(PROFILE_PIC_URL_KEY, profilePicUrl);
+        values.put(NAME_KEY, name);
+        values.put(SURNAME_KEY, surname);
         values.put(EMAIL_KEY, email);
         values.put(PASSWORD_KEY, password);
         values.put(HOST_ADDRESS_KEY, hostAddress);
         values.put(ROLE_KEY, role.name());
+        values.put(LANGUAGE_KEY, language);
         database.insert(SESSIONS_TABLE, null, values);
         changeActiveSession(id);
     }
@@ -186,12 +195,30 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
                 cursor.getString(cursor.getColumnIndexOrThrow(IDENTIFIER_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(TOKEN_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(PROFILE_PIC_URL_KEY)),
+                cursor.getString(cursor.getColumnIndexOrThrow(NAME_KEY)),
+                cursor.getString(cursor.getColumnIndexOrThrow(SURNAME_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(EMAIL_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(PASSWORD_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(HOST_ADDRESS_KEY)),
                 Role.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(ROLE_KEY))),
-                cursor.getInt(cursor.getColumnIndexOrThrow(IS_ACTIVE_SESSION_KEY)) == 1
+                cursor.getInt(cursor.getColumnIndexOrThrow(IS_ACTIVE_SESSION_KEY)) == 1,
+                cursor.getString(cursor.getColumnIndexOrThrow(LANGUAGE_KEY))
         );
+    }
+
+    /**
+     * Method to change a value of the current session
+     *
+     * @param key: the key of the value to change
+     * @param sessionValue: the new session value to set
+     */
+    @Override
+    public void changeSessionValue(String key, String sessionValue) {
+        SQLiteDatabase database = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(key, sessionValue);
+        database.update(SESSIONS_TABLE, values, IS_ACTIVE_SESSION_KEY + "=?",
+                new String[]{"1"});
     }
 
     /**
