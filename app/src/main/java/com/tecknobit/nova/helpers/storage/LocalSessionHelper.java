@@ -1,6 +1,7 @@
 package com.tecknobit.nova.helpers.storage;
 
 import static com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.HOST_ADDRESS_KEY;
+import static com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.IS_ACTIVE_SESSION_KEY;
 import static com.tecknobit.novacore.records.NovaItem.IDENTIFIER_KEY;
 import static com.tecknobit.novacore.records.User.EMAIL_KEY;
 import static com.tecknobit.novacore.records.User.PASSWORD_KEY;
@@ -73,6 +74,7 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
      * @param password: the password of the user in that session
      * @param hostAddress: the host address used in that session
      * @param role: the identifier of the user in that session
+     *
      */
     @Override
     public void insertSession(String id, String token, String profilePicUrl, String email,
@@ -87,6 +89,34 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
         values.put(HOST_ADDRESS_KEY, hostAddress);
         values.put(ROLE_KEY, role.name());
         database.insert(SESSIONS_TABLE, null, values);
+        changeActiveSession(id);
+    }
+
+    /**
+     * Method to set the current active session as inactive <br>
+     *
+     * No-any params required
+     */
+    @Override
+    public void setCurrentActiveSessionAsInactive() {
+        SQLiteDatabase database = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(IS_ACTIVE_SESSION_KEY, false);
+        database.update(SESSIONS_TABLE, values, IS_ACTIVE_SESSION_KEY + "=?",
+                new String[]{"1"});
+    }
+
+    /**
+     * Method to set as the active session a new session
+     *
+     * @param id: the identifier of the session to set as active
+     */
+    @Override
+    public void setNewActiveSession(String id) {
+        SQLiteDatabase database = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(IS_ACTIVE_SESSION_KEY, true);
+        database.update(SESSIONS_TABLE, values, IDENTIFIER_KEY + "=?", new String[]{id});
     }
 
     /**
@@ -126,8 +156,29 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
     }
 
     /**
+     * Method to get the current active local session specified by the identifier of the user in that session
+     *
+     * @param id: the user identifier to fetch the local session
+     * @return the local session as {@link NovaSession}
+     */
+    @Override
+    public NovaSession getActiveSession(String id) {
+        SQLiteDatabase database = getReadableDatabase();
+        Cursor cursor = database.rawQuery("SELECT * FROM " + SESSIONS_TABLE + " WHERE "
+                + IDENTIFIER_KEY + "=?", new String[]{id});
+        NovaSession activeSession = null;
+        if(cursor.moveToFirst()) {
+            activeSession = fillNovaSession(cursor);
+            cursor.close();
+        }
+        return activeSession;
+    }
+
+    /**
      * Method to fill an local session instance
+     *
      * @param cursor: the cursor obtained by the query
+     *
      * @return the local session instantiated as {@link NovaSession}
      */
     private NovaSession fillNovaSession(Cursor cursor) {
@@ -138,7 +189,8 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
                 cursor.getString(cursor.getColumnIndexOrThrow(EMAIL_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(PASSWORD_KEY)),
                 cursor.getString(cursor.getColumnIndexOrThrow(HOST_ADDRESS_KEY)),
-                Role.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(ROLE_KEY)))
+                Role.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(ROLE_KEY))),
+                cursor.getInt(cursor.getColumnIndexOrThrow(IS_ACTIVE_SESSION_KEY)) == 1
         );
     }
 

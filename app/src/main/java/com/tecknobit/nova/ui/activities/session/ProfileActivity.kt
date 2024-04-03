@@ -416,7 +416,7 @@ class ProfileActivity : ComponentActivity() {
                                         key = { it.id },
                                         items = mySessions
                                     ) { session ->
-                                        val isCurrentSession = user.hostAddress == session.hostAddress
+                                        val isCurrentSession = session.isActive
                                         ListItem(
                                             modifier = Modifier
                                                 .shadow(
@@ -425,6 +425,7 @@ class ProfileActivity : ComponentActivity() {
                                                 )
                                                 .clickable(!isCurrentSession) {
                                                     // TODO: SELECT NEW SESSION THEN
+                                                    localSessionHelper.changeActiveSession(session.id)
                                                     startActivity(
                                                         Intent(
                                                             this@ProfileActivity,
@@ -474,18 +475,20 @@ class ProfileActivity : ComponentActivity() {
                                                 )
                                             },
                                             trailingContent = {
-                                                IconButton(
-                                                    modifier = Modifier
-                                                        .size(22.dp),
-                                                    onClick = {
-                                                        localSessionHelper.deleteSession(session.id)
-                                                        mySessions.remove(session)
+                                                if(!isCurrentSession) {
+                                                    IconButton(
+                                                        modifier = Modifier
+                                                            .size(22.dp),
+                                                        onClick = {
+                                                            localSessionHelper.deleteSession(session.id)
+                                                            mySessions.remove(session)
+                                                        }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Delete,
+                                                            contentDescription = null
+                                                        )
                                                     }
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Delete,
-                                                        contentDescription = null
-                                                    )
                                                 }
                                             }
                                         )

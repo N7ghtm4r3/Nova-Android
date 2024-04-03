@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                 listOf(
                     com.tecknobit.novacore.records.User.Role.Vendor,
                     com.tecknobit.novacore.records.User.Role.Customer
-                )[Random().nextInt(2)]
+                )[Random().nextInt(2)],
             )
         }
 
