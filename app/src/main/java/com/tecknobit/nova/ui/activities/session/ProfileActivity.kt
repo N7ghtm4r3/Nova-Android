@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -45,7 +44,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -74,6 +72,8 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.please_enter_the_new_email_address
+import com.tecknobit.nova.R.string.wrong_email
+import com.tecknobit.nova.R.string.wrong_password
 import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen
@@ -83,6 +83,7 @@ import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localS
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
+import com.tecknobit.nova.ui.components.NovaTextField
 import com.tecknobit.nova.ui.components.UserRoleBadge
 import com.tecknobit.nova.ui.components.getFilePath
 import com.tecknobit.nova.ui.theme.NovaTheme
@@ -135,6 +136,7 @@ class ProfileActivity : NovaActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             NovaTheme {
+                currentContext = LocalContext.current
                 var profilePic by remember { mutableStateOf(activeLocalSession.profilePicUrl) }
                 var currentEmail by remember { mutableStateOf(activeLocalSession.email) }
                 var userPassword by remember { mutableStateOf(PASSWORD_HIDDEN) }
@@ -274,8 +276,9 @@ class ProfileActivity : NovaActivity() {
                                     editAction = { showChangeEmail.value = true }
                                 )
                                 if(showChangeEmail.value) {
-                                    var email by remember { mutableStateOf("") }
-                                    var emailError by remember { mutableStateOf(false) }
+                                    val email = remember { mutableStateOf("") }
+                                    val emailError = remember { mutableStateOf(false) }
+                                    val emailErrorMessage = remember { mutableStateOf("") }
                                     NovaAlertDialog(
                                         show = showChangeEmail,
                                         icon = Icons.Default.Email,
@@ -285,54 +288,54 @@ class ProfileActivity : NovaActivity() {
                                                 Text(
                                                     text = stringResource(please_enter_the_new_email_address)
                                                 )
-                                                OutlinedTextField(
-                                                    singleLine = true,
+                                                NovaTextField(
                                                     value = email,
                                                     onValueChange = {
-                                                        emailError = !isEmailValid(it) &&
-                                                                email.isNotEmpty()
-                                                        email = it
-                                                    },
-                                                    label = {
-                                                        Text(
-                                                            text = stringResource(R.string.email)
+                                                        emailError.value = !isEmailValid(it) &&
+                                                                email.value.isNotEmpty()
+                                                        checkToSetErrorMessage(
+                                                            errorMessage = emailErrorMessage,
+                                                            errorMessageKey = wrong_email,
+                                                            error = emailError
                                                         )
+                                                        email.value = it
                                                     },
-                                                    trailingIcon = {
-                                                        IconButton(
-                                                            onClick = { email = "" }
-                                                        ) {
-                                                            Icon(
-                                                                imageVector = Icons.Default.Clear,
-                                                                contentDescription = null
-                                                            )
-                                                        }
-                                                    },
-                                                    keyboardOptions = KeyboardOptions(
-                                                        keyboardType = KeyboardType.Email
-                                                    ),
+                                                    label = R.string.email,
+                                                    keyboardType = KeyboardType.Email,
+                                                    errorMessage = emailErrorMessage,
                                                     isError = emailError
                                                 )
                                             }
                                         },
                                         confirmAction = {
-                                            if(isEmailValid(email)) {
-                                                email = email.lowercase()
+                                            if(isEmailValid(email.value)) {
+                                                email.value = email.value.lowercase()
                                                 requester.sendRequest(
                                                     request = {
                                                         requester.changeEmail(
-                                                            newEmail = email
+                                                            newEmail = email.value
                                                         )
                                                     },
                                                     onSuccess = {
-                                                        localSessionsHelper.changeEmail(email)
-                                                        currentEmail = email
+                                                        localSessionsHelper.changeEmail(email.value)
+                                                        currentEmail = email.value
                                                         showChangeEmail.value = false
                                                     },
-                                                    onFailure = { emailError = true }
+                                                    onFailure = {
+                                                        setErrorMessage(
+                                                            errorMessage = emailErrorMessage,
+                                                            errorMessageKey = wrong_email,
+                                                            error = emailError
+                                                        )
+                                                    }
                                                 )
-                                            } else
-                                                emailError = true
+                                            } else {
+                                                setErrorMessage(
+                                                    errorMessage = emailErrorMessage,
+                                                    errorMessageKey = wrong_email,
+                                                    error = emailError
+                                                )
+                                            }
                                         }
                                     )
                                 }
@@ -348,8 +351,9 @@ class ProfileActivity : NovaActivity() {
                                     editAction = { showChangePassword.value = true }
                                 )
                                 if(showChangePassword.value) {
-                                    var password by remember { mutableStateOf("") }
-                                    var passwordError by remember { mutableStateOf(false) }
+                                    val password = remember { mutableStateOf("") }
+                                    val passwordErrorMessage = remember { mutableStateOf("") }
+                                    val passwordError = remember { mutableStateOf(false) }
                                     var isPasswordHidden by remember { mutableStateOf(true) }
                                     NovaAlertDialog(
                                         show = showChangePassword,
@@ -360,21 +364,25 @@ class ProfileActivity : NovaActivity() {
                                                 Text(
                                                     text = stringResource(R.string.please_enter_the_new_password)
                                                 )
-                                                OutlinedTextField(
-                                                    singleLine = true,
+                                                NovaTextField(
                                                     value = password,
                                                     visualTransformation = if (isPasswordHidden)
                                                         PasswordVisualTransformation()
                                                     else
-                                                        VisualTransformation.None ,
+                                                        VisualTransformation.None,
                                                     onValueChange = {
-                                                        passwordError = !isPasswordValid(it) &&
-                                                                password.isNotEmpty()
-                                                        password = it
+                                                        passwordError.value = !isPasswordValid(it) &&
+                                                                password.value.isNotEmpty()
+                                                        checkToSetErrorMessage(
+                                                            errorMessage = passwordErrorMessage,
+                                                            errorMessageKey = wrong_password,
+                                                            error = passwordError
+                                                        )
+                                                        password.value = it
                                                     },
                                                     leadingIcon = {
                                                         IconButton(
-                                                            onClick = { password = "" }
+                                                            onClick = { password.value = "" }
                                                         ) {
                                                             Icon(
                                                                 imageVector = Icons.Default.Clear,
@@ -382,11 +390,7 @@ class ProfileActivity : NovaActivity() {
                                                             )
                                                         }
                                                     },
-                                                    label = {
-                                                        Text(
-                                                            text = stringResource(R.string.password)
-                                                        )
-                                                    },
+                                                    label = R.string.password,
                                                     trailingIcon = {
                                                         IconButton(
                                                             onClick = { isPasswordHidden = !isPasswordHidden }
@@ -400,32 +404,42 @@ class ProfileActivity : NovaActivity() {
                                                             )
                                                         }
                                                     },
-                                                    keyboardOptions = KeyboardOptions(
-                                                        keyboardType = KeyboardType.Password
-                                                    ),
+                                                    keyboardType = KeyboardType.Password,
+                                                    errorMessage = passwordErrorMessage,
                                                     isError = passwordError
                                                 )
                                             }
                                         },
                                         confirmAction = {
-                                            if(isPasswordValid(password)) {
+                                            if(isPasswordValid(password.value)) {
                                                 requester.sendRequest(
                                                     request = {
                                                         requester.changePassword(
-                                                            newPassword = password
+                                                            newPassword = password.value
                                                         )
                                                     },
                                                     onSuccess = {
-                                                        localSessionsHelper.changePassword(password)
+                                                        localSessionsHelper.changePassword(password.value)
                                                         if(userPassword != PASSWORD_HIDDEN)
-                                                            userPassword = password
-                                                        activeLocalSession.password = password
+                                                            userPassword = password.value
+                                                        activeLocalSession.password = password.value
                                                         showChangePassword.value = false
                                                     },
-                                                    onFailure = { passwordError = true }
+                                                    onFailure = {
+                                                        setErrorMessage(
+                                                            errorMessage = passwordErrorMessage,
+                                                            errorMessageKey = wrong_password,
+                                                            error = passwordError
+                                                        )
+                                                    }
                                                 )
-                                            } else
-                                                passwordError = true
+                                            } else {
+                                                setErrorMessage(
+                                                    errorMessage = passwordErrorMessage,
+                                                    errorMessageKey = wrong_password,
+                                                    error = passwordError
+                                                )
+                                            }
                                         }
                                     )
                                 }
@@ -481,7 +495,7 @@ class ProfileActivity : NovaActivity() {
                                                     showChangeLanguage.value = false
                                                     navToSplashscreen()
                                                 },
-                                                onFailure = {showChangeLanguage.value = false }
+                                                onFailure = { showChangeLanguage.value = false }
                                             )
                                         }
                                     )
@@ -718,6 +732,7 @@ class ProfileActivity : NovaActivity() {
             dismissAction = { logout.value = false },
             confirmAction = {
                 localSessionsHelper.deleteAllSessions()
+                requester.setUserCredentials(null, null)
                 navToSplashscreen()
             }
         )
@@ -745,7 +760,10 @@ class ProfileActivity : NovaActivity() {
                 if(activeLocalSession.isHostSet) {
                     requester.sendRequest(
                         request = { requester.deleteAccount() },
-                        onSuccess = { deleteSuccessAction.invoke() },
+                        onSuccess = {
+                            requester.setUserCredentials(null, null)
+                            deleteSuccessAction.invoke()
+                        },
                         onFailure = { response ->
                             deleteAccount.value = false
                             snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))

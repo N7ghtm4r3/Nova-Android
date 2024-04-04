@@ -26,12 +26,15 @@
     <string name="approve">Approve</string>
     <string name="reject">Reject</string>
     <string name="reasons">Reasons</string>
+    <string name="wrong_reasons">The rejection reasons are not complete</string>
     <string name="tags">Tags</string>
     <string name="close">Close</string>
     <string name="description">Description</string>
+    <string name="wrong_description">Description is not valid</string>
     <string name="delete_project">Delete project?</string>
     <string name="delete_project_alert_message">If you confirm, the project will be deleted and the related data will no longer be available</string>
     <string name="release_version">Release version</string>
+    <string name="wrong_release_version">Release version is not valid</string>
     <string name="add">Add</string>
     <string name="note">Note</string>
     <string name="notes">Notes</string>
@@ -43,6 +46,7 @@
     <string name="name">Name</string>
     <string name="separate_emails_with_a_comma">Separate emails with a comma</string>
     <string name="mailing_list">Mailing list</string>
+    <string name="wrong_mailing_list">Wrong mailing list</string>
     <string name="project_members">Project members</string>
     <string name="leave_from_project">Leave from project?</string>
     <string name="leave_project_alert_message">If you confirm, you will not be more allowed to access to the related data</string>

@@ -30,7 +30,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOff
@@ -44,7 +43,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,7 +72,6 @@ import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.scan_to_join_in_a_project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.ui.activities.NovaActivity
-import com.tecknobit.nova.ui.activities.NovaActivity.ListFetcher
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
@@ -83,17 +80,18 @@ import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
+import com.tecknobit.nova.ui.components.NovaTextField
 import com.tecknobit.nova.ui.components.getFilePath
 import com.tecknobit.nova.ui.components.getProjectLogoUrl
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
-import com.tecknobit.novacore.InputValidator.isProjectNameValid
+import com.tecknobit.novacore.InputValidator.*
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
+import com.tecknobit.novacore.helpers.Requester.ListFetcher
 import com.tecknobit.novacore.records.User.AUTHORED_PROJECTS_KEY
 import com.tecknobit.novacore.records.User.PROJECTS_KEY
 import com.tecknobit.novacore.records.project.Project
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -144,8 +142,6 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
 
         }
 
-    private lateinit var refreshRoutine: CoroutineScope
-
     /**
      * On create method
      *
@@ -164,6 +160,7 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
                 displayAddProject = remember { mutableStateOf(false) }
                 scanOptions.setPrompt(LocalContext.current.getString(scan_to_join_in_a_project))
                 InitLauncher()
+                currentContext = LocalContext.current
                 refreshRoutine = rememberCoroutineScope()
                 refreshList()
                 Scaffold (
@@ -379,16 +376,16 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
     @Composable
     private fun AddProject() {
         val context = LocalContext.current
-        var projectName by remember { mutableStateOf("") }
-        var isError by remember { mutableStateOf(false) }
-        var errorMessage by remember { mutableStateOf("") }
+        var projectName = remember { mutableStateOf("") }
+        var isError = remember { mutableStateOf(false) }
+        var errorMessage = remember { mutableStateOf("") }
         // TODO: USE THE NOVA PROJECT LOGO AS DEFAULT IMAGE
         var projectLogo by remember { mutableStateOf("https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg") }
         var selectedLogo = File(projectLogo)
         val resetLayout = {
-            errorMessage = ""
-            projectName = ""
-            isError = false
+            errorMessage.value = ""
+            projectName.value = ""
+            isError.value = false
             projectLogo = "https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg"
             selectedLogo = File(projectLogo)
             displayAddProject.value = false
@@ -444,64 +441,52 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
                             )
                         }
                     }
-                    OutlinedTextField(
-                        singleLine = true,
+                    NovaTextField(
                         value = projectName,
                         onValueChange = {
-                            isError = !isProjectNameValid(it) && projectName.isNotEmpty()
-                            errorMessage = if(!isError)
-                                ""
-                            else
-                                context.getString(R.string.name_is_not_valid)
-                            projectName = it
-                        },
-                        label = {
-                            Text(
-                                text = stringResource(R.string.name)
+                            isError.value = !isProjectNameValid(it) && projectName.value.isNotEmpty()
+                            checkToSetErrorMessage(
+                                errorMessage = errorMessage,
+                                errorMessageKey = R.string.name_is_not_valid,
+                                error = isError
                             )
+                            projectName.value = it
                         },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { projectName = "" }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = null
-                                )
-                            }
-                        },
-                        supportingText = {
-                            if(errorMessage.isNotEmpty()) {
-                                Text(
-                                    text = errorMessage
-                                )
-                            }
-                        },
+                        label = R.string.name,
+                        errorMessage = errorMessage,
                         isError = isError
                     )
                 }
             },
             dismissAction = resetLayout,
             confirmAction = {
-                if(isProjectNameValid(projectName)) {
+                if(isProjectNameValid(projectName.value)) {
                     requester.sendRequest(
                         request = {
                             requester.addProject(
                                 logoPic = selectedLogo,
-                                projectName = projectName
+                                projectName = projectName.value
                             )
                         },
                         onSuccess = {
                             resetLayout()
                         },
                         onFailure = { response ->
-                            isError = true
-                            errorMessage = response.getString(RESPONSE_MESSAGE_KEY)
+                            // TODO: TO USE IN SOME WAY
+                            // response.getString(RESPONSE_MESSAGE_KEY)
+                            setErrorMessage(
+                                errorMessage = errorMessage,
+                                errorMessageKey = R.string.name_is_not_valid,
+                                error = isError
+                            )
                         }
                     )
                 } else {
-                    isError = true
-                    errorMessage = context.getString(R.string.name_is_not_valid)
+                    setErrorMessage(
+                        errorMessage = errorMessage,
+                        errorMessageKey = R.string.name_is_not_valid,
+                        error = isError
+                    )
                 }
             }
         )

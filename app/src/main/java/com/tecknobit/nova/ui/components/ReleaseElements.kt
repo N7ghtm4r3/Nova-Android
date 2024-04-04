@@ -20,16 +20,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Alpha
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Beta
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Latest
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedTag
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.theme.fromHexToColor
+import com.tecknobit.novacore.records.release.Release
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.*
+import com.tecknobit.novacore.records.release.events.ReleaseEvent
+import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent
+import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent.*
 
 /**
  * Function to create a badge for a [ReleaseStatus]
@@ -39,7 +36,7 @@ import com.tecknobit.nova.ui.theme.fromHexToColor
  */
 @Composable
 fun ReleaseStatusBadge(
-    releaseStatus: ReleaseStatus,
+    releaseStatus: Release.ReleaseStatus,
     paddingStart: Dp = 10.dp
 ) {
     OutlinedCard (
@@ -76,7 +73,7 @@ fun ReleaseStatusBadge(
  */
 @Composable
 fun ReleaseStatusBadge(
-    releaseStatus: ReleaseStatus,
+    releaseStatus: Release.ReleaseStatus,
     paddingStart: Dp = 10.dp,
     onClick: () -> Unit
 ) {
@@ -113,7 +110,7 @@ fun ReleaseStatusBadge(
  */
 @Composable
 private fun ReleaseStatusBadgeContent(
-    releaseStatus: ReleaseStatus
+    releaseStatus: Release.ReleaseStatus
 ) {
     Column (
         modifier = Modifier
@@ -137,7 +134,7 @@ private fun ReleaseStatusBadgeContent(
  *
  * @return the specific color as [Color]
  */
-fun ReleaseStatus.createColor(): Color {
+fun Release.ReleaseStatus.createColor(): Color {
     return fromHexToColor(color)
 }
 
@@ -149,7 +146,7 @@ fun ReleaseStatus.createColor(): Color {
  */
 @Composable
 fun ReleaseTagBadge(
-    tag: RejectedTag,
+    tag: com.tecknobit.novacore.records.release.events.RejectedTag,
     onClick: () -> Unit = {}
 ) {
     val modifier = Modifier
@@ -209,7 +206,7 @@ fun ReleaseTagBadge(
  */
 @Composable
 private fun ReleaseTagContent(
-    tag: ReleaseTag,
+    tag: ReleaseEvent.ReleaseTag,
     textColor: Color
 ) {
     Column (
@@ -237,7 +234,7 @@ private fun ReleaseTagContent(
  *
  * @return the specific color as [Color]
  */
-fun ReleaseTag.createColor(): Color {
+fun ReleaseEvent.ReleaseTag.createColor(): Color {
     return fromHexToColor(color)
 }
 

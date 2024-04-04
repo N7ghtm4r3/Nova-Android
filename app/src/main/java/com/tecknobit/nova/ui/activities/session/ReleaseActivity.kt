@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Comment
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Info
@@ -42,7 +41,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -59,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -89,29 +88,12 @@ import com.tecknobit.nova.R.string.promote_release_as_beta
 import com.tecknobit.nova.R.string.promote_release_as_latest
 import com.tecknobit.nova.R.string.reject
 import com.tecknobit.nova.R.string.tags
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ALLOWED_ASSETS_TYPE
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Alpha
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Latest
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Rejected
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.AssetUploadingEvent
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedReleaseEvent
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.RejectedTag
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Bug
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.Issue
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseEvent.ReleaseTag.LayoutChange
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.events.ReleaseStandardEvent
+import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.assetDownloader
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.NovaAlertDialog
+import com.tecknobit.nova.ui.components.NovaTextField
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.ReleaseTagBadge
 import com.tecknobit.nova.ui.components.createColor
@@ -127,6 +109,25 @@ import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
 import com.tecknobit.novacore.InputValidator.areRejectionReasonsValid
 import com.tecknobit.novacore.InputValidator.isTagCommentValid
+import com.tecknobit.novacore.records.project.Project
+import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
+import com.tecknobit.novacore.records.release.Release
+import com.tecknobit.novacore.records.release.Release.ALLOWED_ASSETS_TYPE
+import com.tecknobit.novacore.records.release.Release.RELEASE_KEY
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Alpha
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Approved
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Latest
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Rejected
+import com.tecknobit.novacore.records.release.events.AssetUploadingEvent
+import com.tecknobit.novacore.records.release.events.RejectedReleaseEvent
+import com.tecknobit.novacore.records.release.events.RejectedTag
+import com.tecknobit.novacore.records.release.events.ReleaseEvent
+import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag
+import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Bug
+import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Issue
+import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.LayoutChange
+import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent
 
 /**
  * The {@code ReleaseActivity} activity is used to manage and display the [Release] details
@@ -135,7 +136,7 @@ import com.tecknobit.novacore.InputValidator.isTagCommentValid
  * @see ComponentActivity
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeApi::class)
-class ReleaseActivity : ComponentActivity() {
+class ReleaseActivity : NovaActivity() {
 
     /**
      * **release** -> the release displayed
@@ -171,6 +172,7 @@ class ReleaseActivity : ComponentActivity() {
                 intent.getSerializableExtra(PROJECT_KEY, Project::class.java)!!
             else
                 intent.getSerializableExtra(PROJECT_KEY)!! as Project
+            currentContext = LocalContext.current
             navBackIntent = Intent(this@ReleaseActivity, ProjectActivity::class.java)
             navBackIntent!!.putExtra(PROJECT_KEY, sourceProject)
             val releaseCurrentStatus = release.value.status
@@ -423,11 +425,13 @@ class ReleaseActivity : ComponentActivity() {
                                                     val showCommentAsset = remember { mutableStateOf(false) }
                                                     val isApproved = remember { mutableStateOf(true) }
                                                     val reasons = remember { mutableStateOf("") }
+                                                    val reasonsErrorMessage = remember { mutableStateOf("") }
                                                     val isError = remember { mutableStateOf(false) }
                                                     val closeAction = {
                                                         isApproved.value = true
                                                         reasons.value = ""
                                                         isError.value = false
+                                                        reasonsErrorMessage.value = ""
                                                         showCommentAsset.value = false
                                                     }
                                                     NovaAlertDialog(
@@ -438,7 +442,8 @@ class ReleaseActivity : ComponentActivity() {
                                                         message = commentReleaseMessage(
                                                             isApproved = isApproved,
                                                             reasons = reasons,
-                                                            isError = isError
+                                                            isError = isError,
+                                                            reasonsErrorMessage = reasonsErrorMessage
                                                         ),
                                                         dismissAction = closeAction,
                                                         confirmAction = {
@@ -449,8 +454,13 @@ class ReleaseActivity : ComponentActivity() {
                                                                 if(areRejectionReasonsValid(reasons.value)) {
                                                                     // TODO: MAKE THE REQUEST THEN
                                                                     closeAction()
-                                                                } else
-                                                                    isError.value = true
+                                                                } else {
+                                                                    checkToSetErrorMessage(
+                                                                        errorMessage = reasonsErrorMessage,
+                                                                        errorMessageKey = string.wrong_reasons,
+                                                                        error = isError
+                                                                    )
+                                                                }
                                                             }
                                                         }
                                                     )
@@ -461,8 +471,10 @@ class ReleaseActivity : ComponentActivity() {
                                                     ) {
                                                         Button(
                                                             onClick = {
-                                                                event.assetUrl.forEach { url ->
-                                                                    assetDownloader.downloadAsset(url)
+                                                                event.assetsUploaded.forEach { asset ->
+                                                                    assetDownloader.downloadAsset(
+                                                                        asset.url
+                                                                    )
                                                                 }
                                                             }
                                                         ) {
@@ -548,11 +560,13 @@ class ReleaseActivity : ComponentActivity() {
      * @param isApproved: state to indicate whether the release is approved
      * @param reasons: the rejection reasons
      * @param isError: state to indicate whether an error occurred
+     * @param reasonsErrorMessage: message to display when the rejection reasons are not valid
      */
     private fun commentReleaseMessage(
         isApproved: MutableState<Boolean>,
         reasons: MutableState<String>,
-        isError: MutableState<Boolean>
+        isError: MutableState<Boolean>,
+        reasonsErrorMessage: MutableState<String>,
     ) = @Composable {
         Column (
             modifier = Modifier
@@ -623,28 +637,20 @@ class ReleaseActivity : ComponentActivity() {
                 }
             }
             if(!isApproved.value) {
-                OutlinedTextField(
-                    value = reasons.value,
+                NovaTextField(
+                    value = reasons,
                     onValueChange = {
                         isError.value = !areRejectionReasonsValid(it) && reasons.value.isNotEmpty()
+                        checkToSetErrorMessage(
+                            errorMessage = reasonsErrorMessage,
+                            errorMessageKey = string.wrong_reasons,
+                            error = isError
+                        )
                         reasons.value = it
                     },
-                    label = {
-                        Text(
-                            text = getString(string.reasons)
-                        )
-                    },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = { reasons.value = "" }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    isError = isError.value
+                    label = string.reasons,
+                    errorMessage = reasonsErrorMessage,
+                    isError = isError
                 )
                 Text(
                     modifier = Modifier
@@ -749,6 +755,7 @@ class ReleaseActivity : ComponentActivity() {
                     null
                 val description = remember { mutableStateOf("") }
                 val isError = remember { mutableStateOf(false) }
+                val descriptionErrorMessage = remember { mutableStateOf("") }
                 AlertDialog(
                     icon = {
                         Icon(
@@ -777,29 +784,21 @@ class ReleaseActivity : ComponentActivity() {
                                     textAlign = TextAlign.Justify
                                 )
                             } else {
-                                OutlinedTextField(
-                                    value = description.value,
+                                NovaTextField(
+                                    value = description,
                                     onValueChange = {
                                         isError.value = !isTagCommentValid(it) &&
                                                 description.value.isNotEmpty()
+                                        checkToSetErrorMessage(
+                                            errorMessage = descriptionErrorMessage,
+                                            errorMessageKey = string.wrong_description,
+                                            error = isError
+                                        )
                                         description.value = it
                                     },
-                                    label = {
-                                        Text(
-                                            text = stringResource(string.description)
-                                        )
-                                    },
-                                    trailingIcon = {
-                                        IconButton(
-                                            onClick = { description.value = "" }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = null
-                                            )
-                                        }
-                                    },
-                                    isError = isError.value
+                                    label = string.description,
+                                    errorMessage = descriptionErrorMessage,
+                                    isError = isError
                                 )
                             }
                         }
@@ -812,8 +811,13 @@ class ReleaseActivity : ComponentActivity() {
                                     if(isTagCommentValid(description.value)) {
                                         // TODO: MAKE REQUEST THEN
                                         show.value = false
-                                    } else
-                                        isError.value = true
+                                    } else {
+                                        checkToSetErrorMessage(
+                                            errorMessage = descriptionErrorMessage,
+                                            errorMessageKey = string.wrong_description,
+                                            error = isError
+                                        )
+                                    }
                                 } else
                                     show.value = false
                             }

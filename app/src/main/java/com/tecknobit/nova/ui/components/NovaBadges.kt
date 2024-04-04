@@ -18,12 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Alpha
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Beta
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role.Customer
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.novacore.records.User
+import com.tecknobit.novacore.records.User.Role
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Alpha
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Beta
 
 /**
  * **customerColor** -> color for the [Role.Customer]
@@ -85,51 +84,6 @@ fun UserRoleBadge(
     }
 }
 
-// TODO: TO REPLACE WITH THE OFFICIAL
-@Composable
-fun UserRoleBadge(
-    background: Color = gray_background,
-    role: Role
-) {
-    val badgeColor = if(role == Customer)
-        customerColor
-    else
-        vendorColor
-    OutlinedCard (
-        modifier = Modifier
-            .requiredWidthIn(
-                min = 65.dp,
-                max = 100.dp
-            )
-            .wrapContentWidth()
-            .height(25.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = background
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = badgeColor
-        )
-    ) {
-        Column (
-            modifier = Modifier
-                .padding(
-                    start = 10.dp,
-                    end = 10.dp
-                )
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = role.name,
-                fontWeight = FontWeight.Bold,
-                color = badgeColor
-            )
-        }
-    }
-}
-
 /**
  * Function to create a badge for a [Role]
  *
@@ -139,11 +93,11 @@ fun UserRoleBadge(
  */
 @Composable
 fun UserRoleBadge(
-    role: Role,
+    role: User.Role,
     selected: MutableState<Boolean>,
     onClick: () -> Unit
 ) {
-    val badgeColor = if(role == Customer)
+    val badgeColor = if(role == User.Role.Customer)
         customerColor
     else
         vendorColor

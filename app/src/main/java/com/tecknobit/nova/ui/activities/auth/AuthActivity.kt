@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
@@ -34,16 +33,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,11 +54,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.utils.AndroidRequester
-import com.tecknobit.nova.helpers.utils.ui.SnackbarLauncher
+import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionsHelper
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
+import com.tecknobit.nova.ui.components.NovaTextField
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
@@ -92,13 +88,9 @@ import java.util.UUID
  *
  * @author N7ghtm4r3 - Tecknobit
  * @see ComponentActivity
+ * @see NovaActivity
  */
-class AuthActivity : ComponentActivity() {
-
-    /**
-     * **snackbarLauncher** -> the launcher used to display the [Snackbar]
-     */
-    private lateinit var snackbarLauncher: SnackbarLauncher
+class AuthActivity : NovaActivity() {
 
     /**
      * **name** -> the state used to store the name of the user
@@ -111,6 +103,11 @@ class AuthActivity : ComponentActivity() {
     private lateinit var nameError: MutableState<Boolean>
 
     /**
+     * **nameErrorMessage** -> message to display when the name is not valid
+     */
+    private lateinit var nameErrorMessage: MutableState<String>
+
+    /**
      * **surname** -> the state used to store the surname of the user
      */
     private lateinit var surname: MutableState<String>
@@ -119,6 +116,11 @@ class AuthActivity : ComponentActivity() {
      * **surnameError** -> whether the surname inserted is not valid
      */
     private lateinit var surnameError: MutableState<Boolean>
+
+    /**
+     * **surnameErrorMessage** -> message to display when the surname is not valid
+     */
+    private lateinit var surnameErrorMessage: MutableState<String>
 
     /**
      * **email** -> the state used to store the email of the user
@@ -131,6 +133,11 @@ class AuthActivity : ComponentActivity() {
     private lateinit var emailError: MutableState<Boolean>
 
     /**
+     * **emailErrorMessage** -> message to display when the email is not valid
+     */
+    private lateinit var emailErrorMessage: MutableState<String>
+
+    /**
      * **password** -> the state used to store the password of the user
      */
     private lateinit var password: MutableState<String>
@@ -139,6 +146,11 @@ class AuthActivity : ComponentActivity() {
      * **passwordError** -> whether the password inserted is not valid
      */
     private lateinit var passwordError: MutableState<Boolean>
+
+    /**
+     * **passwordErrorMessage** -> message to display when the password is not valid
+     */
+    private lateinit var passwordErrorMessage: MutableState<String>
 
     /**
      * **isPasswordHidden** -> whether the password is not displayed but hide -> ****
@@ -169,36 +181,48 @@ class AuthActivity : ComponentActivity() {
             language = "en"
         setContent {
             NovaTheme {
-                snackbarLauncher = SnackbarLauncher(LocalContext.current)
-                snackbarLauncher.InitSnackbarInstances()
+                InitLauncher()
+                currentContext = LocalContext.current
                 val pagerState = rememberPagerState(pageCount = { 2 })
-                var host by remember { mutableStateOf("") }
+                val host = remember { mutableStateOf("") }
                 val hostError = remember { mutableStateOf(false) }
-                var serverSecret by remember { mutableStateOf("") }
+                val hostErrorMessage = remember { mutableStateOf("") }
+                val serverSecret = remember { mutableStateOf("") }
                 val serverSecretError = remember { mutableStateOf(false) }
+                val serverSecretErrorMessage = remember { mutableStateOf("") }
                 name = remember { mutableStateOf("") }
                 nameError = remember { mutableStateOf(false) }
+                nameErrorMessage = remember { mutableStateOf("") }
                 surname = remember { mutableStateOf("") }
                 surnameError = remember { mutableStateOf(false) }
+                surnameErrorMessage = remember { mutableStateOf("") }
                 email = remember { mutableStateOf("") }
                 emailError = remember { mutableStateOf(false) }
+                emailErrorMessage = remember { mutableStateOf("") }
                 password = remember { mutableStateOf("") }
                 passwordError = remember { mutableStateOf(false) }
+                passwordErrorMessage = remember { mutableStateOf("") }
                 isPasswordHidden = remember { mutableStateOf(true) }
                 isRegisterOpe = remember { mutableStateOf(true) }
                 val clearInputs = {
-                    host = ""
+                    host.value = ""
                     hostError.value = false
-                    serverSecret = ""
+                    hostErrorMessage.value = ""
+                    serverSecret.value = ""
                     serverSecretError.value = false
+                    serverSecretErrorMessage.value = ""
                     name.value = ""
                     nameError.value = false
+                    nameErrorMessage.value = ""
                     surname.value = ""
                     surnameError.value = false
+                    surnameErrorMessage.value = ""
                     email.value = ""
                     emailError.value = false
+                    emailErrorMessage.value = ""
                     password.value = ""
                     passwordError.value = false
+                    passwordErrorMessage.value = ""
                 }
                 Scaffold (
                     snackbarHost = { snackbarLauncher.CreateSnackbarHost() }
@@ -212,82 +236,61 @@ class AuthActivity : ComponentActivity() {
                             UIContainer(
                                 subtitle = R.string.authenticate_on_a_server,
                                 content = {
-                                    OutlinedTextField(
+                                    NovaTextField(
                                         modifier = Modifier
                                             .width(275.dp),
-                                        singleLine = true,
                                         value = host,
                                         onValueChange = {
-                                            hostError.value = !isHostValid(it) && host.isNotEmpty()
-                                            host = it
-                                        },
-                                        label = {
-                                            Text(
-                                                text = stringResource(R.string.host)
+                                            hostError.value = !isHostValid(it) && host.value.isNotEmpty()
+                                            checkToSetErrorMessage(
+                                                errorMessage = hostErrorMessage,
+                                                errorMessageKey = R.string.wrong_host_address,
+                                                error = hostError
                                             )
+                                            host.value = it
                                         },
-                                        trailingIcon = {
-                                            IconButton(
-                                                onClick = { host = "" }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Clear,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        },
-                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                        isError = hostError.value
+                                        label = R.string.host,
+                                        imeAction = ImeAction.Next,
+                                        errorMessage = hostErrorMessage,
+                                        isError = hostError
                                     )
                                     if(isRegisterOpe.value) {
-                                        OutlinedTextField(
+                                        NovaTextField(
                                             modifier = Modifier
-                                                .width(275.dp)
-                                                .padding(
-                                                    top = 10.dp,
-                                                ),
-                                            singleLine = true,
+                                                .width(275.dp),
                                             value = serverSecret,
                                             onValueChange = {
                                                 serverSecretError.value = !isServerSecretValid(it)
-                                                        && serverSecret.isNotEmpty()
-                                                serverSecret = it
-                                            },
-                                            label = {
-                                                Text(
-                                                    text = stringResource(R.string.server_secret)
+                                                        && serverSecret.value.isNotEmpty()
+                                                checkToSetErrorMessage(
+                                                    errorMessage = serverSecretErrorMessage,
+                                                    errorMessageKey = R.string.wrong_server_secret,
+                                                    error = serverSecretError
                                                 )
+                                                host.value = it
                                             },
-                                            trailingIcon = {
-                                                IconButton(
-                                                    onClick = { serverSecret = "" }
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Clear,
-                                                        contentDescription = null
-                                                    )
-                                                }
-                                            },
-                                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                                            isError = serverSecretError.value
+                                            label = R.string.server_secret,
+                                            imeAction = ImeAction.Next,
+                                            errorMessage = serverSecretErrorMessage,
+                                            isError = serverSecretError
                                         )
                                         Form()
                                     } else
                                         EmailPasswordForm()
                                     AuthButton(
                                         authAction = {
-                                            if(isHostValid(host)) {
+                                            if(isHostValid(host.value)) {
                                                 if(isRegisterOpe.value) {
-                                                    if(isServerSecretValid(serverSecret)) {
+                                                    if(isServerSecretValid(serverSecret.value)) {
                                                         execAuth {
                                                             email.value = email.value.lowercase()
                                                             requester = AndroidRequester(
-                                                                host = host
+                                                                host = host.value
                                                             )
                                                             requester.sendRequest(
                                                                 request = {
                                                                     requester.signUp(
-                                                                        serverSecret = serverSecret,
+                                                                        serverSecret = serverSecret.value,
                                                                         name = name.value,
                                                                         surname = surname.value,
                                                                         email = email.value,
@@ -296,19 +299,25 @@ class AuthActivity : ComponentActivity() {
                                                                     )
                                                                 },
                                                                 onSuccess = { response ->
+                                                                    val id = response.getString(IDENTIFIER_KEY)
+                                                                    val token = response.getString(TOKEN_KEY)
                                                                     localSessionsHelper.insertSession(
-                                                                        response.getString(IDENTIFIER_KEY),
-                                                                        response.getString(TOKEN_KEY),
+                                                                        id,
+                                                                        token,
                                                                         response.getString(PROFILE_PIC_URL_KEY),
                                                                         name.value,
                                                                         surname.value,
                                                                         email.value,
                                                                         password.value,
-                                                                        host,
+                                                                        host.value,
                                                                         Vendor,
                                                                         language
                                                                     )
                                                                     activeLocalSession = localSessionsHelper.activeSession
+                                                                    requester.setUserCredentials(
+                                                                        userId = id,
+                                                                        userToken = token
+                                                                    )
                                                                     startActivity(
                                                                         Intent(this@AuthActivity,
                                                                             MainActivity::class.java)
@@ -332,7 +341,7 @@ class AuthActivity : ComponentActivity() {
                                                         if(isPasswordValid(password.value)) {
                                                             email.value = email.value.lowercase()
                                                             requester = AndroidRequester(
-                                                                host = host
+                                                                host = host.value
                                                             )
                                                             requester.sendRequest(
                                                                 request = {
@@ -342,19 +351,25 @@ class AuthActivity : ComponentActivity() {
                                                                     )
                                                                 },
                                                                 onSuccess = { response ->
+                                                                    val id = response.getString(IDENTIFIER_KEY)
+                                                                    val token = response.getString(TOKEN_KEY)
                                                                     localSessionsHelper.insertSession(
-                                                                        response.getString(IDENTIFIER_KEY),
-                                                                        response.getString(TOKEN_KEY),
+                                                                        id,
+                                                                        token,
                                                                         response.getString(PROFILE_PIC_URL_KEY),
                                                                         response.getString(NAME_KEY),
                                                                         response.getString(SURNAME_KEY),
                                                                         email.value,
                                                                         password.value,
-                                                                        host,
+                                                                        host.value,
                                                                         Role.valueOf(response.getString(ROLE_KEY)),
                                                                         language
                                                                     )
                                                                     activeLocalSession = localSessionsHelper.activeSession
+                                                                    requester.setUserCredentials(
+                                                                        userId = id,
+                                                                        userToken = token
+                                                                    )
                                                                     startActivity(
                                                                         Intent(this@AuthActivity,
                                                                             MainActivity::class.java)
@@ -530,7 +545,7 @@ class AuthActivity : ComponentActivity() {
             Card (
                 modifier = Modifier
                     .padding(
-                        top = 75.dp
+                        top = 50.dp
                     ),
                 shape = if(subtitle == R.string.authenticate_on_a_server) {
                     RoundedCornerShape(
@@ -570,65 +585,41 @@ class AuthActivity : ComponentActivity() {
      */
     @Composable
     private fun Form() {
-        OutlinedTextField(
+        NovaTextField(
             modifier = Modifier
-                .width(275.dp)
-                .padding(
-                    top = 10.dp,
-                ),
-            singleLine = true,
-            value = name.value,
+                .width(275.dp),
+            value = surname,
             onValueChange = {
                 nameError.value = !isNameValid(it) && name.value.isNotEmpty()
+                checkToSetErrorMessage(
+                    errorMessage = nameErrorMessage,
+                    errorMessageKey = R.string.name_is_not_valid,
+                    error = nameError
+                )
                 name.value = it
             },
-            label = {
-                Text(
-                    text = stringResource(R.string.name)
-                )
-            },
-            trailingIcon = {
-                IconButton(
-                    onClick = { name.value = "" }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = null
-                    )
-                }
-            },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            isError = nameError.value
+            label = R.string.name,
+            imeAction = ImeAction.Next,
+            errorMessage = nameErrorMessage,
+            isError = nameError
         )
-        OutlinedTextField(
+        NovaTextField(
             modifier = Modifier
-                .width(275.dp)
-                .padding(
-                    top = 10.dp,
-                ),
-            singleLine = true,
-            value = surname.value,
+                .width(275.dp),
+            value = surname,
             onValueChange = {
                 surnameError.value = !isSurnameValid(it) && surname.value.isNotEmpty()
+                checkToSetErrorMessage(
+                    errorMessage = surnameErrorMessage,
+                    errorMessageKey = R.string.wrong_surname,
+                    error = surnameError
+                )
                 surname.value = it
             },
-            label = {
-                Text(
-                    text = stringResource(R.string.surname)
-                )
-            },
-            trailingIcon = {
-                IconButton(
-                    onClick = { surname.value = "" }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = null
-                    )
-                }
-            },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            isError = surnameError.value
+            label = R.string.surname,
+            imeAction = ImeAction.Next,
+            errorMessage = emailErrorMessage,
+            isError = surnameError
         )
         EmailPasswordForm()
     }
@@ -640,53 +631,40 @@ class AuthActivity : ComponentActivity() {
      */
     @Composable
     private fun EmailPasswordForm() {
-        OutlinedTextField(
+        NovaTextField(
             modifier = Modifier
-                .width(275.dp)
-                .padding(
-                    top = 10.dp,
-                ),
-            singleLine = true,
-            value = email.value,
+                .width(275.dp),
+            value = email,
             onValueChange = {
                 emailError.value = !isEmailValid(it) && email.value.isNotEmpty()
+                checkToSetErrorMessage(
+                    errorMessage = emailErrorMessage,
+                    errorMessageKey = R.string.wrong_email,
+                    error = emailError
+                )
                 email.value = it
             },
-            label = {
-                Text(
-                    text = stringResource(R.string.email)
-                )
-            },
-            trailingIcon = {
-                IconButton(
-                    onClick = { email.value = "" }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = null
-                    )
-                }
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            ),
-            isError = emailError.value
+            label = R.string.email,
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next,
+            errorMessage = emailErrorMessage,
+            isError = emailError
         )
-        OutlinedTextField(
+        NovaTextField(
             modifier = Modifier
-                .width(275.dp)
-                .padding(
-                    top = 10.dp,
-                ),
-            singleLine = true,
-            value = password.value,
+                .width(275.dp),
+            value = password,
             visualTransformation = if (isPasswordHidden.value)
                 PasswordVisualTransformation()
             else
                 VisualTransformation.None,
             onValueChange = {
                 passwordError.value = !isPasswordValid(it) && password.value.isNotEmpty()
+                checkToSetErrorMessage(
+                    errorMessage = passwordErrorMessage,
+                    errorMessageKey = R.string.wrong_password,
+                    error = passwordError
+                )
                 password.value = it
             },
             leadingIcon = {
@@ -699,11 +677,7 @@ class AuthActivity : ComponentActivity() {
                     )
                 }
             },
-            label = {
-                Text(
-                    text = stringResource(R.string.password)
-                )
-            },
+            label = R.string.password,
             trailingIcon = {
                 IconButton(
                     onClick = { isPasswordHidden.value = !isPasswordHidden.value }
@@ -717,11 +691,10 @@ class AuthActivity : ComponentActivity() {
                     )
                 }
             },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
-            ),
-            isError = passwordError.value
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done,
+            errorMessage = passwordErrorMessage,
+            isError = passwordError
         )
     }
 
@@ -739,7 +712,7 @@ class AuthActivity : ComponentActivity() {
         Button(
             modifier = Modifier
                 .padding(
-                    top = 15.dp
+                    top = 5.dp
                 )
                 .width(280.dp)
                 .height(60.dp),

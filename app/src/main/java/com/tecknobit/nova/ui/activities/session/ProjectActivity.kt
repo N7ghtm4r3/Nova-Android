@@ -26,13 +26,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.NewReleases
@@ -56,7 +54,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -67,6 +64,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,6 +77,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -95,17 +94,15 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.meetup.twain.MarkdownEditor
 import com.meetup.twain.MarkdownText
 import com.tecknobit.nova.R
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.RELEASE_KEY
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.release.Release.ReleaseStatus.Approved
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role.Customer
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User.Role.Vendor
+import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
-import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
+import com.tecknobit.nova.ui.components.NovaTextField
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.UserRoleBadge
 import com.tecknobit.nova.ui.theme.NovaTheme
@@ -116,7 +113,17 @@ import com.tecknobit.nova.ui.theme.thinFontFamily
 import com.tecknobit.novacore.InputValidator.areReleaseNotesValid
 import com.tecknobit.novacore.InputValidator.isMailingListValid
 import com.tecknobit.novacore.InputValidator.isReleaseVersionValid
+import com.tecknobit.novacore.helpers.Requester
+import com.tecknobit.novacore.helpers.Requester.ItemFetcher
+import com.tecknobit.novacore.records.User.Role.Customer
+import com.tecknobit.novacore.records.User.Role.Vendor
+import com.tecknobit.novacore.records.project.Project
+import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
+import com.tecknobit.novacore.records.release.Release.RELEASE_KEY
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Approved
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.Random
@@ -126,9 +133,12 @@ import java.util.Random
  *
  * @author N7ghtm4r3 - Tecknobit
  * @see ComponentActivity
+ * @see NovaActivity
+ * @see ItemFetcher
+ *
  */
 @OptIn(ExperimentalMaterial3Api::class)
-class ProjectActivity : ComponentActivity() {
+class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
 
     /**
      * **project** -> the project displayed
@@ -178,16 +188,19 @@ class ProjectActivity : ComponentActivity() {
                         mutableStateOf(projectFromExtra!!)
                     else
                     // TODO: MAKE THE REQUEST OR CHECK HOW TO AVOID A REQUEST
-                        mutableStateOf(Project("Glider", "1.0.0"))
+                        mutableStateOf(Project())
                 } else {
                     projectFromExtra = intent.getSerializableExtra(PROJECT_KEY) as Project?
                     if(projectFromExtra != null)
                         mutableStateOf(projectFromExtra!!)
                     else
                     // TODO: MAKE THE REQUEST OR CHECK HOW TO AVOID A REQUEST
-                        mutableStateOf(Project("Glider", "1.0.0"))
+                        mutableStateOf(Project())
                 }
             }
+            currentContext = LocalContext.current
+            refreshRoutine = rememberCoroutineScope()
+            refreshItem()
             // TODO: MAKE THE REAL WORKFLOW TO GET IF THE USER IS OR NOT THE PROJECT AUTHOR
             isProjectAuthor = Random().nextBoolean()
             val showWorkOnProject = remember { mutableStateOf(false) }
@@ -234,7 +247,7 @@ class ProjectActivity : ComponentActivity() {
                                 }
                             },
                             actions = {
-                                if(user.isVendor) {
+                                if(activeLocalSession.isVendor) {
                                     IconButton(
                                         onClick = { displayAddMembers.value = true }
                                     ) {
@@ -432,7 +445,7 @@ class ProjectActivity : ComponentActivity() {
                                                         top = 5.dp
                                                     )
                                                     .fillMaxWidth(),
-                                                markdown = release.releaseNotes.content,
+                                                markdown = release.releaseNotes,
                                                 fontSize = 16.sp
                                             )
                                         }
@@ -465,11 +478,13 @@ class ProjectActivity : ComponentActivity() {
     private fun CreateQrcode() {
         val mailingList = remember { mutableStateOf("") }
         val mailingListIsError = remember { mutableStateOf(false) }
+        val mailingListErrorMessage = remember { mutableStateOf("") }
         var generateJoinCode by remember { mutableStateOf(true) }
         var displayQrcode by remember { mutableStateOf(false) }
         val resetLayout = {
             mailingList.value = ""
             mailingListIsError.value = false
+            mailingListErrorMessage.value = ""
             generateJoinCode = true
             displayQrcode = false
             displayAddMembers.value = false
@@ -547,13 +562,19 @@ class ProjectActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        OutlinedTextField(
+                        NovaTextField(
                             modifier = Modifier
                                 .width(240.dp),
-                            value = mailingList.value,
+                            singleLine = false,
+                            value = mailingList,
                             onValueChange = {
                                 mailingListIsError.value = !isMailingListValid(it) &&
                                         mailingList.value.isNotEmpty()
+                                checkToSetErrorMessage(
+                                    errorMessage = mailingListErrorMessage,
+                                    errorMessageKey = R.string.wrong_mailing_list,
+                                    error = mailingListIsError
+                                )
                                 mailingList.value = it
                             },
                             placeholder = {
@@ -562,25 +583,10 @@ class ProjectActivity : ComponentActivity() {
                                     fontSize = 14.sp
                                 )
                             },
-                            label = {
-                                Text(
-                                    text = stringResource(R.string.mailing_list)
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = { mailingList.value = "" }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Clear,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            isError = mailingListIsError.value,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email
-                            )
+                            label = R.string.mailing_list,
+                            keyboardType = KeyboardType.Email,
+                            errorMessage = mailingListErrorMessage,
+                            isError = mailingListIsError
                         )
                         Row (
                             modifier = Modifier
@@ -627,15 +633,16 @@ class ProjectActivity : ComponentActivity() {
     @SuppressLint("UnrememberedMutableState")
     @Composable
     private fun AddRelease() {
-        var releaseVersion by remember { mutableStateOf("") }
-        var releaseVersionError by remember { mutableStateOf(false) }
+        var releaseVersion = remember { mutableStateOf("") }
+        var releaseVersionError = remember { mutableStateOf(false) }
+        var releaseVersionErrorMessage = remember { mutableStateOf("") }
         val releaseNotes = rememberSaveable(stateSaver = TextFieldValue.Saver) {
             mutableStateOf(TextFieldValue(""))
         }
         var releaseNotesError by remember { mutableStateOf(false) }
         val resetLayout = {
-            releaseVersion = ""
-            releaseVersionError = false
+            releaseVersion.value = ""
+            releaseVersionError.value = false
             releaseNotes.value = TextFieldValue("")
             releaseNotesError = false
             displayAddRelease.value = false
@@ -649,28 +656,20 @@ class ProjectActivity : ComponentActivity() {
                 Column (
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    OutlinedTextField(
-                        singleLine = true,
+                    NovaTextField(
                         value = releaseVersion,
                         onValueChange = {
-                            releaseVersionError = !isReleaseVersionValid(it) && releaseVersion.isNotEmpty()
-                            releaseVersion = it
-                        },
-                        label = {
-                            Text(
-                                text = stringResource(R.string.release_version)
+                            releaseVersionError.value = !isReleaseVersionValid(it) &&
+                                    releaseVersion.value.isNotEmpty()
+                            checkToSetErrorMessage(
+                                errorMessage = releaseVersionErrorMessage,
+                                errorMessageKey = R.string.wrong_release_version,
+                                error = releaseVersionError
                             )
+                            releaseVersion.value = it
                         },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { releaseVersion = "" }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = null
-                                )
-                            }
-                        },
+                        label = R.string.release_version,
+                        errorMessage = releaseVersionErrorMessage,
                         isError = releaseVersionError
                     )
                     Text(
@@ -715,18 +714,19 @@ class ProjectActivity : ComponentActivity() {
             },
             dismissAction = { resetLayout() },
             confirmAction = {
-                if(isReleaseVersionValid(releaseVersion)) {
+                if(isReleaseVersionValid(releaseVersion.value)) {
                     if(areReleaseNotesValid(releaseNotes.value.text)) {
-                        // TODO: MOVE THIS CHECK ON SERVER
-                        releaseVersion = releaseVersion.removePrefix("v.")
-                        if(!releaseVersion.startsWith(" "))
-                            releaseVersion = " $releaseVersion"
                         // TODO: MAKE THE REQUEST THEN
                         resetLayout()
                     } else
                         releaseNotesError = true
-                } else
-                    releaseVersionError = true
+                } else {
+                    checkToSetErrorMessage(
+                        errorMessage = releaseVersionErrorMessage,
+                        errorMessageKey = R.string.wrong_release_version,
+                        error = releaseVersionError
+                    )
+                }
             }
         )
     }
@@ -748,7 +748,7 @@ class ProjectActivity : ComponentActivity() {
                 LazyColumn {
                     items(
                         key = { member -> member.id},
-                        items = project.value.members
+                        items = project.value.projectMembers
                     ) { member ->
                         ListItem(
                             leadingContent = { Logo(url = member.profilePicUrl) },
@@ -777,7 +777,7 @@ class ProjectActivity : ComponentActivity() {
                                 )
                             },
                             trailingContent = {
-                                if(isProjectAuthor && member.id != user.id) {
+                                if(isProjectAuthor && member.id != activeLocalSession.id) {
                                     IconButton(
                                         onClick = {
                                             /*TODO MAKE THE REQUEST THEN*/
@@ -874,6 +874,62 @@ class ProjectActivity : ComponentActivity() {
             showProgress = false
             BitmapPainter(currentBitmap.asImageBitmap())
         }
+    }
+
+    override fun refreshItem() {
+        refreshRoutine.launch {
+            while (continueToFetch(this@ProjectActivity)) {
+                requester.sendRequest(
+                    request = {
+                        requester.getProject(
+                            projectId = project.value.id
+                        )
+                    },
+                    onSuccess = { response ->
+                        project.value = Project(response.jsonObjectSource)
+                    },
+                    onFailure = { response ->
+                        snackbarLauncher.showSnack(response.getString(Requester.RESPONSE_MESSAGE_KEY))
+                    },
+                    onConnectionError = { response ->
+                        snackbarLauncher.showSnack(response.getString(Requester.RESPONSE_MESSAGE_KEY))
+                        refreshRoutine.cancel()
+                    }
+                )
+                delay(1000L)
+            }
+        }
+    }
+
+    /**
+     * Called after {@link #onRestoreInstanceState}, {@link #onRestart}, or {@link #onPause}. This
+     * is usually a hint for your activity to start interacting with the user, which is a good
+     * indicator that the activity became active and ready to receive input. This sometimes could
+     * also be a transit state toward another resting state. For instance, an activity may be
+     * relaunched to {@link #onPause} due to configuration changes and the activity was visible,
+     * but wasn’t the top-most activity of an activity task. {@link #onResume} is guaranteed to be
+     * called before {@link #onPause} in this case which honors the activity lifecycle policy and
+     * the activity eventually rests in {@link #onPause}.
+     *
+     * <p>On platform versions prior to {@link android.os.Build.VERSION_CODES#Q} this is also a good
+     * place to try to open exclusive-access devices or to get access to singleton resources.
+     * Starting  with {@link android.os.Build.VERSION_CODES#Q} there can be multiple resumed
+     * activities in the system simultaneously, so {@link #onTopResumedActivityChanged(boolean)}
+     * should be used for that purpose instead.
+     *
+     * <p><em>Derived classes must call through to the super class's
+     * implementation of this method.  If they do not, an exception will be
+     * thrown.</em></p>
+     *
+     * @see #onRestoreInstanceState
+     * @see #onRestart
+     * @see #onPostResume
+     * @see #onPause
+     * @see #onTopResumedActivityChanged(boolean)
+     */
+    override fun onResume() {
+        super.onResume()
+        activeActivity = this
     }
 
 }
