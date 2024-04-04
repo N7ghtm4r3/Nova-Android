@@ -58,6 +58,7 @@ import androidx.compose.ui.text.intl.Locale.Companion.current
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
+import com.tecknobit.nova.helpers.utils.AndroidRequester
 import com.tecknobit.nova.helpers.utils.ui.SnackbarLauncher
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
@@ -74,7 +75,6 @@ import com.tecknobit.novacore.InputValidator.isPasswordValid
 import com.tecknobit.novacore.InputValidator.isServerSecretValid
 import com.tecknobit.novacore.InputValidator.isSurnameValid
 import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.LOGGED_AS_CUSTOMER_RECORD_VALUE
-import com.tecknobit.novacore.helpers.Requester
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.records.NovaItem.IDENTIFIER_KEY
 import com.tecknobit.novacore.records.User.NAME_KEY
@@ -281,7 +281,7 @@ class AuthActivity : ComponentActivity() {
                                                     if(isServerSecretValid(serverSecret)) {
                                                         execAuth {
                                                             email.value = email.value.lowercase()
-                                                            requester = Requester(
+                                                            requester = AndroidRequester(
                                                                 host = host
                                                             )
                                                             requester.sendRequest(
@@ -299,7 +299,7 @@ class AuthActivity : ComponentActivity() {
                                                                     localSessionsHelper.insertSession(
                                                                         response.getString(IDENTIFIER_KEY),
                                                                         response.getString(TOKEN_KEY),
-                                                                        "$host/${response.getString(PROFILE_PIC_URL_KEY)}",
+                                                                        response.getString(PROFILE_PIC_URL_KEY),
                                                                         name.value,
                                                                         surname.value,
                                                                         email.value,
@@ -331,7 +331,7 @@ class AuthActivity : ComponentActivity() {
                                                     if(isEmailValid(email.value)) {
                                                         if(isPasswordValid(password.value)) {
                                                             email.value = email.value.lowercase()
-                                                            requester = Requester(
+                                                            requester = AndroidRequester(
                                                                 host = host
                                                             )
                                                             requester.sendRequest(
@@ -345,7 +345,7 @@ class AuthActivity : ComponentActivity() {
                                                                     localSessionsHelper.insertSession(
                                                                         response.getString(IDENTIFIER_KEY),
                                                                         response.getString(TOKEN_KEY),
-                                                                        "$host/${response.getString(PROFILE_PIC_URL_KEY)}",
+                                                                        response.getString(PROFILE_PIC_URL_KEY),
                                                                         response.getString(NAME_KEY),
                                                                         response.getString(SURNAME_KEY),
                                                                         email.value,

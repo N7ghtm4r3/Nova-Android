@@ -74,7 +74,7 @@ dependencies {
     implementation("com.meetup:twain:0.2.2")
     implementation("com.google.zxing:core:3.5.1")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-    //TO-DO: TO REMOVE FOR TESTING PURPOSES ONLY
+    //TODO: TO REMOVE FOR TESTING PURPOSES ONLY
     implementation("com.tecknobit.novacore:Nova-core:1.0.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 }

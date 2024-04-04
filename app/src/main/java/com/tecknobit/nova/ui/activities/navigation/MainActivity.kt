@@ -50,8 +50,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,18 +72,32 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.scan_to_join_in_a_project
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
+import com.tecknobit.nova.ui.activities.NovaActivity
+import com.tecknobit.nova.ui.activities.NovaActivity.ListFetcher
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
 import com.tecknobit.nova.ui.activities.session.ProfileActivity
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
+import com.tecknobit.nova.ui.components.getFilePath
+import com.tecknobit.nova.ui.components.getProjectLogoUrl
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.novacore.InputValidator.isProjectNameValid
+import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
+import com.tecknobit.novacore.records.User.AUTHORED_PROJECTS_KEY
+import com.tecknobit.novacore.records.User.PROJECTS_KEY
+import com.tecknobit.novacore.records.project.Project
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Random
 
 /**
@@ -90,20 +106,18 @@ import java.util.Random
  *
  * @author N7ghtm4r3 - Tecknobit
  * @see ComponentActivity
+ * @see NovaActivity
+ * @see ListFetcher
+ *
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : NovaActivity(), ListFetcher<Project> {
 
     companion object {
 
         /**
          * **projects** -> list of the user's projects
          */
-        // TODO: TO LOAD CORRECTLY
-        private val projects = mutableListOf(
-            Project("Nova"),
-            Project("Pandoro", "1.0.1"),
-            Project("Glider", "1.0.5")
-        )
+        private val projects = mutableStateListOf<Project>()
 
         /**
          * **scanOptions** -> the options used when the scan to join in a [Project] starts
@@ -130,6 +144,8 @@ class MainActivity : ComponentActivity() {
 
         }
 
+    private lateinit var refreshRoutine: CoroutineScope
+
     /**
      * On create method
      *
@@ -147,6 +163,9 @@ class MainActivity : ComponentActivity() {
             NovaTheme {
                 displayAddProject = remember { mutableStateOf(false) }
                 scanOptions.setPrompt(LocalContext.current.getString(scan_to_join_in_a_project))
+                InitLauncher()
+                refreshRoutine = rememberCoroutineScope()
+                refreshList()
                 Scaffold (
                     floatingActionButton = {
                         Column (
@@ -174,6 +193,9 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+                    },
+                    snackbarHost = {
+                        snackbarLauncher.CreateSnackbarHost()
                     }
                 ) {
                     Column (
@@ -208,7 +230,9 @@ class MainActivity : ComponentActivity() {
                                     .size(150.dp),
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(activeLocalSession.profilePicUrl)
-                                    .crossfade(true)
+                                    .crossfade(500)
+                                    // TODO: USE THE REAL LOGO 
+                                    .error(R.drawable.ic_launcher_background)
                                     .build(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop
@@ -295,7 +319,9 @@ class MainActivity : ComponentActivity() {
                                                             }
                                                         }
                                                     ) {
-                                                        Logo(url = project.logoUrl)
+                                                        Logo(
+                                                            url = getProjectLogoUrl(project)
+                                                        )
                                                     }
                                                 },
                                                 headlineContent = {
@@ -352,11 +378,19 @@ class MainActivity : ComponentActivity() {
      */
     @Composable
     private fun AddProject() {
+        val context = LocalContext.current
         var projectName by remember { mutableStateOf("") }
-        var projectNameError by remember { mutableStateOf(false) }
+        var isError by remember { mutableStateOf(false) }
+        var errorMessage by remember { mutableStateOf("") }
+        // TODO: USE THE NOVA PROJECT LOGO AS DEFAULT IMAGE
+        var projectLogo by remember { mutableStateOf("https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg") }
+        var selectedLogo = File(projectLogo)
         val resetLayout = {
+            errorMessage = ""
             projectName = ""
-            projectNameError = false
+            isError = false
+            projectLogo = "https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg"
+            selectedLogo = File(projectLogo)
             displayAddProject.value = false
         }
         NovaAlertDialog(
@@ -374,14 +408,17 @@ class MainActivity : ComponentActivity() {
                             .size(125.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        // TODO: USE THE NOVA PROJECT LOGO AS DEFAULT IMAGE
-                        var projectLogo by remember { mutableStateOf("https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg") }
                         val photoPickerLauncher = rememberLauncherForActivityResult(
                             contract = PickVisualMedia(),
                             onResult = { uri ->
                                 if(uri != null) {
                                     projectLogo = uri.toString()
-                                    // TODO: MAKE THE REQUEST THEN
+                                    val filePath = getFilePath(
+                                        context = context,
+                                        uri = uri
+                                    )!!
+                                    projectLogo = filePath
+                                    selectedLogo = File(filePath)
                                 }
                             }
                         )
@@ -411,7 +448,11 @@ class MainActivity : ComponentActivity() {
                         singleLine = true,
                         value = projectName,
                         onValueChange = {
-                            projectNameError = !isProjectNameValid(it) && projectName.isNotEmpty()
+                            isError = !isProjectNameValid(it) && projectName.isNotEmpty()
+                            errorMessage = if(!isError)
+                                ""
+                            else
+                                context.getString(R.string.name_is_not_valid)
                             projectName = it
                         },
                         label = {
@@ -429,19 +470,101 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         },
-                        isError = projectNameError
+                        supportingText = {
+                            if(errorMessage.isNotEmpty()) {
+                                Text(
+                                    text = errorMessage
+                                )
+                            }
+                        },
+                        isError = isError
                     )
                 }
             },
             dismissAction = resetLayout,
             confirmAction = {
                 if(isProjectNameValid(projectName)) {
-                    // TODO: MAKE REQUEST THEN
-                    resetLayout()
-                } else
-                    projectNameError = true
+                    requester.sendRequest(
+                        request = {
+                            requester.addProject(
+                                logoPic = selectedLogo,
+                                projectName = projectName
+                            )
+                        },
+                        onSuccess = {
+                            resetLayout()
+                        },
+                        onFailure = { response ->
+                            isError = true
+                            errorMessage = response.getString(RESPONSE_MESSAGE_KEY)
+                        }
+                    )
+                } else {
+                    isError = true
+                    errorMessage = context.getString(R.string.name_is_not_valid)
+                }
             }
         )
+    }
+
+    override fun refreshList() {
+        refreshRoutine.launch {
+            while (continueToFetch(this@MainActivity)) {
+                requester.sendRequest(
+                    request = { requester.listProjects() },
+                    onSuccess = { response ->
+                        val projectsRefreshed = arrayListOf<Project>()
+                        val memberProjects = response.getJSONArray(PROJECTS_KEY)
+                        val authoredProjects = response.getJSONArray(AUTHORED_PROJECTS_KEY)
+                        for(j in 0 until memberProjects.length())
+                            projectsRefreshed.add(Project(memberProjects.getJSONObject(j)))
+                        for(j in 0 until authoredProjects.length())
+                            projectsRefreshed.add(Project(authoredProjects.getJSONObject(j)))
+                        projects.clear()
+                        projects.addAll(projectsRefreshed)
+                    },
+                    onFailure = { response ->
+                        snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
+                    },
+                    onConnectionError = { response ->
+                        snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
+                        refreshRoutine.cancel()
+                    }
+                )
+                delay(1000L)
+            }
+        }
+    }
+
+    /**
+     * Called after {@link #onRestoreInstanceState}, {@link #onRestart}, or {@link #onPause}. This
+     * is usually a hint for your activity to start interacting with the user, which is a good
+     * indicator that the activity became active and ready to receive input. This sometimes could
+     * also be a transit state toward another resting state. For instance, an activity may be
+     * relaunched to {@link #onPause} due to configuration changes and the activity was visible,
+     * but wasn’t the top-most activity of an activity task. {@link #onResume} is guaranteed to be
+     * called before {@link #onPause} in this case which honors the activity lifecycle policy and
+     * the activity eventually rests in {@link #onPause}.
+     *
+     * <p>On platform versions prior to {@link android.os.Build.VERSION_CODES#Q} this is also a good
+     * place to try to open exclusive-access devices or to get access to singleton resources.
+     * Starting  with {@link android.os.Build.VERSION_CODES#Q} there can be multiple resumed
+     * activities in the system simultaneously, so {@link #onTopResumedActivityChanged(boolean)}
+     * should be used for that purpose instead.
+     *
+     * <p><em>Derived classes must call through to the super class's
+     * implementation of this method.  If they do not, an exception will be
+     * thrown.</em></p>
+     *
+     * @see #onRestoreInstanceState
+     * @see #onRestart
+     * @see #onPostResume
+     * @see #onPause
+     * @see #onTopResumedActivityChanged(boolean)
+     */
+    override fun onResume() {
+        super.onResume()
+        activeActivity = this
     }
 
 }

@@ -89,7 +89,7 @@ public class LocalSessionHelper extends SQLiteOpenHelper implements LocalSession
         ContentValues values = new ContentValues();
         values.put(IDENTIFIER_KEY, id);
         values.put(TOKEN_KEY, token);
-        values.put(PROFILE_PIC_URL_KEY, profilePicUrl);
+        values.put(PROFILE_PIC_URL_KEY, hostAddress + "/" + profilePicUrl);
         values.put(NAME_KEY, name);
         values.put(SURNAME_KEY, surname);
         values.put(EMAIL_KEY, email);

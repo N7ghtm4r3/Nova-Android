@@ -1,5 +1,8 @@
 package com.tecknobit.nova.ui.components
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
+import com.tecknobit.novacore.records.project.Project
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import kotlin.math.min
 
 /**
  * Function to display an image as logo
@@ -40,7 +49,7 @@ fun Logo(
             .size(size),
         model = ImageRequest.Builder(LocalContext.current)
             .data(url)
-            .crossfade(true)
+            .crossfade(500)
             .build(),
         contentDescription = null,
         contentScale = ContentScale.Crop
@@ -81,4 +90,62 @@ fun EmptyList(
             color = Color.Gray
         )
     }
+}
+
+
+/**
+ * Function to get the complete file path of an file
+ *
+ * @param context: the context where the file is needed
+ * @param uri: the uri of the image
+ * @return the path of the image
+ */
+fun getFilePath(
+    context: Context,
+    uri: Uri
+): String? {
+    val returnCursor = context.contentResolver.query(uri, null, null, null, null)
+    val nameIndex =  returnCursor!!.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+    val sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE)
+    returnCursor.moveToFirst()
+    val name = returnCursor.getString(nameIndex)
+    returnCursor.getLong(sizeIndex).toString()
+    val file = File(context.filesDir, name)
+    try {
+        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+        val outputStream = FileOutputStream(file)
+        var read = 0
+        val maxBufferSize = 1 * 1024 * 1024
+        val bytesAvailable: Int = inputStream?.available() ?: 0
+        val bufferSize = min(bytesAvailable, maxBufferSize)
+        val buffers = ByteArray(bufferSize)
+        while (inputStream?.read(buffers).also {
+                if (it != null) {
+                    read = it
+                }
+            } != -1) {
+            outputStream.write(buffers, 0, read)
+        }
+        inputStream?.close()
+        outputStream.close()
+    } catch (_: Exception) {
+    } finally {
+        returnCursor.close()
+    }
+    return file.path
+}
+
+/**
+ * Function to assemble the project logo url complete (with the current [activeLocalSession].hostAddress)
+ * to display
+ *
+ * @param project: the project from get the logo url path
+ *
+ * @return the project logo complete url to display
+ *
+ */
+fun getProjectLogoUrl(
+    project: Project
+): String {
+    return activeLocalSession.hostAddress + "/" + project.logoUrl
 }

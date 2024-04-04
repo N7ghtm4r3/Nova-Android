@@ -1,6 +1,7 @@
 package com.tecknobit.nova.ui.activities.navigation
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.StrictMode
@@ -20,19 +21,32 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.Coil
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.request.CachePolicy
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.storage.LocalSessionHelper
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User
+import com.tecknobit.nova.helpers.utils.AndroidRequester
 import com.tecknobit.nova.helpers.utils.download.AssetDownloader
 import com.tecknobit.nova.helpers.utils.ui.NotificationsReceiver.NotificationsHelper
+import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.auth.AuthActivity
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession
-import com.tecknobit.novacore.helpers.Requester
 import com.tecknobit.novacore.records.User.PROJECTS_KEY
 import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import kotlinx.coroutines.delay
+import okhttp3.OkHttpClient
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSession
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 /**
  * The {@code Splashscreen} activity is used to retrieve and load the session data and enter in
@@ -40,9 +54,10 @@ import kotlinx.coroutines.delay
  *
  * @author N7ghtm4r3 - Tecknobit
  * @see ComponentActivity
+ * @see ImageLoaderFactory
  */
 @SuppressLint("CustomSplashScreen")
-class Splashscreen : ComponentActivity() {
+class Splashscreen : ComponentActivity(), ImageLoaderFactory {
 
     companion object {
 
@@ -70,14 +85,24 @@ class Splashscreen : ComponentActivity() {
         /**
          * **requester** -> the instance to manage the requests with the backend
          */
-        lateinit var requester: Requester
+        lateinit var requester: AndroidRequester
 
         /**
          * **activeLocalSession** -> the current active session that user is using
          */
         lateinit var activeLocalSession: NovaSession
 
+        /**
+         * **activeActivity** -> the current activity displayed to the user
+         */
+        lateinit var activeActivity: NovaActivity
+
     }
+
+    /**
+     * **context** -> the context of the [Splashscreen]
+     */
+    private lateinit var context: Context
 
     /**
      * On create method
@@ -94,9 +119,12 @@ class Splashscreen : ComponentActivity() {
         setContent {
             val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
             StrictMode.setThreadPolicy(policy)
-            assetDownloader = AssetDownloader(LocalContext.current)
-            localSessionsHelper = LocalSessionHelper(LocalContext.current)
-            val notificationsHelper = NotificationsHelper(LocalContext.current)
+            context = LocalContext.current
+            Coil.imageLoader(context)
+            Coil.setImageLoader(newImageLoader())
+            assetDownloader = AssetDownloader(context)
+            localSessionsHelper = LocalSessionHelper(context)
+            val notificationsHelper = NotificationsHelper(context)
             notificationsHelper.scheduleRoutine()
             NovaTheme {
                 Column (
@@ -143,7 +171,7 @@ class Splashscreen : ComponentActivity() {
                         else -> {
                             val activeSession = localSessionsHelper.activeSession
                             if(activeSession != null) {
-                                requester = Requester(
+                                requester = AndroidRequester(
                                     host = activeSession.hostAddress,
                                     userId = activeSession.id,
                                     userToken = activeSession.token
@@ -163,6 +191,48 @@ class Splashscreen : ComponentActivity() {
             override fun handleOnBackPressed() {
                 finishAffinity()
             }
+        })
+    }
+
+    /**
+     * Return a new [ImageLoader].
+     */
+    override fun newImageLoader(): ImageLoader {
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, validateSelfSignedCertificate(), SecureRandom())
+        return ImageLoader.Builder(context)
+            .okHttpClient {
+                OkHttpClient.Builder()
+                    .sslSocketFactory(sslContext.socketFactory,
+                        validateSelfSignedCertificate()[0] as X509TrustManager
+                    )
+                    .hostnameVerifier { _: String?, _: SSLSession? -> true }
+                    .connectTimeout(2, TimeUnit.SECONDS)
+                    .build()
+            }
+            .addLastModifiedToFileCacheKey(true)
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .networkCachePolicy(CachePolicy.ENABLED)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .build()
+    }
+
+    /**
+     * Method to validate a self-signed SLL certificate and bypass the checks of its validity<br></br>
+     * No-any params required
+     *
+     * @return list of trust managers as [Array] of [TrustManager]
+     * @apiNote this method disable all checks on the SLL certificate validity, so is recommended to
+     * use for test only or in a private distribution on own infrastructure
+     */
+    private fun validateSelfSignedCertificate(): Array<TrustManager> {
+        return arrayOf(object : X509TrustManager {
+            override fun getAcceptedIssuers(): Array<X509Certificate> {
+                return arrayOf()
+            }
+
+            override fun checkClientTrusted(certs: Array<X509Certificate>, authType: String) {}
+            override fun checkServerTrusted(certs: Array<X509Certificate>, authType: String) {}
         })
     }
 

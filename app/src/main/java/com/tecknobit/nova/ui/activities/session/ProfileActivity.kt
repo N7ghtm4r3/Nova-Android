@@ -1,5 +1,6 @@
 package com.tecknobit.nova.ui.activities.session
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +47,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -67,18 +70,21 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.please_enter_the_new_email_address
+import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionsHelper
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.UserRoleBadge
+import com.tecknobit.nova.ui.components.getFilePath
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
@@ -87,6 +93,12 @@ import com.tecknobit.novacore.InputValidator.LANGUAGES_SUPPORTED
 import com.tecknobit.novacore.InputValidator.isEmailValid
 import com.tecknobit.novacore.InputValidator.isPasswordValid
 import com.tecknobit.novacore.helpers.LocalSessionUtils
+import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
+import com.tecknobit.novacore.records.User
+import com.tecknobit.novacore.records.User.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
+import java.io.File
 
 /**
  * The {@code ProfileActivity} activity is used to manage and display the [User] details and execute
@@ -95,15 +107,16 @@ import com.tecknobit.novacore.helpers.LocalSessionUtils
  *
  * @author N7ghtm4r3 - Tecknobit
  * @see ComponentActivity
+ * @see NovaActivity
  */
-class ProfileActivity : ComponentActivity() {
+class ProfileActivity : NovaActivity() {
 
     companion object {
 
         /**
          * **PASSWORD_HIDDEN** -> constant value for an hidden password
          */
-        private const val PASSWORD_HIDDEN = "****";
+        private const val PASSWORD_HIDDEN = "****"
 
     }
 
@@ -117,6 +130,7 @@ class ProfileActivity : ComponentActivity() {
      * If your ComponentActivity is annotated with {@link ContentView}, this will
      * call {@link #setContentView(int)} for you.
      */
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -127,412 +141,455 @@ class ProfileActivity : ComponentActivity() {
                 val showChangeEmail = remember { mutableStateOf(false) }
                 val showChangePassword = remember { mutableStateOf(false) }
                 val showChangeLanguage = remember { mutableStateOf(false) }
+                InitLauncher()
                 val mySessions = remember { mutableStateListOf<LocalSessionUtils.NovaSession>() }
                 mySessions.addAll(localSessionsHelper.sessions)
-                Box {
-                    Box {
-                        val photoPickerLauncher = rememberLauncherForActivityResult(
-                            contract = PickVisualMedia(),
-                            onResult = { uri ->
-                                if(uri != null) {
-                                    profilePic = uri.toString()
-                                    // TODO: MAKE THE REQUEST THEN
-                                }
-                            }
-                        )
-                        AsyncImage(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(275.dp)
-                                .clickable {
-                                    photoPickerLauncher.launch(PickVisualMediaRequest(ImageOnly))
-                                },
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(profilePic)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop
-                        )
-                        IconButton(
-                            onClick = {
-                                startActivity(
-                                    Intent(this@ProfileActivity, MainActivity::class.java)
-                                )
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = null,
-                                tint = Color.White
-                            )
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomStart)
-                                .padding(
-                                    start = 10.dp,
-                                    bottom = 60.dp
-                                ),
-                            horizontalArrangement = Arrangement.Absolute.spacedBy(5.dp)
-                        ) {
-                            Text(
-                                text = activeLocalSession.name,
-                                color = Color.White,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = activeLocalSession.surname,
-                                color = Color.White,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                Scaffold (
+                    snackbarHost = {
+                        snackbarLauncher.CreateSnackbarHost()
                     }
-                    Card (
-                        modifier = Modifier
-                            .padding(
-                                top = 225.dp
-                            )
-                            .fillMaxSize(),
-                        shape = RoundedCornerShape(
-                            topEnd = 55.dp
-                        ),
-                        colors = CardDefaults.cardColors(
-                            containerColor = gray_background
-                        ),
-                        elevation = CardDefaults.cardElevation(10.dp),
-                    ) {
-                        Column (
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(15.dp)
-                        ) {
-                            UserInfo(
-                                header = R.string.uid,
-                                info = activeLocalSession.id
-                            )
-                            UserInfo(
-                                header = R.string.email,
-                                info = currentEmail,
-                                editAction = { showChangeEmail.value = true }
-                            )
-                            if(showChangeEmail.value) {
-                                var email by remember { mutableStateOf("") }
-                                var emailError by remember { mutableStateOf(false) }
-                                NovaAlertDialog(
-                                    show = showChangeEmail,
-                                    icon = Icons.Default.Email,
-                                    title = stringResource(R.string.change_email),
-                                    message = {
-                                        Column {
-                                            Text(
-                                                text = stringResource(please_enter_the_new_email_address)
-                                            )
-                                            OutlinedTextField(
-                                                singleLine = true,
-                                                value = email,
-                                                onValueChange = {
-                                                    emailError = !isEmailValid(it) &&
-                                                            email.isNotEmpty()
-                                                    email = it
-                                                },
-                                                label = {
-                                                    Text(
-                                                        text = stringResource(R.string.email)
-                                                    )
-                                                },
-                                                trailingIcon = {
-                                                    IconButton(
-                                                        onClick = { email = "" }
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Clear,
-                                                            contentDescription = null
+                ) {
+                    Box {
+                        Box {
+                            val photoPickerLauncher = rememberLauncherForActivityResult(
+                                contract = PickVisualMedia(),
+                                onResult = { imageUri ->
+                                    if(imageUri != null) {
+                                        var imagePath: String? = null
+                                        runBlocking {
+                                            async {
+                                                imagePath = getFilePath(
+                                                    context = this@ProfileActivity,
+                                                    uri = imageUri
+                                                )
+                                            }.await()
+                                            if(imagePath != null) {
+                                                requester.sendRequest(
+                                                    request = {
+                                                        requester.changeProfilePic(
+                                                            File(imagePath!!)
+                                                        )
+                                                    },
+                                                    onSuccess = { response ->
+                                                        profilePic = response.getString(PROFILE_PIC_URL_KEY)
+                                                        localSessionsHelper.changeProfilePic(
+                                                            profilePic
+                                                        )
+                                                        activeLocalSession.profilePicUrl =
+                                                            localSessionsHelper.activeSession.profilePicUrl
+                                                        profilePic = activeLocalSession.profilePicUrl
+                                                    },
+                                                    onFailure = { response ->
+                                                        snackbarLauncher.showSnack(
+                                                            response.getString(RESPONSE_MESSAGE_KEY)
                                                         )
                                                     }
-                                                },
-                                                keyboardOptions = KeyboardOptions(
-                                                    keyboardType = KeyboardType.Email
-                                                ),
-                                                isError = emailError
-                                            )
-                                        }
-                                    },
-                                    confirmAction = {
-                                        if(isEmailValid(email)) {
-                                            email = email.lowercase()
-                                            requester.sendRequest(
-                                                request = {
-                                                    requester.changeEmail(
-                                                        newEmail = email
-                                                    )
-                                                },
-                                                onSuccess = {
-                                                    localSessionsHelper.changeEmail(email)
-                                                    currentEmail = email
-                                                    showChangeEmail.value = false
-                                                },
-                                                onFailure = { emailError = true }
-                                            )
-                                        } else
-                                            emailError = true
-                                    }
-                                )
-                            }
-                            UserInfo(
-                                header = R.string.password,
-                                info = userPassword,
-                                onInfoClick = {
-                                    userPassword = if(userPassword == PASSWORD_HIDDEN)
-                                        activeLocalSession.password
-                                    else
-                                        PASSWORD_HIDDEN
-                                },
-                                editAction = { showChangePassword.value = true }
-                            )
-                            if(showChangePassword.value) {
-                                var password by remember { mutableStateOf("") }
-                                var passwordError by remember { mutableStateOf(false) }
-                                var isPasswordHidden by remember { mutableStateOf(true) }
-                                NovaAlertDialog(
-                                    show = showChangePassword,
-                                    icon = Icons.Default.Password,
-                                    title = stringResource(R.string.change_password),
-                                    message = {
-                                        Column {
-                                            Text(
-                                                text = stringResource(R.string.please_enter_the_new_password)
-                                            )
-                                            OutlinedTextField(
-                                                singleLine = true,
-                                                value = password,
-                                                visualTransformation = if (isPasswordHidden)
-                                                    PasswordVisualTransformation()
-                                                else
-                                                    VisualTransformation.None ,
-                                                onValueChange = {
-                                                    passwordError = !isPasswordValid(it) &&
-                                                            password.isNotEmpty()
-                                                    password = it
-                                                },
-                                                leadingIcon = {
-                                                    IconButton(
-                                                        onClick = { password = "" }
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Clear,
-                                                            contentDescription = null
-                                                        )
-                                                    }
-                                                },
-                                                label = {
-                                                    Text(
-                                                        text = stringResource(R.string.password)
-                                                    )
-                                                },
-                                                trailingIcon = {
-                                                    IconButton(
-                                                        onClick = { isPasswordHidden = !isPasswordHidden }
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = if(isPasswordHidden)
-                                                                Icons.Default.Visibility
-                                                            else
-                                                                Icons.Default.VisibilityOff,
-                                                            contentDescription = null
-                                                        )
-                                                    }
-                                                },
-                                                keyboardOptions = KeyboardOptions(
-                                                    keyboardType = KeyboardType.Password
-                                                ),
-                                                isError = passwordError
-                                            )
-                                        }
-                                    },
-                                    confirmAction = {
-                                        if(isPasswordValid(password)) {
-                                            requester.sendRequest(
-                                                request = {
-                                                    requester.changePassword(
-                                                        newPassword = password
-                                                    )
-                                                },
-                                                onSuccess = {
-                                                    localSessionsHelper.changePassword(password)
-                                                    if(userPassword != PASSWORD_HIDDEN)
-                                                        userPassword = password
-                                                    activeLocalSession.password = password
-                                                    showChangePassword.value = false
-                                                },
-                                                onFailure = { passwordError = true }
-                                            )
-                                        } else
-                                            passwordError = true
-                                    }
-                                )
-                            }
-                            val language = activeLocalSession.language
-                            UserInfo(
-                                header = R.string.language,
-                                info = language,
-                                editAction = { showChangeLanguage.value = true },
-                                isLast = true
-                            )
-                            if(showChangeLanguage.value) {
-                                var selectedLanguage by remember { mutableStateOf(language) }
-                                NovaAlertDialog(
-                                    show = showChangeLanguage,
-                                    icon = Icons.Default.Language,
-                                    title = stringResource(R.string.change_language),
-                                    message = {
-                                        Column {
-                                            LazyColumn (
-                                                modifier = Modifier
-                                                    .height(150.dp)
-                                                    .fillMaxWidth()
-                                            ) {
-                                                items(
-                                                    key = { it },
-                                                    items = LANGUAGES_SUPPORTED.values.toList()
-                                                ) { language ->
-                                                    Row (
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        RadioButton(
-                                                            selected = language == selectedLanguage,
-                                                            onClick = { selectedLanguage = language }
-                                                        )
-                                                        Text(
-                                                            text = language
-                                                        )
-                                                    }
-                                                }
+                                                )
                                             }
                                         }
-                                    },
-                                    confirmAction = {
-                                        requester.sendRequest(
-                                            request = {
-                                                requester.changeLanguage(
-                                                    newLanguage = selectedLanguage
-                                                )
-                                            },
-                                            onSuccess = {
-                                                localSessionsHelper.changeLanguage(selectedLanguage)
-                                                activeLocalSession.language = selectedLanguage
-                                                showChangeLanguage.value = false
-                                                navToSplashscreen()
-                                            },
-                                            onFailure = {showChangeLanguage.value = false }
-                                        )
-                                    }
-                                )
-                            }
-                            if(mySessions.size > 1) {
-                                Text(
-                                    modifier = Modifier
-                                        .padding(
-                                            top = 5.dp
-                                        ),
-                                    text = stringResource(R.string.my_sessions),
-                                    fontSize = 22.sp
-                                )
-                                LazyColumn (
-                                    modifier = Modifier
-                                        .padding(
-                                            top = 5.dp
-                                        ),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                                    contentPadding = PaddingValues(
-                                        top = 5.dp,
-                                        bottom = 5.dp
-                                    )
-                                ) {
-                                    items(
-                                        key = { it.id },
-                                        items = mySessions
-                                    ) { session ->
-                                        val isCurrentSession = session.isActive
-                                        ListItem(
-                                            modifier = Modifier
-                                                .shadow(
-                                                    elevation = 5.dp,
-                                                    shape = RoundedCornerShape(15.dp)
-                                                )
-                                                .clickable(!isCurrentSession) {
-                                                    localSessionsHelper.changeActiveSession(session.id)
-                                                    navToSplashscreen()
-                                                }
-                                                .clip(RoundedCornerShape(15.dp)),
-                                            colors = ListItemDefaults.colors(
-                                                containerColor = Color.White
-                                            ),
-                                            leadingContent = {
-                                                Logo(
-                                                    size = 80.dp,
-                                                    url = session.profilePicUrl
-                                                )
-                                            },
-                                            overlineContent = {
-                                                Row (
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                                ) {
-                                                    UserRoleBadge(
-                                                        background = Color.White,
-                                                        role = session.role
-                                                    )
-                                                    if(isCurrentSession) {
-                                                        Text(
-                                                            text = stringResource(R.string.current)
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            headlineContent = {
-                                                Text(
-                                                    text = session.hostAddress,
-                                                    fontSize = 15.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            },
-                                            supportingContent = {
-                                                Text(
-                                                    text = session.email,
-                                                    fontSize = 13.sp,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            },
-                                            trailingContent = {
-                                                if(!isCurrentSession) {
-                                                    IconButton(
-                                                        modifier = Modifier
-                                                            .size(22.dp),
-                                                        onClick = {
-                                                            localSessionsHelper.deleteSession(session.id)
-                                                            mySessions.remove(session)
-                                                        }
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Delete,
-                                                            contentDescription = null
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        )
-                                    }
-                                    item {
-                                        ActionButtons()
                                     }
                                 }
-                            } else
-                                ActionButtons()
+                            )
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(275.dp)
+                                    .clickable {
+                                        photoPickerLauncher.launch(PickVisualMediaRequest(ImageOnly))
+                                    },
+                                painter = rememberAsyncImagePainter(
+                                    ImageRequest.Builder(LocalContext.current)
+                                        .data(profilePic)
+                                        // TODO: USE THE REAL LOGO
+                                        .error(R.drawable.ic_launcher_background)
+                                        .crossfade(500)
+                                        .build()
+                                ),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = {
+                                    startActivity(
+                                        Intent(this@ProfileActivity, MainActivity::class.java)
+                                    )
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.BottomStart)
+                                    .padding(
+                                        start = 10.dp,
+                                        bottom = 60.dp
+                                    ),
+                                horizontalArrangement = Arrangement.Absolute.spacedBy(5.dp)
+                            ) {
+                                Text(
+                                    text = activeLocalSession.name,
+                                    color = Color.White,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = activeLocalSession.surname,
+                                    color = Color.White,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Card (
+                            modifier = Modifier
+                                .padding(
+                                    top = 225.dp
+                                )
+                                .fillMaxSize(),
+                            shape = RoundedCornerShape(
+                                topEnd = 55.dp
+                            ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = gray_background
+                            ),
+                            elevation = CardDefaults.cardElevation(10.dp),
+                        ) {
+                            Column (
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(15.dp)
+                            ) {
+                                UserInfo(
+                                    header = R.string.uid,
+                                    info = activeLocalSession.id
+                                )
+                                UserInfo(
+                                    header = R.string.email,
+                                    info = currentEmail,
+                                    editAction = { showChangeEmail.value = true }
+                                )
+                                if(showChangeEmail.value) {
+                                    var email by remember { mutableStateOf("") }
+                                    var emailError by remember { mutableStateOf(false) }
+                                    NovaAlertDialog(
+                                        show = showChangeEmail,
+                                        icon = Icons.Default.Email,
+                                        title = stringResource(R.string.change_email),
+                                        message = {
+                                            Column {
+                                                Text(
+                                                    text = stringResource(please_enter_the_new_email_address)
+                                                )
+                                                OutlinedTextField(
+                                                    singleLine = true,
+                                                    value = email,
+                                                    onValueChange = {
+                                                        emailError = !isEmailValid(it) &&
+                                                                email.isNotEmpty()
+                                                        email = it
+                                                    },
+                                                    label = {
+                                                        Text(
+                                                            text = stringResource(R.string.email)
+                                                        )
+                                                    },
+                                                    trailingIcon = {
+                                                        IconButton(
+                                                            onClick = { email = "" }
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Clear,
+                                                                contentDescription = null
+                                                            )
+                                                        }
+                                                    },
+                                                    keyboardOptions = KeyboardOptions(
+                                                        keyboardType = KeyboardType.Email
+                                                    ),
+                                                    isError = emailError
+                                                )
+                                            }
+                                        },
+                                        confirmAction = {
+                                            if(isEmailValid(email)) {
+                                                email = email.lowercase()
+                                                requester.sendRequest(
+                                                    request = {
+                                                        requester.changeEmail(
+                                                            newEmail = email
+                                                        )
+                                                    },
+                                                    onSuccess = {
+                                                        localSessionsHelper.changeEmail(email)
+                                                        currentEmail = email
+                                                        showChangeEmail.value = false
+                                                    },
+                                                    onFailure = { emailError = true }
+                                                )
+                                            } else
+                                                emailError = true
+                                        }
+                                    )
+                                }
+                                UserInfo(
+                                    header = R.string.password,
+                                    info = userPassword,
+                                    onInfoClick = {
+                                        userPassword = if(userPassword == PASSWORD_HIDDEN)
+                                            activeLocalSession.password
+                                        else
+                                            PASSWORD_HIDDEN
+                                    },
+                                    editAction = { showChangePassword.value = true }
+                                )
+                                if(showChangePassword.value) {
+                                    var password by remember { mutableStateOf("") }
+                                    var passwordError by remember { mutableStateOf(false) }
+                                    var isPasswordHidden by remember { mutableStateOf(true) }
+                                    NovaAlertDialog(
+                                        show = showChangePassword,
+                                        icon = Icons.Default.Password,
+                                        title = stringResource(R.string.change_password),
+                                        message = {
+                                            Column {
+                                                Text(
+                                                    text = stringResource(R.string.please_enter_the_new_password)
+                                                )
+                                                OutlinedTextField(
+                                                    singleLine = true,
+                                                    value = password,
+                                                    visualTransformation = if (isPasswordHidden)
+                                                        PasswordVisualTransformation()
+                                                    else
+                                                        VisualTransformation.None ,
+                                                    onValueChange = {
+                                                        passwordError = !isPasswordValid(it) &&
+                                                                password.isNotEmpty()
+                                                        password = it
+                                                    },
+                                                    leadingIcon = {
+                                                        IconButton(
+                                                            onClick = { password = "" }
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Clear,
+                                                                contentDescription = null
+                                                            )
+                                                        }
+                                                    },
+                                                    label = {
+                                                        Text(
+                                                            text = stringResource(R.string.password)
+                                                        )
+                                                    },
+                                                    trailingIcon = {
+                                                        IconButton(
+                                                            onClick = { isPasswordHidden = !isPasswordHidden }
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = if(isPasswordHidden)
+                                                                    Icons.Default.Visibility
+                                                                else
+                                                                    Icons.Default.VisibilityOff,
+                                                                contentDescription = null
+                                                            )
+                                                        }
+                                                    },
+                                                    keyboardOptions = KeyboardOptions(
+                                                        keyboardType = KeyboardType.Password
+                                                    ),
+                                                    isError = passwordError
+                                                )
+                                            }
+                                        },
+                                        confirmAction = {
+                                            if(isPasswordValid(password)) {
+                                                requester.sendRequest(
+                                                    request = {
+                                                        requester.changePassword(
+                                                            newPassword = password
+                                                        )
+                                                    },
+                                                    onSuccess = {
+                                                        localSessionsHelper.changePassword(password)
+                                                        if(userPassword != PASSWORD_HIDDEN)
+                                                            userPassword = password
+                                                        activeLocalSession.password = password
+                                                        showChangePassword.value = false
+                                                    },
+                                                    onFailure = { passwordError = true }
+                                                )
+                                            } else
+                                                passwordError = true
+                                        }
+                                    )
+                                }
+                                val language = activeLocalSession.language
+                                UserInfo(
+                                    header = R.string.language,
+                                    info = language,
+                                    editAction = { showChangeLanguage.value = true },
+                                    isLast = true
+                                )
+                                if(showChangeLanguage.value) {
+                                    var selectedLanguage by remember { mutableStateOf(language) }
+                                    NovaAlertDialog(
+                                        show = showChangeLanguage,
+                                        icon = Icons.Default.Language,
+                                        title = stringResource(R.string.change_language),
+                                        message = {
+                                            Column {
+                                                LazyColumn (
+                                                    modifier = Modifier
+                                                        .height(150.dp)
+                                                        .fillMaxWidth()
+                                                ) {
+                                                    items(
+                                                        key = { it },
+                                                        items = LANGUAGES_SUPPORTED.values.toList()
+                                                    ) { language ->
+                                                        Row (
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            RadioButton(
+                                                                selected = language == selectedLanguage,
+                                                                onClick = { selectedLanguage = language }
+                                                            )
+                                                            Text(
+                                                                text = language
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        confirmAction = {
+                                            requester.sendRequest(
+                                                request = {
+                                                    requester.changeLanguage(
+                                                        newLanguage = selectedLanguage
+                                                    )
+                                                },
+                                                onSuccess = {
+                                                    localSessionsHelper.changeLanguage(selectedLanguage)
+                                                    activeLocalSession.language = selectedLanguage
+                                                    showChangeLanguage.value = false
+                                                    navToSplashscreen()
+                                                },
+                                                onFailure = {showChangeLanguage.value = false }
+                                            )
+                                        }
+                                    )
+                                }
+                                if(mySessions.size > 1) {
+                                    Text(
+                                        modifier = Modifier
+                                            .padding(
+                                                top = 5.dp
+                                            ),
+                                        text = stringResource(R.string.my_sessions),
+                                        fontSize = 22.sp
+                                    )
+                                    LazyColumn (
+                                        modifier = Modifier
+                                            .padding(
+                                                top = 5.dp
+                                            ),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                                        contentPadding = PaddingValues(
+                                            top = 5.dp,
+                                            bottom = 5.dp
+                                        )
+                                    ) {
+                                        items(
+                                            key = { it.id },
+                                            items = mySessions
+                                        ) { session ->
+                                            val isCurrentSession = session.isActive
+                                            ListItem(
+                                                modifier = Modifier
+                                                    .shadow(
+                                                        elevation = 5.dp,
+                                                        shape = RoundedCornerShape(15.dp)
+                                                    )
+                                                    .clickable(!isCurrentSession) {
+                                                        localSessionsHelper.changeActiveSession(
+                                                            session.id
+                                                        )
+                                                        navToSplashscreen()
+                                                    }
+                                                    .clip(RoundedCornerShape(15.dp)),
+                                                colors = ListItemDefaults.colors(
+                                                    containerColor = Color.White
+                                                ),
+                                                leadingContent = {
+                                                    Logo(
+                                                        size = 80.dp,
+                                                        url = session.profilePicUrl
+                                                    )
+                                                },
+                                                overlineContent = {
+                                                    Row (
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                    ) {
+                                                        UserRoleBadge(
+                                                            background = Color.White,
+                                                            role = session.role
+                                                        )
+                                                        if(isCurrentSession) {
+                                                            Text(
+                                                                text = stringResource(R.string.current)
+                                                            )
+                                                        }
+                                                    }
+                                                },
+                                                headlineContent = {
+                                                    Text(
+                                                        text = session.hostAddress,
+                                                        fontSize = 15.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                },
+                                                supportingContent = {
+                                                    Text(
+                                                        text = session.email,
+                                                        fontSize = 13.sp,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                },
+                                                trailingContent = {
+                                                    if(!isCurrentSession) {
+                                                        IconButton(
+                                                            modifier = Modifier
+                                                                .size(22.dp),
+                                                            onClick = {
+                                                                localSessionsHelper.deleteSession(session.id)
+                                                                mySessions.remove(session)
+                                                            }
+                                                        ) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Delete,
+                                                                contentDescription = null
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            )
+                                        }
+                                        item {
+                                            ActionButtons()
+                                        }
+                                    }
+                                } else
+                                    ActionButtons()
+                            }
                         }
                     }
                 }
@@ -566,7 +623,7 @@ class ProfileActivity : ComponentActivity() {
                 text = stringResource(header),
                 fontFamily = thinFontFamily
             )
-            if(editAction != null) {
+            if(editAction != null && activeLocalSession.isHostSet) {
                 Button(
                     modifier = Modifier
                         .height(25.dp),
@@ -677,18 +734,25 @@ class ProfileActivity : ComponentActivity() {
             message = R.string.account_deletion_message,
             dismissAction = { deleteAccount.value = false },
             confirmAction = {
-                localSessionsHelper.sessions.forEach { session ->
-                    val sessionId = session.id
-                    requester.setUserCredentials(session.id, session.token)
-                    requester.changeHost(session.hostAddress)
+                val deleteSuccessAction = {
+                    localSessionsHelper.deleteSession(activeLocalSession.id)
+                    val sessions = localSessionsHelper.sessions
+                    if(sessions.isNotEmpty())
+                        localSessionsHelper.changeActiveSession(sessions.first().id)
+                    deleteAccount.value = false
+                    navToSplashscreen()
+                }
+                if(activeLocalSession.isHostSet) {
                     requester.sendRequest(
                         request = { requester.deleteAccount() },
-                        onSuccess = { localSessionsHelper.deleteSession(sessionId) },
-                        onFailure = { localSessionsHelper.changeActiveSession(sessionId) }
+                        onSuccess = { deleteSuccessAction.invoke() },
+                        onFailure = { response ->
+                            deleteAccount.value = false
+                            snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
+                        }
                     )
-                }
-                deleteAccount.value = false
-                navToSplashscreen()
+                } else
+                    deleteSuccessAction.invoke()
             }
         )
     }
@@ -700,6 +764,37 @@ class ProfileActivity : ComponentActivity() {
      */
     private fun navToSplashscreen() {
         startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
+    }
+
+    /**
+     * Called after {@link #onRestoreInstanceState}, {@link #onRestart}, or {@link #onPause}. This
+     * is usually a hint for your activity to start interacting with the user, which is a good
+     * indicator that the activity became active and ready to receive input. This sometimes could
+     * also be a transit state toward another resting state. For instance, an activity may be
+     * relaunched to {@link #onPause} due to configuration changes and the activity was visible,
+     * but wasn’t the top-most activity of an activity task. {@link #onResume} is guaranteed to be
+     * called before {@link #onPause} in this case which honors the activity lifecycle policy and
+     * the activity eventually rests in {@link #onPause}.
+     *
+     * <p>On platform versions prior to {@link android.os.Build.VERSION_CODES#Q} this is also a good
+     * place to try to open exclusive-access devices or to get access to singleton resources.
+     * Starting  with {@link android.os.Build.VERSION_CODES#Q} there can be multiple resumed
+     * activities in the system simultaneously, so {@link #onTopResumedActivityChanged(boolean)}
+     * should be used for that purpose instead.
+     *
+     * <p><em>Derived classes must call through to the super class's
+     * implementation of this method.  If they do not, an exception will be
+     * thrown.</em></p>
+     *
+     * @see #onRestoreInstanceState
+     * @see #onRestart
+     * @see #onPostResume
+     * @see #onPause
+     * @see #onTopResumedActivityChanged(boolean)
+     */
+    override fun onResume() {
+        super.onResume()
+        activeActivity = this
     }
 
 }
