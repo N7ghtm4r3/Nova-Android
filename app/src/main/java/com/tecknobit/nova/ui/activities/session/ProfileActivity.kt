@@ -196,7 +196,9 @@ class ProfileActivity : NovaActivity() {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(275.dp)
-                                    .clickable {
+                                    .clickable (
+                                        enabled = activeLocalSession.isHostSet
+                                    ) {
                                         photoPickerLauncher.launch(PickVisualMediaRequest(ImageOnly))
                                     },
                                 painter = rememberAsyncImagePainter(
@@ -525,77 +527,79 @@ class ProfileActivity : NovaActivity() {
                                             items = mySessions
                                         ) { session ->
                                             val isCurrentSession = session.isActive
-                                            ListItem(
-                                                modifier = Modifier
-                                                    .shadow(
-                                                        elevation = 5.dp,
-                                                        shape = RoundedCornerShape(15.dp)
-                                                    )
-                                                    .clickable(!isCurrentSession) {
-                                                        localSessionsHelper.changeActiveSession(
-                                                            session.id
+                                            if(session.isHostSet) {
+                                                ListItem(
+                                                    modifier = Modifier
+                                                        .shadow(
+                                                            elevation = 5.dp,
+                                                            shape = RoundedCornerShape(15.dp)
                                                         )
-                                                        navToSplashscreen()
-                                                    }
-                                                    .clip(RoundedCornerShape(15.dp)),
-                                                colors = ListItemDefaults.colors(
-                                                    containerColor = Color.White
-                                                ),
-                                                leadingContent = {
-                                                    Logo(
-                                                        size = 80.dp,
-                                                        url = session.profilePicUrl
-                                                    )
-                                                },
-                                                overlineContent = {
-                                                    Row (
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                                    ) {
-                                                        UserRoleBadge(
-                                                            background = Color.White,
-                                                            role = session.role
-                                                        )
-                                                        if(isCurrentSession) {
-                                                            Text(
-                                                                text = stringResource(R.string.current)
+                                                        .clickable(!isCurrentSession) {
+                                                            localSessionsHelper.changeActiveSession(
+                                                                session.id
                                                             )
+                                                            navToSplashscreen()
                                                         }
-                                                    }
-                                                },
-                                                headlineContent = {
-                                                    Text(
-                                                        text = session.hostAddress,
-                                                        fontSize = 15.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
-                                                },
-                                                supportingContent = {
-                                                    Text(
-                                                        text = session.email,
-                                                        fontSize = 13.sp,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
-                                                    )
-                                                },
-                                                trailingContent = {
-                                                    if(!isCurrentSession) {
-                                                        IconButton(
-                                                            modifier = Modifier
-                                                                .size(22.dp),
-                                                            onClick = {
-                                                                localSessionsHelper.deleteSession(session.id)
-                                                                mySessions.remove(session)
-                                                            }
+                                                        .clip(RoundedCornerShape(15.dp)),
+                                                    colors = ListItemDefaults.colors(
+                                                        containerColor = Color.White
+                                                    ),
+                                                    leadingContent = {
+                                                        Logo(
+                                                            size = 80.dp,
+                                                            url = session.profilePicUrl
+                                                        )
+                                                    },
+                                                    overlineContent = {
+                                                        Row (
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                                                         ) {
-                                                            Icon(
-                                                                imageVector = Icons.Default.Delete,
-                                                                contentDescription = null
+                                                            UserRoleBadge(
+                                                                background = Color.White,
+                                                                role = session.role
                                                             )
+                                                            if(isCurrentSession) {
+                                                                Text(
+                                                                    text = stringResource(R.string.current)
+                                                                )
+                                                            }
+                                                        }
+                                                    },
+                                                    headlineContent = {
+                                                        Text(
+                                                            text = session.hostAddress,
+                                                            fontSize = 15.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    },
+                                                    supportingContent = {
+                                                        Text(
+                                                            text = session.email,
+                                                            fontSize = 13.sp,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                    },
+                                                    trailingContent = {
+                                                        if(!isCurrentSession) {
+                                                            IconButton(
+                                                                modifier = Modifier
+                                                                    .size(22.dp),
+                                                                onClick = {
+                                                                    localSessionsHelper.deleteSession(session.id)
+                                                                    mySessions.remove(session)
+                                                                }
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Delete,
+                                                                    contentDescription = null
+                                                                )
+                                                            }
                                                         }
                                                     }
-                                                }
-                                            )
+                                                )
+                                            }
                                         }
                                         item {
                                             ActionButtons()

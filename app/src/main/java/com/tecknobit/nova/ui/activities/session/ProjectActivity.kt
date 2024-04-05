@@ -93,6 +93,7 @@ import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
 import com.meetup.twain.MarkdownEditor
 import com.meetup.twain.MarkdownText
+import com.tecknobit.apimanager.formatters.JsonHelper
 import com.tecknobit.nova.R
 import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
@@ -105,6 +106,7 @@ import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.NovaTextField
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.UserRoleBadge
+import com.tecknobit.nova.ui.components.getMemberProfilePicUrl
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_error
@@ -113,11 +115,14 @@ import com.tecknobit.nova.ui.theme.thinFontFamily
 import com.tecknobit.novacore.InputValidator.areReleaseNotesValid
 import com.tecknobit.novacore.InputValidator.isMailingListValid
 import com.tecknobit.novacore.InputValidator.isReleaseVersionValid
-import com.tecknobit.novacore.helpers.Requester
+import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.HOST_ADDRESS_KEY
+import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.helpers.Requester.ItemFetcher
 import com.tecknobit.novacore.records.User.Role.Customer
 import com.tecknobit.novacore.records.User.Role.Vendor
+import com.tecknobit.novacore.records.project.JoiningQRCode
 import com.tecknobit.novacore.records.project.Project
+import com.tecknobit.novacore.records.project.Project.IDENTIFIER_KEY
 import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import com.tecknobit.novacore.records.release.Release.RELEASE_KEY
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Approved
@@ -200,9 +205,9 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
             }
             currentContext = LocalContext.current
             refreshRoutine = rememberCoroutineScope()
+            InitLauncher()
             refreshItem()
-            // TODO: MAKE THE REAL WORKFLOW TO GET IF THE USER IS OR NOT THE PROJECT AUTHOR
-            isProjectAuthor = Random().nextBoolean()
+            isProjectAuthor = project.value.amITheProjectAuthor(activeLocalSession.id)
             val showWorkOnProject = remember { mutableStateOf(false) }
             displayAddMembers = remember { mutableStateOf(false) }
             displayAddRelease = remember { mutableStateOf(false) }
@@ -249,7 +254,10 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                             actions = {
                                 if(activeLocalSession.isVendor) {
                                     IconButton(
-                                        onClick = { displayAddMembers.value = true }
+                                        onClick = {
+                                            displayAddMembers.value = true
+                                            suspendRefresher()
+                                        }
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.QrCode,
@@ -260,7 +268,10 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                                     CreateQrcode()
                                 }
                                 IconButton(
-                                    onClick = { displayMembers.value = true }
+                                    onClick = {
+                                        displayMembers.value = true
+                                        suspendRefresher()
+                                    }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Group,
@@ -270,7 +281,10 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                                 }
                                 ProjectMembers()
                                 IconButton(
-                                    onClick = { showWorkOnProject.value = true }
+                                    onClick = {
+                                        showWorkOnProject.value = true
+                                        suspendRefresher()
+                                    }
                                 ) {
                                     Icon(
                                         imageVector = if(isProjectAuthor)
@@ -283,6 +297,10 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                                 }
                                 NovaAlertDialog(
                                     show = showWorkOnProject,
+                                    onDismissAction = {
+                                        showWorkOnProject.value = false
+                                        refreshItem()
+                                    },
                                     icon = Icons.Default.Warning,
                                     title = if(isProjectAuthor)
                                         R.string.delete_project
@@ -293,13 +311,37 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                                     else
                                         R.string.leave_project_alert_message,
                                     confirmAction = {
-                                        // TODO: MAKE THE REQUEST THEN
-                                        showWorkOnProject.value = false
-                                        startActivity(navBackIntent)
+                                        requester.sendRequest(
+                                            request = {
+                                                if(isProjectAuthor) {
+                                                    requester.deleteProject(
+                                                        projectId = project.value.id
+                                                    )
+                                                } else {
+                                                    requester.leaveProject(
+                                                        projectId = project.value.id
+                                                    )
+                                                }
+                                            },
+                                            onSuccess = {
+                                                showWorkOnProject.value = false
+                                                startActivity(navBackIntent)
+                                            },
+                                            onFailure = { response ->
+                                                showWorkOnProject.value = false
+                                                snackbarLauncher.showSnack(
+                                                    message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                )
+                                                refreshItem()
+                                            }
+                                        )
                                     }
                                 )
                             }
                         )
+                    },
+                    snackbarHost = {
+                        snackbarLauncher.CreateSnackbarHost()
                     },
                     floatingActionButton = {
                         FloatingActionButton(
@@ -488,9 +530,11 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
             generateJoinCode = true
             displayQrcode = false
             displayAddMembers.value = false
+            refreshItem()
         }
         val customerSelected = remember { mutableStateOf(true) }
         val vendorSelected = remember { mutableStateOf(false) }
+        var responsePayload: JsonHelper? = null
         NovaAlertDialog(
             show = displayAddMembers,
             onDismissAction = resetLayout,
@@ -513,22 +557,24 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                                 .clip(RoundedCornerShape(10.dp))
                                 .size(130.dp),
                             painter = rememberQrBitmapPainter(
-                                // TODO: USE THE REAL DATA
-                                JSONObject().put("data", "datafromserver").toString()
+                                JSONObject()
+                                    .put(HOST_ADDRESS_KEY, activeLocalSession.hostAddress)
+                                    .put(IDENTIFIER_KEY, responsePayload!!.getString(IDENTIFIER_KEY))
                             ),
                             contentDescription = null,
                             contentScale = ContentScale.Crop
                         )
-                        //TODO: USE THE REAL DATA FROM THE RESPONSE
-                        Text(
-                            modifier = Modifier
-                                .padding(
-                                    top = 10.dp
-                                ),
-                            text = "1FABCE",
-                            letterSpacing = 10.sp,
-                            fontSize = 20.sp
-                        )
+                        if(generateJoinCode) {
+                            Text(
+                                modifier = Modifier
+                                    .padding(
+                                        top = 10.dp
+                                    ),
+                                text = responsePayload!!.getString(JoiningQRCode.JOIN_CODE_KEY),
+                                letterSpacing = 10.sp,
+                                fontSize = 20.sp
+                            )
+                        }
                     }
                 } else {
                     Column (
@@ -616,10 +662,33 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                             Customer
                         else
                             Vendor
-                        // TODO: MAKE REQUEST THEN
-                        displayQrcode = true
-                    } else
-                        mailingListIsError.value = true
+                        requester.sendRequest(
+                            request = {
+                                requester.addMembers(
+                                    projectId = project.value.id,
+                                    mailingList = mailingList.value,
+                                    role = role,
+                                    createJoinCode = generateJoinCode
+                                )
+                            },
+                            onSuccess = { response ->
+                                responsePayload = response
+                                displayQrcode = true
+                            },
+                            onFailure = { response ->
+                                resetLayout()
+                                snackbarLauncher.showSnack(
+                                    message = response.getString(RESPONSE_MESSAGE_KEY)
+                                )
+                            }
+                        )
+                    } else {
+                        checkToSetErrorMessage(
+                            errorMessage = mailingListErrorMessage,
+                            errorMessageKey = R.string.wrong_mailing_list,
+                            error = mailingListIsError
+                        )
+                    }
                 }
             }
         )
@@ -633,9 +702,9 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
     @SuppressLint("UnrememberedMutableState")
     @Composable
     private fun AddRelease() {
-        var releaseVersion = remember { mutableStateOf("") }
-        var releaseVersionError = remember { mutableStateOf(false) }
-        var releaseVersionErrorMessage = remember { mutableStateOf("") }
+        val releaseVersion = remember { mutableStateOf("") }
+        val releaseVersionError = remember { mutableStateOf(false) }
+        val releaseVersionErrorMessage = remember { mutableStateOf("") }
         val releaseNotes = rememberSaveable(stateSaver = TextFieldValue.Saver) {
             mutableStateOf(TextFieldValue(""))
         }
@@ -740,6 +809,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
     private fun ProjectMembers() {
         val sheetState = rememberModalBottomSheetState()
         if(displayMembers.value) {
+            suspendRefresher()
             ModalBottomSheet(
                 onDismissRequest = { displayMembers.value = false },
                 sheetState = sheetState,
@@ -751,7 +821,11 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                         items = project.value.projectMembers
                     ) { member ->
                         ListItem(
-                            leadingContent = { Logo(url = member.profilePicUrl) },
+                            leadingContent = {
+                                Logo(
+                                    url = getMemberProfilePicUrl(member)
+                                )
+                            },
                             headlineContent = {
                                 Row (
                                     horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -777,10 +851,27 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                                 )
                             },
                             trailingContent = {
-                                if(isProjectAuthor && member.id != activeLocalSession.id) {
+                                val memberId = member.id
+                                if(isProjectAuthor && memberId != activeLocalSession.id) {
                                     IconButton(
                                         onClick = {
-                                            /*TODO MAKE THE REQUEST THEN*/
+                                            requester.sendRequest(
+                                                request = {
+                                                    requester.removeMember(
+                                                        projectId = project.value.id,
+                                                        memberId = memberId
+                                                    )
+                                                },
+                                                onSuccess = {
+                                                    refreshItem()
+                                                },
+                                                onFailure = { response ->
+                                                    displayMembers.value = false
+                                                    snackbarLauncher.showSnack(
+                                                        message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                    )
+                                                }
+                                            )
                                         }
                                     ) {
                                         Icon(
@@ -795,7 +886,8 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                     }
                 }
             }
-        }
+        } else
+            refreshItem()
     }
 
     /**
@@ -807,10 +899,11 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
      */
     @Composable
     private fun rememberQrBitmapPainter(
-        content: String,
+        content: JSONObject,
         size: Dp = 100.dp,
         padding: Dp = 0.dp
     ): BitmapPainter {
+        val contentSource = content.toString(4)
         var showProgress by remember { mutableStateOf(true) }
         if (showProgress) {
             Column(
@@ -829,7 +922,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
         val density = LocalDensity.current
         val sizePx = with(density) { size.roundToPx() }
         val paddingPx = with(density) { padding.roundToPx() }
-        var bitmap by remember(content) { mutableStateOf<Bitmap?>(null) }
+        var bitmap by remember(contentSource) { mutableStateOf<Bitmap?>(null) }
         LaunchedEffect(bitmap) {
             if (bitmap != null) return@LaunchedEffect
             launch(Dispatchers.IO) {
@@ -840,7 +933,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                     }
                 val bitmapMatrix = try {
                     qrCodeWriter.encode(
-                        content, BarcodeFormat.QR_CODE,
+                        contentSource, BarcodeFormat.QR_CODE,
                         sizePx, sizePx, encodeHints
                     )
                 } catch (ex: WriterException) {
@@ -877,26 +970,31 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
     }
 
     override fun refreshItem() {
-        refreshRoutine.launch {
-            while (continueToFetch(this@ProjectActivity)) {
-                requester.sendRequest(
-                    request = {
-                        requester.getProject(
-                            projectId = project.value.id
-                        )
-                    },
-                    onSuccess = { response ->
-                        project.value = Project(response.jsonObjectSource)
-                    },
-                    onFailure = { response ->
-                        snackbarLauncher.showSnack(response.getString(Requester.RESPONSE_MESSAGE_KEY))
-                    },
-                    onConnectionError = { response ->
-                        snackbarLauncher.showSnack(response.getString(Requester.RESPONSE_MESSAGE_KEY))
-                        refreshRoutine.cancel()
-                    }
-                )
-                delay(1000L)
+        if(canRefresherStarts()) {
+            isRefreshing = true
+            refreshRoutine.launch {
+                while (continueToFetch(this@ProjectActivity)) {
+                    requester.sendRequest(
+                        request = {
+                            requester.getProject(
+                                projectId = project.value.id
+                            )
+                        },
+                        onSuccess = { response ->
+                            project.value = Project(response.jsonObjectSource)
+                        },
+                        onFailure = {
+                            refreshRoutine.cancel()
+                            startActivity(Intent(this@ProjectActivity,
+                                MainActivity::class.java))
+                        },
+                        onConnectionError = { response ->
+                            snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
+                            refreshRoutine.cancel()
+                        }
+                    )
+                    delay(1000L)
+                }
             }
         }
     }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,7 +24,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
@@ -267,7 +270,7 @@ class AuthActivity : NovaActivity() {
                                                     errorMessageKey = R.string.wrong_server_secret,
                                                     error = serverSecretError
                                                 )
-                                                host.value = it
+                                                serverSecret.value = it
                                             },
                                             label = R.string.server_secret,
                                             imeAction = ImeAction.Next,
@@ -545,8 +548,10 @@ class AuthActivity : NovaActivity() {
             Card (
                 modifier = Modifier
                     .padding(
-                        top = 50.dp
-                    ),
+                        top = 30.dp
+                    )
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState()),
                 shape = if(subtitle == R.string.authenticate_on_a_server) {
                     RoundedCornerShape(
                         topStart = 0.dp,
@@ -588,7 +593,7 @@ class AuthActivity : NovaActivity() {
         NovaTextField(
             modifier = Modifier
                 .width(275.dp),
-            value = surname,
+            value = name,
             onValueChange = {
                 nameError.value = !isNameValid(it) && name.value.isNotEmpty()
                 checkToSetErrorMessage(
@@ -618,7 +623,7 @@ class AuthActivity : NovaActivity() {
             },
             label = R.string.surname,
             imeAction = ImeAction.Next,
-            errorMessage = emailErrorMessage,
+            errorMessage = surnameErrorMessage,
             isError = surnameError
         )
         EmailPasswordForm()

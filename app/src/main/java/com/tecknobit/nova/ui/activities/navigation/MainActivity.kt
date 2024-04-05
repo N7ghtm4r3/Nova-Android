@@ -68,12 +68,15 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.tecknobit.apimanager.formatters.JsonHelper
 import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.scan_to_join_in_a_project
 import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
+import com.tecknobit.nova.helpers.utils.AndroidRequester
 import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.localSessionsHelper
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
 import com.tecknobit.nova.ui.activities.session.ProfileActivity
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
@@ -86,11 +89,16 @@ import com.tecknobit.nova.ui.components.getProjectLogoUrl
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
-import com.tecknobit.novacore.InputValidator.*
+import com.tecknobit.novacore.InputValidator.isProjectNameValid
+import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.HOST_ADDRESS_KEY
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.helpers.Requester.ListFetcher
-import com.tecknobit.novacore.records.User.AUTHORED_PROJECTS_KEY
+import com.tecknobit.novacore.records.User
+import com.tecknobit.novacore.records.User.IDENTIFIER_KEY
+import com.tecknobit.novacore.records.User.PROFILE_PIC_URL_KEY
 import com.tecknobit.novacore.records.User.PROJECTS_KEY
+import com.tecknobit.novacore.records.User.Role
+import com.tecknobit.novacore.records.User.TOKEN_KEY
 import com.tecknobit.novacore.records.project.Project
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -138,8 +146,71 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
     private val barcodeLauncher: ActivityResultLauncher<ScanOptions> =
         registerForActivityResult(ScanContract()) { result ->
             val content = result.contents
-            // TODO: MAKE THE REAL WORKFLOW
-
+            if(content != null) {
+                try {
+                    val helper = JsonHelper(content)
+                    val identifier = helper.getString(IDENTIFIER_KEY, null)
+                    val hostAddress = helper.getString(HOST_ADDRESS_KEY, null)
+                    if(identifier != null && hostAddress != null) {
+                        val email = activeLocalSession.email
+                        val name = activeLocalSession.name
+                        val surname = activeLocalSession.surname
+                        val password = activeLocalSession.password
+                        requester = AndroidRequester(
+                            host = hostAddress
+                        )
+                        requester.sendRequest(
+                            request = {
+                                requester.joinWithId(
+                                    id = identifier,
+                                    email = email,
+                                    name = name,
+                                    surname = surname,
+                                    password = password
+                                )
+                            },
+                            onSuccess = { response ->
+                                val payloadResponse = response.getJSONObject(RESPONSE_MESSAGE_KEY)
+                                val userIdentifier = response.getString(IDENTIFIER_KEY)
+                                val token = response.getString(TOKEN_KEY)
+                                if(payloadResponse.has(TOKEN_KEY)) {
+                                    localSessionsHelper.insertSession(
+                                        userIdentifier,
+                                        token,
+                                        response.getString(PROFILE_PIC_URL_KEY),
+                                        name,
+                                        surname,
+                                        email,
+                                        password,
+                                        hostAddress,
+                                        Role.valueOf(response.getString(User.ROLE_KEY)),
+                                        activeLocalSession.language
+                                    )
+                                } else {
+                                    if(activeLocalSession.id != userIdentifier)
+                                        localSessionsHelper.changeActiveSession(userIdentifier)
+                                }
+                                activeLocalSession = localSessionsHelper.activeSession
+                                requester.setUserCredentials(
+                                    userId = activeLocalSession.id,
+                                    userToken = activeLocalSession.token
+                                )
+                                refreshList()
+                            },
+                            onFailure = { response ->
+                                snackbarLauncher.showSnack(
+                                    message = response.getString(RESPONSE_MESSAGE_KEY)
+                                )
+                                refreshList()
+                            }
+                        )
+                    } else
+                        refreshList()
+                } catch (e : IllegalArgumentException) {
+                    refreshList()
+                }
+            } else
+                refreshList()
         }
 
     /**
@@ -170,7 +241,10 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
                         ) {
                             if(activeLocalSession.isVendor) {
                                 FloatingActionButton(
-                                    onClick = { displayAddProject.value = true },
+                                    onClick = {
+                                        displayAddProject.value = true
+                                        suspendRefresher()
+                                    },
                                     containerColor = md_theme_light_primary
                                 ) {
                                     Icon(
@@ -181,7 +255,10 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
                                 AddProject()
                             }
                             FloatingActionButton(
-                                onClick = { barcodeLauncher.launch(scanOptions) },
+                                onClick = {
+                                    suspendRefresher()
+                                    barcodeLauncher.launch(scanOptions)
+                                },
                                 containerColor = md_theme_light_primary
                             ) {
                                 Icon(
@@ -376,9 +453,9 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
     @Composable
     private fun AddProject() {
         val context = LocalContext.current
-        var projectName = remember { mutableStateOf("") }
-        var isError = remember { mutableStateOf(false) }
-        var errorMessage = remember { mutableStateOf("") }
+        val projectName = remember { mutableStateOf("") }
+        val isError = remember { mutableStateOf(false) }
+        val errorMessage = remember { mutableStateOf("") }
         // TODO: USE THE NOVA PROJECT LOGO AS DEFAULT IMAGE
         var projectLogo by remember { mutableStateOf("https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg") }
         var selectedLogo = File(projectLogo)
@@ -389,6 +466,7 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
             projectLogo = "https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg"
             selectedLogo = File(projectLogo)
             displayAddProject.value = false
+            refreshList()
         }
         NovaAlertDialog(
             show = displayAddProject,
@@ -472,11 +550,9 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
                             resetLayout()
                         },
                         onFailure = { response ->
-                            // TODO: TO USE IN SOME WAY
-                            // response.getString(RESPONSE_MESSAGE_KEY)
                             setErrorMessage(
                                 errorMessage = errorMessage,
-                                errorMessageKey = R.string.name_is_not_valid,
+                                errorMessageValue = response.getString(RESPONSE_MESSAGE_KEY),
                                 error = isError
                             )
                         }
@@ -493,30 +569,30 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
     }
 
     override fun refreshList() {
-        refreshRoutine.launch {
-            while (continueToFetch(this@MainActivity)) {
-                requester.sendRequest(
-                    request = { requester.listProjects() },
-                    onSuccess = { response ->
-                        val projectsRefreshed = arrayListOf<Project>()
-                        val memberProjects = response.getJSONArray(PROJECTS_KEY)
-                        val authoredProjects = response.getJSONArray(AUTHORED_PROJECTS_KEY)
-                        for(j in 0 until memberProjects.length())
-                            projectsRefreshed.add(Project(memberProjects.getJSONObject(j)))
-                        for(j in 0 until authoredProjects.length())
-                            projectsRefreshed.add(Project(authoredProjects.getJSONObject(j)))
-                        projects.clear()
-                        projects.addAll(projectsRefreshed)
-                    },
-                    onFailure = { response ->
-                        snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
-                    },
-                    onConnectionError = { response ->
-                        snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
-                        refreshRoutine.cancel()
-                    }
-                )
-                delay(1000L)
+        if(canRefresherStarts()) {
+            isRefreshing = true
+            refreshRoutine.launch {
+                while (continueToFetch(this@MainActivity)) {
+                    requester.sendRequest(
+                        request = { requester.listProjects() },
+                        onSuccess = { response ->
+                            val projectsRefreshed = arrayListOf<Project>()
+                            val memberProjects = response.getJSONArray(PROJECTS_KEY)
+                            for(j in 0 until memberProjects.length())
+                                projectsRefreshed.add(Project(memberProjects.getJSONObject(j)))
+                            projects.clear()
+                            projects.addAll(projectsRefreshed)
+                        },
+                        onFailure = { response ->
+                            snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
+                        },
+                        onConnectionError = { response ->
+                            snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
+                            refreshRoutine.cancel()
+                        }
+                    )
+                    delay(1000L)
+                }
             }
         }
     }
@@ -550,6 +626,11 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
     override fun onResume() {
         super.onResume()
         activeActivity = this
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        projects.clear()
     }
 
 }

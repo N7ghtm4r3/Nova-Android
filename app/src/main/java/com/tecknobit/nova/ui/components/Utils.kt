@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
+import com.tecknobit.novacore.records.User
 import com.tecknobit.novacore.records.project.Project
 import java.io.File
 import java.io.FileOutputStream
@@ -148,4 +149,19 @@ fun getProjectLogoUrl(
     project: Project
 ): String {
     return activeLocalSession.hostAddress + "/" + project.logoUrl
+}
+
+/**
+ * Function to assemble the profile pic url complete (with the current [activeLocalSession].hostAddress)
+ * to display
+ *
+ * @param member: the member from get the profile pic url path
+ *
+ * @return the profile pic complete url to display
+ *
+ */
+fun getMemberProfilePicUrl(
+    member: User
+): String {
+    return activeLocalSession.hostAddress + "/" + member.profilePicUrl
 }

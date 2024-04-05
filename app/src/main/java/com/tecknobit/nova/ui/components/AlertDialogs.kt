@@ -29,7 +29,7 @@ fun NovaAlertDialog(
     onDismissAction: () -> Unit = { show.value = false },
     title: Int,
     message: Int,
-    dismissAction: () -> Unit = { show.value = false },
+    dismissAction: () -> Unit = onDismissAction,
     confirmAction: () -> Unit
 ) {
     NovaAlertDialog(
@@ -70,7 +70,7 @@ fun NovaAlertDialog(
     onDismissAction: () -> Unit = { show.value = false },
     title: Int,
     message: @Composable (() -> Unit),
-    dismissAction: () -> Unit = { show.value = false },
+    dismissAction: () -> Unit = onDismissAction,
     confirmAction: () -> Unit
 ) {
     NovaAlertDialog(
@@ -106,7 +106,7 @@ fun NovaAlertDialog(
     onDismissAction: () -> Unit = { show.value = false },
     title: String,
     message: @Composable (() -> Unit),
-    dismissAction: () -> Unit = { show.value = false },
+    dismissAction: () -> Unit = onDismissAction,
     confirmAction: () -> Unit
 ) {
     NovaAlertDialog(
@@ -142,7 +142,7 @@ fun NovaAlertDialog(
     onDismissAction: () -> Unit = { show.value = false },
     title: @Composable (() -> Unit),
     message: @Composable (() -> Unit),
-    dismissAction: () -> Unit = { show.value = false },
+    dismissAction: () -> Unit = onDismissAction,
     confirmAction: () -> Unit
 ) {
     if(show.value) {
