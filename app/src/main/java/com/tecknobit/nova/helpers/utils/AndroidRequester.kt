@@ -5,6 +5,7 @@ import com.tecknobit.novacore.helpers.Requester
 import com.tecknobit.novacore.records.User.NAME_KEY
 import com.tecknobit.novacore.records.User.PROFILE_PIC_URL_KEY
 import com.tecknobit.novacore.records.project.Project.LOGO_URL_KEY
+import com.tecknobit.novacore.records.release.events.AssetUploadingEvent.AssetUploaded.ASSETS_UPLOADED_KEY
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import okhttp3.Headers.Companion.toHeaders
@@ -109,7 +110,21 @@ class AndroidRequester(
         releaseId: String,
         assets: List<File>
     ): JSONObject {
-        return super.uploadAsset(projectId, releaseId, assets)
+        val body = MultipartBody.Builder().setType(MultipartBody.FORM)
+        assets.forEach { asset ->
+            body.addFormDataPart(
+                ASSETS_UPLOADED_KEY,
+                asset.name,
+                asset.readBytes().toRequestBody("*/*".toMediaType())
+            )
+        }
+        return execMultipartRequest(
+            endpoint = assembleReleasesEndpointPath(
+                projectId = projectId,
+                releaseId = releaseId
+            ),
+            body = body.build()
+        )
     }
 
     /**

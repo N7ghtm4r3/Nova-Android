@@ -53,6 +53,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,8 +90,10 @@ import com.tecknobit.nova.R.string.promote_release_as_latest
 import com.tecknobit.nova.R.string.reject
 import com.tecknobit.nova.R.string.tags
 import com.tecknobit.nova.ui.activities.NovaActivity
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.assetDownloader
-import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.requester
 import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.NovaTextField
@@ -98,6 +101,7 @@ import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.ReleaseTagBadge
 import com.tecknobit.nova.ui.components.createColor
 import com.tecknobit.nova.ui.components.getMessage
+import com.tecknobit.nova.ui.components.getReportUrl
 import com.tecknobit.nova.ui.theme.BlueSchemeColors
 import com.tecknobit.nova.ui.theme.LightblueSchemeColors
 import com.tecknobit.nova.ui.theme.NovaTheme
@@ -109,14 +113,18 @@ import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
 import com.tecknobit.novacore.InputValidator.areRejectionReasonsValid
 import com.tecknobit.novacore.InputValidator.isTagCommentValid
+import com.tecknobit.novacore.helpers.Requester
+import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.records.project.Project
 import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import com.tecknobit.novacore.records.release.Release
 import com.tecknobit.novacore.records.release.Release.ALLOWED_ASSETS_TYPE
 import com.tecknobit.novacore.records.release.Release.RELEASE_KEY
+import com.tecknobit.novacore.records.release.Release.RELEASE_REPORT_PATH
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Alpha
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Approved
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Beta
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Latest
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Rejected
 import com.tecknobit.novacore.records.release.events.AssetUploadingEvent
@@ -128,6 +136,12 @@ import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Bug
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Issue
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.LayoutChange
 import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.io.File
 
 /**
  * The {@code ReleaseActivity} activity is used to manage and display the [Release] details
@@ -136,12 +150,14 @@ import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent
  * @see ComponentActivity
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeApi::class)
-class ReleaseActivity : NovaActivity() {
+class ReleaseActivity : NovaActivity(), Requester.ItemFetcher<Release> {
 
     /**
      * **release** -> the release displayed
      */
     private lateinit var release: MutableState<Release>
+
+    private lateinit var sourceProject: Project
 
     /**
      * **navBackIntent** -> the intent reached when navigate back
@@ -168,11 +184,14 @@ class ReleaseActivity : NovaActivity() {
                 else
                     mutableStateOf(intent.getSerializableExtra(RELEASE_KEY)!! as Release)
             }
-            val sourceProject = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            sourceProject = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
                 intent.getSerializableExtra(PROJECT_KEY, Project::class.java)!!
             else
                 intent.getSerializableExtra(PROJECT_KEY)!! as Project
             currentContext = LocalContext.current
+            refreshRoutine = rememberCoroutineScope()
+            InitLauncher()
+            refreshItem()
             navBackIntent = Intent(this@ReleaseActivity, ProjectActivity::class.java)
             navBackIntent!!.putExtra(PROJECT_KEY, sourceProject)
             val releaseCurrentStatus = release.value.status
@@ -216,7 +235,29 @@ class ReleaseActivity : NovaActivity() {
                             actions = {
                                 IconButton(
                                     onClick = {
-                                        // TODO: MAKE REQUEST THEN
+                                        suspendRefresher()
+                                        requester.sendRequest(
+                                            request = {
+                                                requester.createReportRelease(
+                                                    projectId = sourceProject.id,
+                                                    releaseId = release.value.id
+                                                )
+                                            },
+                                            onSuccess = { response ->
+                                                val reportPath = getReportUrl(response
+                                                    .getString(RELEASE_REPORT_PATH))
+                                                assetDownloader.downloadAsset(
+                                                    url = reportPath
+                                                )
+                                                refreshItem()
+                                            },
+                                            onFailure = { response ->
+                                                refreshItem()
+                                                snackbarLauncher.showSnack(
+                                                    message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                )
+                                            }
+                                        )
                                     }
                                 ) {
                                     Icon(
@@ -226,7 +267,10 @@ class ReleaseActivity : NovaActivity() {
                                     )
                                 }
                                 IconButton(
-                                    onClick = { showDeleteRelease.value = true }
+                                    onClick = {
+                                        showDeleteRelease.value = true
+                                        suspendRefresher()
+                                    }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.DeleteForever,
@@ -237,23 +281,54 @@ class ReleaseActivity : NovaActivity() {
                             }
                         )
                     },
+                    snackbarHost = {
+                        snackbarLauncher.CreateSnackbarHost()
+                    },
                     floatingActionButton = {
-                        if(releaseCurrentStatus != Latest && user.isVendor) {
+                        if(releaseCurrentStatus != Latest && activeLocalSession.isVendor) {
                             var showFilePicker by remember { mutableStateOf(false) }
                             MultipleFilePicker(
                                 show = showFilePicker,
                                 fileExtensions = ALLOWED_ASSETS_TYPE
                             ) { assets ->
                                 if(!assets.isNullOrEmpty()) {
-                                    // TODO: MAKE REQUEST THEN
-                                    showFilePicker = false
+                                    val assetsPath = mutableListOf<File>()
+                                    runBlocking {
+                                        async {
+                                            assets.forEach { asset ->
+                                                assetsPath.add(File(asset.path))
+                                            }
+                                        }.await()
+                                        if(assetsPath.isNotEmpty()) {
+                                            requester.sendRequest(
+                                                request = {
+                                                    requester.uploadAsset(
+                                                        projectId = sourceProject.id,
+                                                        releaseId = release.value.id,
+                                                        assets = assetsPath
+                                                    )
+                                                },
+                                                onSuccess = { response ->
+
+                                                    showFilePicker = false
+                                                },
+                                                onFailure = { response ->
+                                                    showFilePicker = false
+                                                    snackbarLauncher.showSnack(
+                                                        response.getString(RESPONSE_MESSAGE_KEY)
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             FloatingActionButton(
                                 onClick = {
-                                    if(isReleaseApproved)
+                                    if(isReleaseApproved) {
+                                        suspendRefresher()
                                         showPromoteRelease.value = true
-                                    else
+                                    } else
                                         showFilePicker = true
                                 },
                                 containerColor = md_theme_light_primary
@@ -270,22 +345,48 @@ class ReleaseActivity : NovaActivity() {
                     },
                     containerColor = gray_background
                 ) {
+                    val closeDeleteReleaseDialog = {
+                        showDeleteRelease.value = false
+                        refreshItem()
+                    }
                     NovaAlertDialog(
                         show = showDeleteRelease,
                         icon = Icons.Default.Warning,
+                        onDismissAction = closeDeleteReleaseDialog,
                         title = delete_release,
                         message = delete_release_alert_message,
                         confirmAction = {
-                            // TODO: MAKE THE REQUEST THEN
-                            showDeleteRelease.value = false
-                            startActivity(navBackIntent)
+                            requester.sendRequest(
+                                request = {
+                                    requester.deleteRelease(
+                                        projectId = sourceProject.id,
+                                        releaseId = release.value.id
+                                    )
+                                },
+                                onSuccess = {
+                                    showDeleteRelease.value = false
+                                    startActivity(navBackIntent)
+                                },
+                                onFailure = { response ->
+                                    closeDeleteReleaseDialog.invoke()
+                                    snackbarLauncher.showSnack(
+                                        message = response.getString(RESPONSE_MESSAGE_KEY)
+                                    )
+                                }
+                            )
                         }
                     )
                     if(isReleaseApproved) {
+                        val closeAction = {
+                            showPromoteRelease.value = false
+                            refreshItem()
+                        }
                         val lastEventStatus = getLastEventStatus()
+                        var newStatus: ReleaseStatus = Alpha
                         NovaAlertDialog(
                             show = showPromoteRelease,
                             icon = Icons.Default.Verified,
+                            onDismissAction = closeAction,
                             title = when (lastEventStatus) {
                                 Approved -> promote_release
                                 Alpha -> promote_release_as_beta
@@ -294,8 +395,14 @@ class ReleaseActivity : NovaActivity() {
                             message = {
                                 val resId = when(lastEventStatus) {
                                     Approved -> { promote_release }
-                                    Alpha -> { promote_beta_release_alert_message }
-                                    else -> { promote_latest_release_alert_message }
+                                    Alpha -> {
+                                        newStatus = Beta
+                                        promote_beta_release_alert_message
+                                    }
+                                    else -> {
+                                        newStatus = Latest
+                                        promote_latest_release_alert_message
+                                    }
                                 }
                                 if(lastEventStatus == Approved) {
                                     var isAlphaSelected by remember {
@@ -316,6 +423,7 @@ class ReleaseActivity : NovaActivity() {
                                                 onClick = {
                                                     if(!isAlphaSelected) {
                                                         isAlphaSelected = true
+                                                        newStatus = Alpha
                                                         warnText = promote_alpha_release_alert_message
                                                     }
                                                 }
@@ -328,6 +436,7 @@ class ReleaseActivity : NovaActivity() {
                                                 onClick = {
                                                     if(isAlphaSelected) {
                                                         isAlphaSelected = false
+                                                        newStatus = Latest
                                                         warnText = promote_latest_release_alert_message
                                                     }
                                                 }
@@ -353,8 +462,24 @@ class ReleaseActivity : NovaActivity() {
                                 }
                             },
                             confirmAction = {
-                                // TODO: MAKE THE REQUEST TO PROMOTE THE RELEASE AS LATEST THEN
-                                showPromoteRelease.value = false
+                                requester.sendRequest(
+                                    request = {
+                                        requester.promoteRelease(
+                                            projectId = sourceProject.id,
+                                            releaseId = release.value.id,
+                                            releaseStatus = newStatus
+                                        )
+                                    },
+                                    onSuccess = {
+                                        closeAction.invoke()
+                                    },
+                                    onFailure = { response ->
+                                        closeAction.invoke()
+                                        snackbarLauncher.showSnack(
+                                            message = response.getString(RESPONSE_MESSAGE_KEY)
+                                        )
+                                    }
+                                )
                             }
                         )
                     }
@@ -427,12 +552,16 @@ class ReleaseActivity : NovaActivity() {
                                                     val reasons = remember { mutableStateOf("") }
                                                     val reasonsErrorMessage = remember { mutableStateOf("") }
                                                     val isError = remember { mutableStateOf(false) }
+                                                    val rejectedTags = remember {
+                                                        mutableListOf<ReleaseTag>()
+                                                    }
                                                     val closeAction = {
                                                         isApproved.value = true
                                                         reasons.value = ""
                                                         isError.value = false
                                                         reasonsErrorMessage.value = ""
                                                         showCommentAsset.value = false
+                                                        rejectedTags.clear()
                                                     }
                                                     NovaAlertDialog(
                                                         show = showCommentAsset,
@@ -443,19 +572,54 @@ class ReleaseActivity : NovaActivity() {
                                                             isApproved = isApproved,
                                                             reasons = reasons,
                                                             isError = isError,
-                                                            reasonsErrorMessage = reasonsErrorMessage
+                                                            reasonsErrorMessage = reasonsErrorMessage,
+                                                            rejectedTags = rejectedTags
                                                         ),
                                                         dismissAction = closeAction,
                                                         confirmAction = {
                                                             if(isApproved.value) {
-                                                                // TODO: MAKE THE REQUEST THEN
-                                                                closeAction()
+                                                                requester.sendRequest(
+                                                                    request = {
+                                                                        requester.approveAssets(
+                                                                            projectId = sourceProject.id,
+                                                                            releaseId = release.value.id,
+                                                                            eventId = event.id
+                                                                        )
+                                                                    },
+                                                                    onSuccess = {
+                                                                        closeAction()
+                                                                    },
+                                                                    onFailure = { response ->
+                                                                        closeAction()
+                                                                        snackbarLauncher.showSnack(
+                                                                            message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                                        )
+                                                                    }
+                                                                )
                                                             } else {
                                                                 if(areRejectionReasonsValid(reasons.value)) {
-                                                                    // TODO: MAKE THE REQUEST THEN
-                                                                    closeAction()
+                                                                    requester.sendRequest(
+                                                                        request = {
+                                                                            requester.rejectAssets(
+                                                                                projectId = sourceProject.id,
+                                                                                releaseId = release.value.id,
+                                                                                eventId = event.id,
+                                                                                reasons = reasons.value,
+                                                                                tags = rejectedTags
+                                                                            )
+                                                                        },
+                                                                        onSuccess = {
+                                                                            closeAction()
+                                                                        },
+                                                                        onFailure = { response ->
+                                                                            closeAction()
+                                                                            snackbarLauncher.showSnack(
+                                                                                message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                                            )
+                                                                        }
+                                                                    )
                                                                 } else {
-                                                                    checkToSetErrorMessage(
+                                                                    setErrorMessage(
                                                                         errorMessage = reasonsErrorMessage,
                                                                         errorMessageKey = string.wrong_reasons,
                                                                         error = isError
@@ -483,7 +647,7 @@ class ReleaseActivity : NovaActivity() {
                                                                 text = "Test"
                                                             )
                                                         }
-                                                        if(user.isCustomer) {
+                                                        if(activeLocalSession.isCustomer) {
                                                             Button(
                                                                 onClick = { showCommentAsset.value = true }
                                                             ) {
@@ -527,6 +691,7 @@ class ReleaseActivity : NovaActivity() {
                                                         )
                                                         TagInformation(
                                                             show = showAlert,
+                                                            event = event,
                                                             tag = tag,
                                                             date = event.releaseEventDate
                                                         )
@@ -561,12 +726,14 @@ class ReleaseActivity : NovaActivity() {
      * @param reasons: the rejection reasons
      * @param isError: state to indicate whether an error occurred
      * @param reasonsErrorMessage: message to display when the rejection reasons are not valid
+     * @param rejectedTags: the tags to fill if the release is rejected
      */
     private fun commentReleaseMessage(
         isApproved: MutableState<Boolean>,
         reasons: MutableState<String>,
         isError: MutableState<Boolean>,
         reasonsErrorMessage: MutableState<String>,
+        rejectedTags: MutableList<ReleaseTag>
     ) = @Composable {
         Column (
             modifier = Modifier
@@ -699,7 +866,13 @@ class ReleaseActivity : NovaActivity() {
                                 else
                                     Color.White
                             ),
-                            onClick = { isAdded = !isAdded }
+                            onClick = {
+                                isAdded = !isAdded
+                                if(isAdded)
+                                    rejectedTags.add(tag)
+                                else
+                                    rejectedTags.remove(tag)
+                            }
                         ) {
                             Text(
                                 text = tag.name,
@@ -720,12 +893,14 @@ class ReleaseActivity : NovaActivity() {
      * Function to display a [NovaAlertDialog] with the comment of a [RejectedTag]
      *
      * @param show: whether show or not the alert
+     * @param event: the event where the tag is placed
      * @param tag: the tag used to display the alert
      * @param date: the date when the tag has been commented
      */
     @Composable
     private fun TagInformation(
         show: MutableState<Boolean>,
+        event: RejectedReleaseEvent,
         tag: RejectedTag,
         date: String
     ) {
@@ -739,7 +914,8 @@ class ReleaseActivity : NovaActivity() {
             typography = Typography,
         ) {
             if(show.value) {
-                val isInputMode = tag.comment.isEmpty()
+                suspendRefresher()
+                val isInputMode = tag.comment == null || tag.comment.isEmpty()
                 val isInputButton = @Composable {
                     TextButton(
                         onClick = { show.value = false }
@@ -808,11 +984,33 @@ class ReleaseActivity : NovaActivity() {
                         TextButton(
                             onClick = {
                                 if(isInputMode) {
-                                    if(isTagCommentValid(description.value)) {
-                                        // TODO: MAKE REQUEST THEN
+                                    var closeAction = {
                                         show.value = false
+                                        refreshItem()
+                                    }
+                                    if(isTagCommentValid(description.value)) {
+                                        requester.sendRequest(
+                                            request = {
+                                                requester.fillRejectedTag(
+                                                    projectId = sourceProject.id,
+                                                    releaseId = release.value.id,
+                                                    eventId = event.id,
+                                                    tagId = tag.id,
+                                                    comment = description.value
+                                                )
+                                            },
+                                            onSuccess = {
+                                                closeAction.invoke()
+                                            },
+                                            onFailure = { response ->
+                                                closeAction.invoke()
+                                                snackbarLauncher.showSnack(
+                                                    message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                )
+                                            }
+                                        )
                                     } else {
-                                        checkToSetErrorMessage(
+                                        setErrorMessage(
                                             errorMessage = descriptionErrorMessage,
                                             errorMessageKey = string.wrong_description,
                                             error = isError
@@ -832,7 +1030,8 @@ class ReleaseActivity : NovaActivity() {
                         }
                     }
                 )
-            }
+            } else
+                refreshItem()
         }
     }
 
@@ -844,13 +1043,18 @@ class ReleaseActivity : NovaActivity() {
      * @return the last status of the last event occurred as [ReleaseStatus]
      */
     private fun getLastEventStatus() : ReleaseStatus {
+        TODO("fix the search algorithm")
         val releaseEvents = mutableListOf<ReleaseEvent>()
         releaseEvents.addAll(release.value.releaseEvents)
         releaseEvents.reverse()
         var lastEventStatus = Alpha
+        var approvedCounter = 0
         releaseEvents.forEachIndexed { index, event ->
+            if(approvedCounter >= 2)
+                return@forEachIndexed
             val eventValue = event as ReleaseStandardEvent
             if (eventValue.status == Approved) {
+                approvedCounter++
                 val nextIndex = index + 1
                 lastEventStatus = if(nextIndex >= releaseEvents.size)
                     Approved
@@ -859,6 +1063,68 @@ class ReleaseActivity : NovaActivity() {
             }
         }
         return lastEventStatus
+    }
+
+    override fun refreshItem() {
+        if(canRefresherStarts()) {
+            isRefreshing = true
+            refreshRoutine.launch {
+                while (continueToFetch(this@ReleaseActivity)) {
+                    requester.sendRequest(
+                        request = {
+                            requester.getRelease(
+                                projectId = sourceProject.id,
+                                releaseId = release.value.id
+                            )
+                        },
+                        onSuccess = { response ->
+                            release.value = Release(response.jsonObjectSource)
+                        },
+                        onFailure = {
+                            refreshRoutine.cancel()
+                            startActivity(Intent(this@ReleaseActivity,
+                                ProjectActivity::class.java))
+                        },
+                        onConnectionError = { response ->
+                            snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))
+                            refreshRoutine.cancel()
+                        }
+                    )
+                    delay(1000L)
+                }
+            }
+        }
+    }
+
+    /**
+     * Called after {@link #onRestoreInstanceState}, {@link #onRestart}, or {@link #onPause}. This
+     * is usually a hint for your activity to start interacting with the user, which is a good
+     * indicator that the activity became active and ready to receive input. This sometimes could
+     * also be a transit state toward another resting state. For instance, an activity may be
+     * relaunched to {@link #onPause} due to configuration changes and the activity was visible,
+     * but wasn’t the top-most activity of an activity task. {@link #onResume} is guaranteed to be
+     * called before {@link #onPause} in this case which honors the activity lifecycle policy and
+     * the activity eventually rests in {@link #onPause}.
+     *
+     * <p>On platform versions prior to {@link android.os.Build.VERSION_CODES#Q} this is also a good
+     * place to try to open exclusive-access devices or to get access to singleton resources.
+     * Starting  with {@link android.os.Build.VERSION_CODES#Q} there can be multiple resumed
+     * activities in the system simultaneously, so {@link #onTopResumedActivityChanged(boolean)}
+     * should be used for that purpose instead.
+     *
+     * <p><em>Derived classes must call through to the super class's
+     * implementation of this method.  If they do not, an exception will be
+     * thrown.</em></p>
+     *
+     * @see #onRestoreInstanceState
+     * @see #onRestart
+     * @see #onPostResume
+     * @see #onPause
+     * @see #onTopResumedActivityChanged(boolean)
+     */
+    override fun onResume() {
+        super.onResume()
+        activeActivity = this
     }
 
 }

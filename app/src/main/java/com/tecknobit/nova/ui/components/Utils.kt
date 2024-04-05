@@ -98,8 +98,8 @@ fun EmptyList(
  * Function to get the complete file path of an file
  *
  * @param context: the context where the file is needed
- * @param uri: the uri of the image
- * @return the path of the image
+ * @param uri: the uri of the file
+ * @return the path of the file
  */
 fun getFilePath(
     context: Context,
@@ -164,4 +164,19 @@ fun getMemberProfilePicUrl(
     member: User
 ): String {
     return activeLocalSession.hostAddress + "/" + member.profilePicUrl
+}
+
+/**
+ * Function to assemble the profile pic url complete (with the current [activeLocalSession].hostAddress)
+ * to display
+ *
+ * @param member: the member from get the profile pic url path
+ *
+ * @return the profile pic complete url to display
+ *
+ */
+fun getReportUrl(
+    reportUrl: String
+): String {
+    return activeLocalSession.hostAddress + "/" + reportUrl
 }

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -112,6 +113,7 @@ import com.tecknobit.nova.ui.theme.gray_background
 import com.tecknobit.nova.ui.theme.md_theme_light_error
 import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
+import com.tecknobit.novacore.InputValidator.WRONG_RELEASE_VERSION_MESSAGE
 import com.tecknobit.novacore.InputValidator.areReleaseNotesValid
 import com.tecknobit.novacore.InputValidator.isMailingListValid
 import com.tecknobit.novacore.InputValidator.isReleaseVersionValid
@@ -345,7 +347,10 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                     },
                     floatingActionButton = {
                         FloatingActionButton(
-                            onClick = { displayAddRelease.value = true },
+                            onClick = {
+                                displayAddRelease.value = true
+                                suspendRefresher()
+                            },
                             containerColor = md_theme_light_primary
                         ) {
                             Icon(
@@ -356,7 +361,9 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
                         AddRelease()
                     }
                 ) {
-                    val releases = project.value.releases
+                    val releases = project.value.releases.sortedByDescending { release ->
+                        release.creationDate
+                    }
                     if(releases.isNotEmpty()) {
                         LazyColumn(
                             modifier = Modifier
@@ -715,6 +722,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
             releaseNotes.value = TextFieldValue("")
             releaseNotesError = false
             displayAddRelease.value = false
+            refreshItem()
         }
         NovaAlertDialog(
             show = displayAddRelease,
@@ -785,12 +793,36 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
             confirmAction = {
                 if(isReleaseVersionValid(releaseVersion.value)) {
                     if(areReleaseNotesValid(releaseNotes.value.text)) {
-                        // TODO: MAKE THE REQUEST THEN
-                        resetLayout()
+                        requester.sendRequest(
+                            request = {
+                                requester.addRelease(
+                                    projectId = project.value.id,
+                                    releaseVersion = releaseVersion.value,
+                                    releaseNotes = releaseNotes.value.text
+                                )
+                            },
+                            onSuccess = {
+                                resetLayout()
+                            },
+                            onFailure = { response ->
+                                val message = response.getString(RESPONSE_MESSAGE_KEY)
+                                if(message == WRONG_RELEASE_VERSION_MESSAGE) {
+                                    setErrorMessage(
+                                        errorMessage = releaseVersionErrorMessage,
+                                        errorMessageValue = message,
+                                        error = releaseVersionError
+                                    )
+                                } else {
+                                    snackbarLauncher.showSnack(
+                                        message = message
+                                    )
+                                }
+                            }
+                        )
                     } else
                         releaseNotesError = true
                 } else {
-                    checkToSetErrorMessage(
+                    setErrorMessage(
                         errorMessage = releaseVersionErrorMessage,
                         errorMessageKey = R.string.wrong_release_version,
                         error = releaseVersionError

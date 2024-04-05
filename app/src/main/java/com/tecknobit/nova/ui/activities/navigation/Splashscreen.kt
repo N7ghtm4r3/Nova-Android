@@ -27,7 +27,6 @@ import coil.ImageLoaderFactory
 import coil.request.CachePolicy
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.storage.LocalSessionHelper
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.users.User
 import com.tecknobit.nova.helpers.utils.AndroidRequester
 import com.tecknobit.nova.helpers.utils.download.AssetDownloader
 import com.tecknobit.nova.helpers.utils.ui.NotificationsReceiver.NotificationsHelper
@@ -65,11 +64,6 @@ class Splashscreen : ComponentActivity(), ImageLoaderFactory {
          * {@code DESTINATION_KEY} the key for the <b>"destination"</b> field
          */
         const val DESTINATION_KEY = "destination"
-
-        /**
-         * **user** -> the user of the current session
-         */
-        lateinit var user: User
 
         /**
          * **user** -> helper to manage the assets downloading

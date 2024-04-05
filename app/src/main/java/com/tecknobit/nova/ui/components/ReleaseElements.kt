@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tecknobit.nova.R
-import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.user
+import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
 import com.tecknobit.nova.ui.theme.fromHexToColor
 import com.tecknobit.novacore.records.release.Release
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.*
@@ -155,7 +155,7 @@ fun ReleaseTagBadge(
             max = 140.dp
         )
         .height(35.dp)
-    val isAdded = tag.comment.isNotEmpty()
+    val isAdded = tag.comment != null && tag.comment.isNotEmpty()
     val tagColor = tag.tag.createColor()
     val colors = CardDefaults.cardColors(
         containerColor = if(isAdded)
@@ -172,7 +172,7 @@ fun ReleaseTagBadge(
         color = textColor
     )
     // TODO: MAKE THE WORKFLOW TO LOCK THE POSSIBILITY IF IS NOT THE LAST EVENT
-    if(user.isVendor && tag.comment.isEmpty()) {
+    if(activeLocalSession.isVendor && tag.comment.isNullOrEmpty()) {
         OutlinedCard(
             modifier = modifier,
             colors = colors,

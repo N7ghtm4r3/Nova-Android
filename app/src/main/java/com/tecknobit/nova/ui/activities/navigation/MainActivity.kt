@@ -71,7 +71,6 @@ import com.journeyapps.barcodescanner.ScanOptions
 import com.tecknobit.apimanager.formatters.JsonHelper
 import com.tecknobit.nova.R
 import com.tecknobit.nova.R.string.scan_to_join_in_a_project
-import com.tecknobit.nova.helpers.toImportFromCoreLibrary.Project.PROJECT_KEY
 import com.tecknobit.nova.helpers.utils.AndroidRequester
 import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
@@ -100,6 +99,7 @@ import com.tecknobit.novacore.records.User.PROJECTS_KEY
 import com.tecknobit.novacore.records.User.Role
 import com.tecknobit.novacore.records.User.TOKEN_KEY
 import com.tecknobit.novacore.records.project.Project
+import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -147,6 +147,13 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
         registerForActivityResult(ScanContract()) { result ->
             val content = result.contents
             if(content != null) {
+                val restartWorkflow = {
+                    requester.setUserCredentials(
+                        userId = activeLocalSession.id,
+                        userToken = activeLocalSession.token
+                    )
+                    refreshList()
+                }
                 try {
                     val helper = JsonHelper(content)
                     val identifier = helper.getString(IDENTIFIER_KEY, null)
@@ -191,23 +198,19 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
                                         localSessionsHelper.changeActiveSession(userIdentifier)
                                 }
                                 activeLocalSession = localSessionsHelper.activeSession
-                                requester.setUserCredentials(
-                                    userId = activeLocalSession.id,
-                                    userToken = activeLocalSession.token
-                                )
-                                refreshList()
+                                restartWorkflow.invoke()
                             },
                             onFailure = { response ->
                                 snackbarLauncher.showSnack(
                                     message = response.getString(RESPONSE_MESSAGE_KEY)
                                 )
-                                refreshList()
+                                restartWorkflow.invoke()
                             }
                         )
                     } else
-                        refreshList()
+                        restartWorkflow.invoke()
                 } catch (e : IllegalArgumentException) {
-                    refreshList()
+                    restartWorkflow.invoke()
                 }
             } else
                 refreshList()
@@ -626,11 +629,6 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
     override fun onResume() {
         super.onResume()
         activeActivity = this
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        projects.clear()
     }
 
 }
