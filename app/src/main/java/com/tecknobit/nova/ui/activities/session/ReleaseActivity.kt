@@ -64,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import com.darkrockstudios.libraries.mpfilepicker.MultipleFilePicker
 import com.pushpal.jetlime.ItemsList
 import com.pushpal.jetlime.JetLimeColumn
@@ -295,7 +296,7 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                 if(!assets.isNullOrEmpty()) {
                                     val assetsPath = mutableListOf<File>()
                                     assets.forEach { asset ->
-                                        assetsPath.add(File(asset.path))
+                                        assetsPath.add(File(asset.path.toUri().lastPathSegment!!))
                                     }
                                     if(assetsPath.isNotEmpty()) {
                                         requester.sendRequest(
@@ -307,7 +308,6 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                                 )
                                             },
                                             onSuccess = { response ->
-
                                                 showFilePicker = false
                                             },
                                             onFailure = { response ->

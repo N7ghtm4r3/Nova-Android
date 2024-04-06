@@ -132,7 +132,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.util.Random
 
 /**
  * The {@code ProjectActivity} activity is used to manage and display a [Project] details
@@ -396,9 +395,9 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
                                 ) {
                                     BadgedBox(
                                         badge = {
-                                            // TODO: USE THE REAL NOTIFICATIONS LIST OF THE user
-                                            // val notifications = release.getNotifications()
-                                            val notifications = Random().nextInt(22)
+                                            val notifications = release.getNotifications(
+                                                MainActivity.notifications
+                                            )
                                             if(notifications > 0) {
                                                 Badge (
                                                     modifier = Modifier

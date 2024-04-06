@@ -4,7 +4,10 @@ import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 import static android.app.PendingIntent.getActivity;
 import static android.content.Context.NOTIFICATION_SERVICE;
 import static android.media.RingtoneManager.getDefaultUri;
+import static com.tecknobit.apimanager.apis.sockets.SocketManager.StandardResponseCode.SUCCESSFUL;
 import static com.tecknobit.nova.ui.activities.navigation.Splashscreen.DESTINATION_KEY;
+import static com.tecknobit.novacore.helpers.Requester.RESPONSE_MESSAGE_KEY;
+import static com.tecknobit.novacore.helpers.Requester.RESPONSE_STATUS_KEY;
 import static com.tecknobit.novacore.records.NovaItem.IDENTIFIER_KEY;
 import static com.tecknobit.novacore.records.NovaNotification.NOTIFICATIONS_KEY;
 import static com.tecknobit.novacore.records.User.PROJECTS_KEY;
@@ -30,16 +33,20 @@ import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import com.tecknobit.apimanager.formatters.JsonHelper;
 import com.tecknobit.nova.R;
 import com.tecknobit.nova.helpers.storage.LocalSessionHelper;
+import com.tecknobit.nova.helpers.utils.AndroidRequester;
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen;
 import com.tecknobit.novacore.helpers.LocalSessionUtils;
 import com.tecknobit.novacore.records.NovaNotification;
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.net.URL;
-import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -178,11 +185,25 @@ public class NotificationsReceiver extends BroadcastReceiver {
         public void execCheckRoutine() {
             try(LocalSessionHelper localSessionHelper = new LocalSessionHelper(context)) {
                 for (LocalSessionUtils.NovaSession session : localSessionHelper.getSessions()) {
-                    //TODO: MAKE THE REQUEST TO FETCH THE NOTIFICATIONS THEN
-                    List<NovaNotification> notifications = List.of();
-                    for(NovaNotification notification : notifications)
-                        if(!notification.isSent())
-                            sendNotification(notification, getDestination(notification));
+                    if(session.isHostSet()) {
+                        AndroidRequester requester = new AndroidRequester(
+                                session.getHostAddress(),
+                                session.getId(),
+                                session.getToken()
+                        );
+                        JsonHelper response = new JsonHelper(requester.getNotifications());
+                        try {
+                            if(response.getString(RESPONSE_STATUS_KEY).equals(SUCCESSFUL.name())) {
+                                JSONArray jNotifications = response.getJSONArray(RESPONSE_MESSAGE_KEY);
+                                for (int j = 0; j < jNotifications.length(); j++) {
+                                    NovaNotification notification = new NovaNotification(jNotifications
+                                            .getJSONObject(j));
+                                    if(!notification.isSent())
+                                        sendNotification(notification, getDestination(notification));
+                                }
+                            }
+                        } catch (JSONException ignored) {}
+                    }
                 }
             }
         }
@@ -260,7 +281,7 @@ public class NotificationsReceiver extends BroadcastReceiver {
                 };
             }
         }
-        
+
     }
 
     /**

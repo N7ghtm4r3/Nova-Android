@@ -76,6 +76,8 @@ import com.tecknobit.nova.R.string.wrong_email
 import com.tecknobit.nova.R.string.wrong_password
 import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.navigation.MainActivity
+import com.tecknobit.nova.ui.activities.navigation.MainActivity.Companion.notifications
+import com.tecknobit.nova.ui.activities.navigation.MainActivity.Companion.projects
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
@@ -785,6 +787,8 @@ class ProfileActivity : NovaActivity() {
      * No-any params required
      */
     private fun navToSplashscreen() {
+        projects.clear()
+        notifications.clear()
         startActivity(Intent(this@ProfileActivity, Splashscreen::class.java))
     }
 

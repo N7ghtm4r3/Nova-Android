@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,12 +33,17 @@ import com.tecknobit.nova.helpers.utils.download.AssetDownloader
 import com.tecknobit.nova.helpers.utils.ui.NotificationsReceiver.NotificationsHelper
 import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.auth.AuthActivity
+import com.tecknobit.nova.ui.activities.navigation.MainActivity.Companion.notifications
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession
+import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
+import com.tecknobit.novacore.helpers.Requester.ListFetcher
+import com.tecknobit.novacore.records.NovaNotification
 import com.tecknobit.novacore.records.User.PROJECTS_KEY
 import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
@@ -56,7 +62,7 @@ import javax.net.ssl.X509TrustManager
  * @see ImageLoaderFactory
  */
 @SuppressLint("CustomSplashScreen")
-class Splashscreen : ComponentActivity(), ImageLoaderFactory {
+class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
 
     companion object {
 
@@ -114,6 +120,8 @@ class Splashscreen : ComponentActivity(), ImageLoaderFactory {
             val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
             StrictMode.setThreadPolicy(policy)
             context = LocalContext.current
+            currentContext = context
+            refreshRoutine = rememberCoroutineScope()
             Coil.imageLoader(context)
             Coil.setImageLoader(newImageLoader())
             assetDownloader = AssetDownloader(context)
@@ -171,6 +179,7 @@ class Splashscreen : ComponentActivity(), ImageLoaderFactory {
                                     userToken = activeSession.token
                                 )
                                 activeLocalSession = activeSession
+                                refreshList()
                                 MainActivity::class.java
                             } else 
                                 AuthActivity::class.java
@@ -228,6 +237,33 @@ class Splashscreen : ComponentActivity(), ImageLoaderFactory {
             override fun checkClientTrusted(certs: Array<X509Certificate>, authType: String) {}
             override fun checkServerTrusted(certs: Array<X509Certificate>, authType: String) {}
         })
+    }
+
+    /**
+     * Function to refresh the current [notifications]
+     *
+     * No-any params required
+     */
+    override fun refreshList() {
+        if(activeLocalSession.isHostSet) {
+            refreshRoutine.launch {
+                while (true) {
+                    requester.sendRequest(
+                        request = {
+                            requester.getNotifications()
+                        },
+                        onSuccess = { response ->
+                            val jNotifications = response.getJSONArray(RESPONSE_MESSAGE_KEY)
+                            notifications.clear()
+                            for(j in 0 until jNotifications.length())
+                                notifications.add(NovaNotification(jNotifications.getJSONObject(j)))
+                        },
+                        onFailure = {}
+                    )
+                    delay(1000L)
+                }
+            }
+        }
     }
 
 }

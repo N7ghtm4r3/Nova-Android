@@ -167,12 +167,12 @@ fun getMemberProfilePicUrl(
 }
 
 /**
- * Function to assemble the profile pic url complete (with the current [activeLocalSession].hostAddress)
+ * Function to assemble the report from get the complete url path (with the current [activeLocalSession].hostAddress)
  * to display
  *
- * @param member: the member from get the profile pic url path
+ * @param reportUrl: the report from get the complete url path
  *
- * @return the profile pic complete url to display
+ * @return the report from get the complete url path to display
  *
  */
 fun getReportUrl(
@@ -180,3 +180,4 @@ fun getReportUrl(
 ): String {
     return activeLocalSession.hostAddress + "/" + reportUrl
 }
+

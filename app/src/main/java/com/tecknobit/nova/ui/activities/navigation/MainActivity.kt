@@ -92,6 +92,7 @@ import com.tecknobit.novacore.InputValidator.isProjectNameValid
 import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession.HOST_ADDRESS_KEY
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.helpers.Requester.ListFetcher
+import com.tecknobit.novacore.records.NovaNotification
 import com.tecknobit.novacore.records.User
 import com.tecknobit.novacore.records.User.IDENTIFIER_KEY
 import com.tecknobit.novacore.records.User.PROFILE_PIC_URL_KEY
@@ -104,7 +105,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.Random
 
 /**
  * The {@code MainActivity} activity is used to display and manage the user's projects and navigate
@@ -123,7 +123,12 @@ class MainActivity : NovaActivity(), ListFetcher {
         /**
          * **projects** -> list of the user's projects
          */
-        private val projects = mutableStateListOf<Project>()
+        val projects = mutableStateListOf<Project>()
+
+        /**
+         * **notifications** -> list of the user's notifications
+         */
+        val notifications = mutableStateListOf<NovaNotification>()
 
         /**
          * **scanOptions** -> the options used when the scan to join in a [Project] starts
@@ -384,9 +389,9 @@ class MainActivity : NovaActivity(), ListFetcher {
                                                 leadingContent = {
                                                     BadgedBox(
                                                         badge = {
-                                                            // TODO: USE THE REAL NOTIFICATIONS LIST OF THE user
-                                                            // val notifications = project.getNotifications()
-                                                            val notifications = Random().nextInt(22)
+                                                            val notifications = project.getNotifications(
+                                                                notifications
+                                                            )
                                                             if(notifications > 0) {
                                                                 Badge {
                                                                     Text(
@@ -586,12 +591,10 @@ class MainActivity : NovaActivity(), ListFetcher {
                     requester.sendRequest(
                         request = { requester.listProjects() },
                         onSuccess = { response ->
-                            val projectsRefreshed = arrayListOf<Project>()
                             val memberProjects = response.getJSONArray(PROJECTS_KEY)
-                            for(j in 0 until memberProjects.length())
-                                projectsRefreshed.add(Project(memberProjects.getJSONObject(j)))
                             projects.clear()
-                            projects.addAll(projectsRefreshed)
+                            for(j in 0 until memberProjects.length())
+                                projects.add(Project(memberProjects.getJSONObject(j)))
                         },
                         onFailure = { response ->
                             snackbarLauncher.showSnack(response.getString(RESPONSE_MESSAGE_KEY))

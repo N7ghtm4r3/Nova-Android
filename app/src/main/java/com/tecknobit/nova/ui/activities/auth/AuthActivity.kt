@@ -24,9 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
@@ -523,13 +521,12 @@ class AuthActivity : NovaActivity() {
     ) {
         Column (
             modifier = Modifier
-                .fillMaxSize()
                 .background(md_theme_light_primary)
         ) {
             Text(
                 modifier = Modifier
                     .padding(
-                        top = 50.dp,
+                        top = 40.dp,
                         start = 30.dp
                     ),
                 text = stringResource(R.string.hello),
@@ -548,10 +545,9 @@ class AuthActivity : NovaActivity() {
             Card (
                 modifier = Modifier
                     .padding(
-                        top = 30.dp
+                        top = 20.dp
                     )
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState()),
+                    .fillMaxHeight(),
                 shape = if(subtitle == R.string.authenticate_on_a_server) {
                     RoundedCornerShape(
                         topStart = 0.dp,
@@ -572,7 +568,7 @@ class AuthActivity : NovaActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
-                            top = 30.dp,
+                            top = 25.dp,
                             bottom = 25.dp
                         ),
                     verticalArrangement = Arrangement.Center,
