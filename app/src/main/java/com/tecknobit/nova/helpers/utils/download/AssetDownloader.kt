@@ -46,6 +46,7 @@ class AssetDownloader (
         val assetName = url.split("/").last()
         val request = DownloadManager.Request(url.toUri())
             .setTitle(assetName)
+            // TODO: CHECK TO REMOVE
             //.addRequestHeader("", "")
             .setDestinationInExternalPublicDir(DIRECTORY_DOWNLOADS, "$NOVA_ASSETS_PATH$assetName")
         lastDownloadToWait = downloader.enqueue(request)

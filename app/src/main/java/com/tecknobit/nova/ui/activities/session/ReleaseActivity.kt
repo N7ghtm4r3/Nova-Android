@@ -113,8 +113,8 @@ import com.tecknobit.nova.ui.theme.md_theme_light_primary
 import com.tecknobit.nova.ui.theme.thinFontFamily
 import com.tecknobit.novacore.InputValidator.areRejectionReasonsValid
 import com.tecknobit.novacore.InputValidator.isTagCommentValid
-import com.tecknobit.novacore.helpers.Requester
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
+import com.tecknobit.novacore.helpers.Requester.ItemFetcher
 import com.tecknobit.novacore.records.project.Project
 import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import com.tecknobit.novacore.records.release.Release
@@ -130,17 +130,14 @@ import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Rejected
 import com.tecknobit.novacore.records.release.events.AssetUploadingEvent
 import com.tecknobit.novacore.records.release.events.RejectedReleaseEvent
 import com.tecknobit.novacore.records.release.events.RejectedTag
-import com.tecknobit.novacore.records.release.events.ReleaseEvent
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Bug
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Issue
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.LayoutChange
 import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.io.File
 
 /**
@@ -148,15 +145,19 @@ import java.io.File
  *
  * @author N7ghtm4r3 - Tecknobit
  * @see ComponentActivity
+ * @see ItemFetcher
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeApi::class)
-class ReleaseActivity : NovaActivity(), Requester.ItemFetcher<Release> {
+class ReleaseActivity : NovaActivity(), ItemFetcher {
 
     /**
      * **release** -> the release displayed
      */
     private lateinit var release: MutableState<Release>
 
+    /**
+     * **sourceProject** -> the project where the release is attached
+     */
     private lateinit var sourceProject: Project
 
     /**
@@ -293,33 +294,29 @@ class ReleaseActivity : NovaActivity(), Requester.ItemFetcher<Release> {
                             ) { assets ->
                                 if(!assets.isNullOrEmpty()) {
                                     val assetsPath = mutableListOf<File>()
-                                    runBlocking {
-                                        async {
-                                            assets.forEach { asset ->
-                                                assetsPath.add(File(asset.path))
-                                            }
-                                        }.await()
-                                        if(assetsPath.isNotEmpty()) {
-                                            requester.sendRequest(
-                                                request = {
-                                                    requester.uploadAsset(
-                                                        projectId = sourceProject.id,
-                                                        releaseId = release.value.id,
-                                                        assets = assetsPath
-                                                    )
-                                                },
-                                                onSuccess = { response ->
+                                    assets.forEach { asset ->
+                                        assetsPath.add(File(asset.path))
+                                    }
+                                    if(assetsPath.isNotEmpty()) {
+                                        requester.sendRequest(
+                                            request = {
+                                                requester.uploadAsset(
+                                                    projectId = sourceProject.id,
+                                                    releaseId = release.value.id,
+                                                    assets = assetsPath
+                                                )
+                                            },
+                                            onSuccess = { response ->
 
-                                                    showFilePicker = false
-                                                },
-                                                onFailure = { response ->
-                                                    showFilePicker = false
-                                                    snackbarLauncher.showSnack(
-                                                        response.getString(RESPONSE_MESSAGE_KEY)
-                                                    )
-                                                }
-                                            )
-                                        }
+                                                showFilePicker = false
+                                            },
+                                            onFailure = { response ->
+                                                showFilePicker = false
+                                                snackbarLauncher.showSnack(
+                                                    response.getString(RESPONSE_MESSAGE_KEY)
+                                                )
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -381,7 +378,7 @@ class ReleaseActivity : NovaActivity(), Requester.ItemFetcher<Release> {
                             showPromoteRelease.value = false
                             refreshItem()
                         }
-                        val lastEventStatus = getLastEventStatus()
+                        val lastEventStatus = release.value.lastPromotionStatus
                         var newStatus: ReleaseStatus = Alpha
                         NovaAlertDialog(
                             show = showPromoteRelease,
@@ -687,6 +684,7 @@ class ReleaseActivity : NovaActivity(), Requester.ItemFetcher<Release> {
                                                         }
                                                         ReleaseTagBadge(
                                                             tag = tag,
+                                                            isLastEvent = release.value.isLastEvent(event),
                                                             onClick = { showAlert.value = true }
                                                         )
                                                         TagInformation(
@@ -1036,37 +1034,14 @@ class ReleaseActivity : NovaActivity(), Requester.ItemFetcher<Release> {
     }
 
     /**
-     * Function to get the last event occurred in the current [release]
+     * Function to refresh the current [release]
+     *
+     * Will be invoked the [canRefresherStart] function to check whether the [refreshRoutine] can start
      *
      * No-any params required
-     *
-     * @return the last status of the last event occurred as [ReleaseStatus]
      */
-    private fun getLastEventStatus() : ReleaseStatus {
-        TODO("fix the search algorithm")
-        val releaseEvents = mutableListOf<ReleaseEvent>()
-        releaseEvents.addAll(release.value.releaseEvents)
-        releaseEvents.reverse()
-        var lastEventStatus = Alpha
-        var approvedCounter = 0
-        releaseEvents.forEachIndexed { index, event ->
-            if(approvedCounter >= 2)
-                return@forEachIndexed
-            val eventValue = event as ReleaseStandardEvent
-            if (eventValue.status == Approved) {
-                approvedCounter++
-                val nextIndex = index + 1
-                lastEventStatus = if(nextIndex >= releaseEvents.size)
-                    Approved
-                else
-                    (releaseEvents[index + 1] as ReleaseStandardEvent).status
-            }
-        }
-        return lastEventStatus
-    }
-
     override fun refreshItem() {
-        if(canRefresherStarts()) {
+        if(canRefresherStart()) {
             isRefreshing = true
             refreshRoutine.launch {
                 while (continueToFetch(this@ReleaseActivity)) {

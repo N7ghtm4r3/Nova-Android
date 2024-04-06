@@ -15,6 +15,23 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 
+/**
+ * Function to display a custom [OutlinedTextField]
+ *
+ * @param modifier: the modifier for the component
+ * @param singleLine: whether the input must be in a single line
+ * @param value: the value where store the input
+ * @param visualTransformation: the [VisualTransformation] to apply to the input
+ * @param onValueChange: the function to call when the [value] changes
+ * @param leadingIcon: the icon to display at the start of the [OutlinedTextField]
+ * @param label: the label to display
+ * @param placeholder: the placeholder to display
+ * @param trailingIcon: the icon to display at the end of the [OutlinedTextField]
+ * @param keyboardType: the type of the input to get
+ * @param imeAction: the [ImeAction] to execute
+ * @param errorMessage: the error message to display in the supporting text section
+ * @param isError: whether the input cannot be accepted as inserted
+ */
 @Composable
 fun NovaTextField(
     modifier: Modifier = Modifier,

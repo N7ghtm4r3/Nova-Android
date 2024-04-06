@@ -96,7 +96,7 @@ import com.tecknobit.novacore.InputValidator.isPasswordValid
 import com.tecknobit.novacore.helpers.LocalSessionUtils
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.records.User
-import com.tecknobit.novacore.records.User.*
+import com.tecknobit.novacore.records.User.PROFILE_PIC_URL_KEY
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -616,7 +616,7 @@ class ProfileActivity : NovaActivity() {
     }
 
     /**
-     * Function to display a specific [user] detail
+     * Function to display a specific [activeLocalSession] detail
      *
      * @param header: the header of the section, so the detail displayed
      * @param editAction: the edit action to execute, if is an editable data

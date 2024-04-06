@@ -116,7 +116,7 @@ import java.util.Random
  * @see ListFetcher
  *
  */
-class MainActivity : NovaActivity(), ListFetcher<Project> {
+class MainActivity : NovaActivity(), ListFetcher {
 
     companion object {
 
@@ -571,8 +571,15 @@ class MainActivity : NovaActivity(), ListFetcher<Project> {
         )
     }
 
+    /**
+     * Function to refresh the current [projects]
+     *
+     * Will be invoked the [canRefresherStart] function to check whether the [refreshRoutine] can start
+     *
+     * No-any params required
+     */
     override fun refreshList() {
-        if(canRefresherStarts()) {
+        if(canRefresherStart()) {
             isRefreshing = true
             refreshRoutine.launch {
                 while (continueToFetch(this@MainActivity)) {

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -145,7 +144,7 @@ import java.util.Random
  *
  */
 @OptIn(ExperimentalMaterial3Api::class)
-class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
+class ProjectActivity : NovaActivity(), ItemFetcher {
 
     /**
      * **project** -> the project displayed
@@ -1001,8 +1000,15 @@ class ProjectActivity : NovaActivity(), ItemFetcher<Project> {
         }
     }
 
+    /**
+     * Function to refresh the current [project]
+     *
+     * Will be invoked the [canRefresherStart] function to check whether the [refreshRoutine] can start
+     *
+     * No-any params required
+     */
     override fun refreshItem() {
-        if(canRefresherStarts()) {
+        if(canRefresherStart()) {
             isRefreshing = true
             refreshRoutine.launch {
                 while (continueToFetch(this@ProjectActivity)) {

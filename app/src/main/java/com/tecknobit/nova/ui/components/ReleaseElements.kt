@@ -24,6 +24,7 @@ import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.active
 import com.tecknobit.nova.ui.theme.fromHexToColor
 import com.tecknobit.novacore.records.release.Release
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.*
+import com.tecknobit.novacore.records.release.events.RejectedTag
 import com.tecknobit.novacore.records.release.events.ReleaseEvent
 import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent
 import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent.*
@@ -142,11 +143,13 @@ fun Release.ReleaseStatus.createColor(): Color {
  * Function to create a badge for a [RejectedTag]
  *
  * @param tag: the tag to use to create the badge
+ * @param isLastEvent: whether the tag is placed in the last event occurred in the release
  * @param onClick: the action to execute when the badge is clicked
  */
 @Composable
 fun ReleaseTagBadge(
-    tag: com.tecknobit.novacore.records.release.events.RejectedTag,
+    tag: RejectedTag,
+    isLastEvent: Boolean,
     onClick: () -> Unit = {}
 ) {
     val modifier = Modifier
@@ -171,8 +174,7 @@ fun ReleaseTagBadge(
         width = 1.dp,
         color = textColor
     )
-    // TODO: MAKE THE WORKFLOW TO LOCK THE POSSIBILITY IF IS NOT THE LAST EVENT
-    if(activeLocalSession.isVendor && tag.comment.isNullOrEmpty()) {
+    if(((activeLocalSession.isVendor && tag.comment.isNullOrEmpty()) || !isLastEvent)) {
         OutlinedCard(
             modifier = modifier,
             colors = colors,
