@@ -39,7 +39,7 @@ import com.tecknobit.nova.R;
 import com.tecknobit.nova.helpers.storage.LocalSessionHelper;
 import com.tecknobit.nova.helpers.utils.AndroidRequester;
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen;
-import com.tecknobit.novacore.helpers.LocalSessionUtils;
+import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession;
 import com.tecknobit.novacore.records.NovaNotification;
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus;
 
@@ -187,7 +187,7 @@ public class NotificationsReceiver extends BroadcastReceiver {
          */
         public void execCheckRoutine() {
             try(LocalSessionHelper localSessionHelper = new LocalSessionHelper(context)) {
-                for (LocalSessionUtils.NovaSession session : localSessionHelper.getSessions()) {
+                for (NovaSession session : localSessionHelper.getSessions()) {
                     if(session.isHostSet()) {
                         AndroidRequester requester = new AndroidRequester(
                                 session.getHostAddress(),
@@ -202,7 +202,7 @@ public class NotificationsReceiver extends BroadcastReceiver {
                                     NovaNotification notification = new NovaNotification(jNotifications
                                             .getJSONObject(j));
                                     if(!notification.isSent())
-                                        sendNotification(notification, getDestination(notification));
+                                        sendNotification(session, notification, getDestination(notification));
                                 }
                             }
                         } catch (JSONException ignored) {}
@@ -231,10 +231,11 @@ public class NotificationsReceiver extends BroadcastReceiver {
         /**
          * Method to create and send a notification
          *
+         * @param session: the session where the notifications is attached
          * @param notification: the notification details to send and create the related {@link Notification}
          * @param destination: the destination to reach after user clicked on the {@link Notification}
          */
-        private void sendNotification(NovaNotification notification, Intent destination) {
+        private void sendNotification(NovaSession session, NovaNotification notification, Intent destination) {
             Notification.Builder builder = new Notification.Builder(context, NOVA_NOTIFICATIONS_CHANNEL_ID);
             // TODO: 02/04/2024 USE THE REAL APPLICATION ICON
             builder.setSmallIcon(R.drawable.ic_launcher_background);
@@ -247,8 +248,9 @@ public class NotificationsReceiver extends BroadcastReceiver {
             } else
                 builder.setContentTitle(text);
             try {
-                Bitmap bitmap = BitmapFactory.decodeStream(new URL(notification.getProjectLogo())
-                        .openConnection().getInputStream());
+                Bitmap bitmap = BitmapFactory.decodeStream(new URL(
+                        session.getHostAddress() + "/" + notification.getProjectLogo()
+                ).openConnection().getInputStream());
                 builder.setLargeIcon(bitmap);
             } catch (IOException ignored) {
             }

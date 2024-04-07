@@ -1,12 +1,19 @@
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package com.tecknobit.nova.ui.activities.session
 
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
+import android.provider.MediaStore.Files.getContentUri
+import android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -64,7 +71,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.darkrockstudios.libraries.mpfilepicker.MultipleFilePicker
 import com.pushpal.jetlime.ItemsList
 import com.pushpal.jetlime.JetLimeColumn
 import com.pushpal.jetlime.JetLimeDefaults
@@ -101,6 +107,7 @@ import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.ReleaseTagBadge
 import com.tecknobit.nova.ui.components.createColor
 import com.tecknobit.nova.ui.components.getAssetUrl
+import com.tecknobit.nova.ui.components.getFilePath
 import com.tecknobit.nova.ui.components.getMessage
 import com.tecknobit.nova.ui.components.getReportUrl
 import com.tecknobit.nova.ui.theme.BlueSchemeColors
@@ -119,7 +126,6 @@ import com.tecknobit.novacore.helpers.Requester.ItemFetcher
 import com.tecknobit.novacore.records.project.Project
 import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
 import com.tecknobit.novacore.records.release.Release
-import com.tecknobit.novacore.records.release.Release.ALLOWED_ASSETS_TYPE
 import com.tecknobit.novacore.records.release.Release.RELEASE_KEY
 import com.tecknobit.novacore.records.release.Release.RELEASE_REPORT_PATH
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus
@@ -137,10 +143,14 @@ import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Bug
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Issue
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.LayoutChange
 import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
+
 
 /**
  * The {@code ReleaseActivity} activity is used to manage and display the [Release] details
@@ -166,6 +176,39 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
      * **navBackIntent** -> the intent reached when navigate back
      */
     private var navBackIntent: Intent? = null
+
+    private lateinit var show: MutableState<Boolean>
+
+    private val pickAssets = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()){ assets ->
+        val assetsPath = mutableListOf<File>()
+        show.value = true
+        GlobalScope.launch {
+            CoroutineScope(this.coroutineContext).launch {
+                assets.forEach { asset ->
+                    assetsPath.add(File(getFilePath(
+                        context = currentContext,
+                        uri = asset
+                    )!!))
+                }
+                requester.sendRequest(
+                    request = {
+                        requester.uploadAsset(
+                            projectId = sourceProject.id,
+                            releaseId = release.value.id,
+                            assets = assetsPath
+                        )
+                    },
+                    onSuccess = { show.value = false },
+                    onFailure = { response ->
+                        show.value = false
+                        snackbarLauncher.showSnack(
+                            response.getString(RESPONSE_MESSAGE_KEY)
+                        )
+                    }
+                )
+            }
+        }
+    }
 
     /**
      * On create method
@@ -195,6 +238,16 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
             refreshRoutine = rememberCoroutineScope()
             InitLauncher()
             refreshItem()
+            show = remember { mutableStateOf(false) }
+            TODO("WORK ON THE UI TO SHOW")
+            NovaAlertDialog(
+                show = show,
+                icon = Icons.Default.Upload,
+                title = string.uploading_assets,
+                message = string.the_assets_are_uploading_on_the_server
+            ) {
+                show.value = false
+            }
             navBackIntent = Intent(this@ReleaseActivity, ProjectActivity::class.java)
             navBackIntent!!.putExtra(PROJECT_KEY, sourceProject)
             val releaseCurrentStatus = release.value.status
@@ -290,7 +343,7 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                     floatingActionButton = {
                         if(releaseCurrentStatus != Latest && activeLocalSession.isVendor &&
                             releaseCurrentStatus != Verifying) {
-                            var showFilePicker by remember { mutableStateOf(false) }
+                            /*var showFilePicker by remember { mutableStateOf(false) }
                             MultipleFilePicker(
                                 show = showFilePicker,
                                 fileExtensions = ALLOWED_ASSETS_TYPE
@@ -302,34 +355,17 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                         assetsPath.add(File(asset.path))
                                     }
                                     if(assetsPath.isNotEmpty()) {
-                                        requester.sendRequest(
-                                            request = {
-                                                requester.uploadAsset(
-                                                    projectId = sourceProject.id,
-                                                    releaseId = release.value.id,
-                                                    assets = assetsPath
-                                                )
-                                            },
-                                            onSuccess = { response ->
-                                                showFilePicker = false
-                                            },
-                                            onFailure = { response ->
-                                                showFilePicker = false
-                                                snackbarLauncher.showSnack(
-                                                    response.getString(RESPONSE_MESSAGE_KEY)
-                                                )
-                                            }
-                                        )
+
                                     }
                                 }
-                            }
+                            }*/
                             FloatingActionButton(
                                 onClick = {
                                     if(isReleaseApproved) {
                                         suspendRefresher()
                                         showPromoteRelease.value = true
                                     } else
-                                        showFilePicker = true
+                                        pickAssets.launch(arrayOf("*/*"))
                                 },
                                 containerColor = md_theme_light_primary
                             ) {
@@ -1104,6 +1140,23 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
     override fun onResume() {
         super.onResume()
         activeActivity = this
+    }
+
+    fun getFileFromUri(): File? {
+        val filePathColumn = arrayOf(MediaStore.Files.FileColumns.DATA)
+        val cursor = contentResolver.query(
+            getContentUri(VOLUME_EXTERNAL_PRIMARY),
+            filePathColumn, null, null, null
+        )
+        while (cursor?.moveToNext()!!) {
+            val columnIndex = cursor?.getColumnIndexOrThrow(filePathColumn[0])
+            Log.d("gagagagga", cursor?.getString(columnIndex!!)!!)
+        }
+        cursor?.moveToFirst()
+        val columnIndex = cursor?.getColumnIndexOrThrow(filePathColumn[0])
+        val filePath = cursor?.getString(columnIndex!!)
+        cursor?.close()
+        return filePath?.let { File(it) }
     }
 
 }
