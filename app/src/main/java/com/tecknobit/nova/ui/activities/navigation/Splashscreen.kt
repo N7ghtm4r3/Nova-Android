@@ -248,18 +248,20 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
         if(activeLocalSession.isHostSet) {
             refreshRoutine.launch {
                 while (true) {
-                    requester.sendRequest(
-                        request = {
-                            requester.getNotifications()
-                        },
-                        onSuccess = { response ->
-                            val jNotifications = response.getJSONArray(RESPONSE_MESSAGE_KEY)
-                            notifications.clear()
-                            for(j in 0 until jNotifications.length())
-                                notifications.add(NovaNotification(jNotifications.getJSONObject(j)))
-                        },
-                        onFailure = {}
-                    )
+                    if(!EXECUTING_REQUEST) {
+                        requester.sendRequest(
+                            request = {
+                                requester.getNotifications()
+                            },
+                            onSuccess = { response ->
+                                val jNotifications = response.getJSONArray(RESPONSE_MESSAGE_KEY)
+                                notifications.clear()
+                                for(j in 0 until jNotifications.length())
+                                    notifications.add(NovaNotification(jNotifications.getJSONObject(j)))
+                            },
+                            onFailure = {}
+                        )
+                    }
                     delay(1000L)
                 }
             }

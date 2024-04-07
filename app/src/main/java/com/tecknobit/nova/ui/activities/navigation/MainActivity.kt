@@ -585,7 +585,7 @@ class MainActivity : NovaActivity(), ListFetcher {
      */
     override fun refreshList() {
         if(canRefresherStart()) {
-            isRefreshing = true
+            restartRefresher()
             refreshRoutine.launch {
                 while (continueToFetch(this@MainActivity)) {
                     requester.sendRequest(

@@ -23,6 +23,13 @@ import kotlinx.coroutines.cancelChildren
 @Structure
 abstract class NovaActivity: ComponentActivity() {
 
+    companion object {
+
+        @Volatile
+        var EXECUTING_REQUEST: Boolean = false
+
+    }
+
     /**
      * **snackbarLauncher** -> the launcher used to display the [Snackbar]
      */
@@ -75,8 +82,21 @@ abstract class NovaActivity: ComponentActivity() {
      * No-any params required
      */
     protected fun suspendRefresher() {
+        EXECUTING_REQUEST = true
         refreshRoutine.coroutineContext.cancelChildren()
         isRefreshing = false
+    }
+
+    /**
+     * Function to restart the current [refreshRoutine] after other requests has been executed,
+     * the [isRefreshing] will be set as **true** to deny the restart of the routine after executing
+     * the other requests
+     *
+     * No-any params required
+     */
+    protected fun restartRefresher() {
+        EXECUTING_REQUEST = false
+        isRefreshing = true
     }
 
     /**

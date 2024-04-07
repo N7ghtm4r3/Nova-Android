@@ -1008,7 +1008,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
      */
     override fun refreshItem() {
         if(canRefresherStart()) {
-            isRefreshing = true
+            restartRefresher()
             refreshRoutine.launch {
                 while (continueToFetch(this@ProjectActivity)) {
                     requester.sendRequest(
