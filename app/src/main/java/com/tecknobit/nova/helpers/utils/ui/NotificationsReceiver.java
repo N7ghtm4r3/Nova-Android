@@ -23,6 +23,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioAttributes;
 import android.media.RingtoneManager;
+import android.os.StrictMode;
 
 import androidx.annotation.NonNull;
 import androidx.work.Constraints;
@@ -67,6 +68,8 @@ public class NotificationsReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if(Objects.equals(intent.getAction(), Intent.ACTION_BOOT_COMPLETED)) {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
             NotificationsHelper notificationsHelper = new NotificationsHelper(context);
             notificationsHelper.scheduleAndExec();
         }

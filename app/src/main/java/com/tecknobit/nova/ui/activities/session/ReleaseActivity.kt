@@ -64,7 +64,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import com.darkrockstudios.libraries.mpfilepicker.MultipleFilePicker
 import com.pushpal.jetlime.ItemsList
 import com.pushpal.jetlime.JetLimeColumn
@@ -101,6 +100,7 @@ import com.tecknobit.nova.ui.components.NovaTextField
 import com.tecknobit.nova.ui.components.ReleaseStatusBadge
 import com.tecknobit.nova.ui.components.ReleaseTagBadge
 import com.tecknobit.nova.ui.components.createColor
+import com.tecknobit.nova.ui.components.getAssetUrl
 import com.tecknobit.nova.ui.components.getMessage
 import com.tecknobit.nova.ui.components.getReportUrl
 import com.tecknobit.nova.ui.theme.BlueSchemeColors
@@ -128,6 +128,7 @@ import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Approved
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Beta
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Latest
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Rejected
+import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Verifying
 import com.tecknobit.novacore.records.release.events.AssetUploadingEvent
 import com.tecknobit.novacore.records.release.events.RejectedReleaseEvent
 import com.tecknobit.novacore.records.release.events.RejectedTag
@@ -287,7 +288,8 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                         snackbarLauncher.CreateSnackbarHost()
                     },
                     floatingActionButton = {
-                        if(releaseCurrentStatus != Latest && activeLocalSession.isVendor) {
+                        if(releaseCurrentStatus != Latest && activeLocalSession.isVendor &&
+                            releaseCurrentStatus != Verifying) {
                             var showFilePicker by remember { mutableStateOf(false) }
                             MultipleFilePicker(
                                 show = showFilePicker,
@@ -296,7 +298,8 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                 if(!assets.isNullOrEmpty()) {
                                     val assetsPath = mutableListOf<File>()
                                     assets.forEach { asset ->
-                                        assetsPath.add(File(asset.path.toUri().lastPathSegment!!))
+                                        // TODO: GET THE FILE URI PATH
+                                        assetsPath.add(File(asset.path))
                                     }
                                     if(assetsPath.isNotEmpty()) {
                                         requester.sendRequest(
@@ -634,14 +637,15 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                                             onClick = {
                                                                 event.assetsUploaded.forEach { asset ->
                                                                     assetDownloader.downloadAsset(
-                                                                        asset.url
+                                                                        getAssetUrl(
+                                                                            asset = asset.url
+                                                                        )
                                                                     )
                                                                 }
                                                             }
                                                         ) {
-                                                            // TODO: FIND A SUITABLE TEXT
                                                             Text(
-                                                                text = "Test"
+                                                                text = stringResource(string.test)
                                                             )
                                                         }
                                                         if(activeLocalSession.isCustomer) {
@@ -982,7 +986,7 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                         TextButton(
                             onClick = {
                                 if(isInputMode) {
-                                    var closeAction = {
+                                    val closeAction = {
                                         show.value = false
                                         refreshItem()
                                     }

@@ -33,6 +33,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import kotlin.math.min
 
+
 /**
  * Function to display an image as logo
  *
@@ -142,7 +143,7 @@ fun getFilePath(
  *
  * @param project: the project from get the logo url path
  *
- * @return the project logo complete url to display
+ * @return the project logo complete url to display as [String]
  *
  */
 fun getProjectLogoUrl(
@@ -157,7 +158,7 @@ fun getProjectLogoUrl(
  *
  * @param member: the member from get the profile pic url path
  *
- * @return the profile pic complete url to display
+ * @return the profile pic complete url to display as [String]
  *
  */
 fun getMemberProfilePicUrl(
@@ -172,7 +173,7 @@ fun getMemberProfilePicUrl(
  *
  * @param reportUrl: the report from get the complete url path
  *
- * @return the report from get the complete url path to display
+ * @return the report from get the complete url path to display as [String]
  *
  */
 fun getReportUrl(
@@ -181,3 +182,17 @@ fun getReportUrl(
     return activeLocalSession.hostAddress + "/" + reportUrl
 }
 
+/**
+ * Function to assemble the asset url path (with the current [activeLocalSession].hostAddress)
+ * to display
+ *
+ * @param asset: the asset from get the complete url path
+ *
+ * @return the asset from get the complete url path to display as [String]
+ *
+ */
+fun getAssetUrl(
+    asset: String
+): String {
+    return activeLocalSession.hostAddress + "/" + asset
+}

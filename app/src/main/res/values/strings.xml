@@ -98,4 +98,5 @@
     <string name="the_project_has_been_deleted">The project has been deleted</string>
     <string name="account_deletion_message">If you confirm your account will be permanently deleted on the current host to which it is connected</string>
     <string name="account_logout_message">If you confirm you will be disconnected from all hosts to which it is connected and you will then have to reconnect</string>
+    <string name="test">Test</string>
 </resources>
