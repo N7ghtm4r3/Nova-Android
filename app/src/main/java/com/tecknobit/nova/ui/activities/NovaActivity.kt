@@ -2,14 +2,24 @@ package com.tecknobit.nova.ui.activities
 
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Snackbar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.ehsanmsz.mszprogressindicator.progressindicator.BallClipRotatePulseProgressIndicator
 import com.tecknobit.apimanager.annotations.Structure
 import com.tecknobit.nova.helpers.utils.ui.SnackbarLauncher
+import com.tecknobit.nova.ui.activities.navigation.MainActivity.Companion.projects
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeActivity
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
+import com.tecknobit.novacore.records.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancelChildren
 
@@ -25,6 +35,10 @@ abstract class NovaActivity: ComponentActivity() {
 
     companion object {
 
+        /**
+         * **EXECUTING_REQUEST** -> whether other requests has being executing so the refresh of the [ProjectsScreen.notifications]
+         * need to be suspended
+         */
         @Volatile
         var EXECUTING_REQUEST: Boolean = false
 
@@ -48,7 +62,7 @@ abstract class NovaActivity: ComponentActivity() {
     /**
      * **isRefreshing** -> whether the [refreshRoutine] is already refreshing
      */
-    protected var isRefreshing: Boolean = false
+    private var isRefreshing: Boolean = false
 
     /**
      * Function to init the [SnackbarLauncher] <br>
@@ -59,6 +73,46 @@ abstract class NovaActivity: ComponentActivity() {
     protected fun InitLauncher() {
         snackbarLauncher = SnackbarLauncher(LocalContext.current)
         snackbarLauncher.InitSnackbarInstances()
+        refreshRoutine = rememberCoroutineScope()
+    }
+
+    /**
+     * Function to get project from the [projects] list
+     *
+     * @param projectId: the identifier of the project to get
+     *
+     * @return the project as [Project] if exists
+     */
+    protected fun getProject(
+        projectId: String?
+    ): Project? {
+        if(projectId != null) {
+            projects.forEach { project ->
+                if(project.id == projectId)
+                    return project
+            }
+        }
+        return null
+    }
+
+    /**
+     * Function to display the loading UI when a data to display is not yet loaded
+     *
+     * No-any params required
+     */
+    @Composable
+    protected fun LoadingUI() {
+        Column (
+            modifier = Modifier
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            BallClipRotatePulseProgressIndicator(
+                minBallDiameter = 50.dp,
+                minGap = 30.dp
+            )
+        }
     }
 
     /**

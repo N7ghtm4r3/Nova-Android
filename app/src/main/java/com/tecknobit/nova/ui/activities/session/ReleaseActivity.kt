@@ -4,7 +4,6 @@ package com.tecknobit.nova.ui.activities.session
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -52,11 +51,12 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.MutableLiveData
 import com.ehsanmsz.mszprogressindicator.progressindicator.BallClipRotatePulseProgressIndicator
 import com.pushpal.jetlime.ItemsList
 import com.pushpal.jetlime.JetLimeColumn
@@ -120,10 +121,9 @@ import com.tecknobit.novacore.InputValidator.areRejectionReasonsValid
 import com.tecknobit.novacore.InputValidator.isTagCommentValid
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.helpers.Requester.ItemFetcher
-import com.tecknobit.novacore.records.project.Project
-import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
+import com.tecknobit.novacore.records.project.Project.PROJECT_IDENTIFIER_KEY
 import com.tecknobit.novacore.records.release.Release
-import com.tecknobit.novacore.records.release.Release.RELEASE_KEY
+import com.tecknobit.novacore.records.release.Release.RELEASE_IDENTIFIER_KEY
 import com.tecknobit.novacore.records.release.Release.RELEASE_REPORT_PATH
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Alpha
@@ -160,14 +160,24 @@ import java.io.File
 class ReleaseActivity : NovaActivity(), ItemFetcher {
 
     /**
-     * **release** -> the release displayed
+     * **sourceProjectId** -> the identifier of the project where the release is attached
      */
-    private lateinit var release: MutableState<Release>
+    private var sourceProjectId: String? = null
 
     /**
-     * **sourceProject** -> the project where the release is attached
+     * **releaseId** -> the identifier of the release displayed
      */
-    private lateinit var sourceProject: Project
+    private var releaseId: String? = null
+    
+    /**
+     * **release** -> the release displayed
+     */
+    private var release: MutableLiveData<Release?> = MutableLiveData()
+
+    /**
+     * **releaseState** -> the release state to trigger the [Composable] invocations
+     */
+    private lateinit var releaseState: State<Release?>
 
     /**
      * **navBackIntent** -> the intent reached when navigate back
@@ -200,8 +210,8 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
             requester.sendRequest(
                 request = {
                     requester.uploadAsset(
-                        projectId = sourceProject.id,
-                        releaseId = release.value.id,
+                        projectId = sourceProjectId!!,
+                        releaseId = releaseId!!,
                         assets = assetsPath
                     )
                 },
@@ -219,6 +229,11 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
     }
 
     /**
+     * **displayUi** -> whether display the UI or the [LoadingUI]
+     */
+    private lateinit var displayUi: MutableState<Boolean>
+
+    /**
      * On create method
      *
      * @param savedInstanceState If the activity is being re-initialized after
@@ -232,276 +247,172 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            release = remember {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                    mutableStateOf(intent.getSerializableExtra(RELEASE_KEY, Release::class.java)!!)
-                else
-                    mutableStateOf(intent.getSerializableExtra(RELEASE_KEY)!! as Release)
-            }
-            sourceProject = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                intent.getSerializableExtra(PROJECT_KEY, Project::class.java)!!
-            else
-                intent.getSerializableExtra(PROJECT_KEY)!! as Project
+            sourceProjectId = intent.getStringExtra(PROJECT_IDENTIFIER_KEY)
+            releaseId = intent.getStringExtra(RELEASE_IDENTIFIER_KEY)
+            val sourceProject = getProject(
+                projectId = sourceProjectId
+            )
+            if(sourceProject != null)
+                release.value = sourceProject.getRelease(releaseId)
             currentContext = LocalContext.current
-            refreshRoutine = rememberCoroutineScope()
             InitLauncher()
             refreshItem()
+            displayUi = remember { mutableStateOf(release.value != null) }
             isUploading = remember { mutableStateOf(false) }
-            navBackIntent = Intent(this@ReleaseActivity, ProjectActivity::class.java)
-            navBackIntent!!.putExtra(PROJECT_KEY, sourceProject)
-            val releaseCurrentStatus = release.value.status
-            val isReleaseApproved = releaseCurrentStatus == Approved
             val showPromoteRelease = remember { mutableStateOf(false) }
             val showDeleteRelease = remember { mutableStateOf(false) }
+            navBackIntent = Intent(this@ReleaseActivity, ProjectActivity::class.java)
+            navBackIntent!!.putExtra(PROJECT_IDENTIFIER_KEY, sourceProjectId)
+            release.observe(this) { release ->
+                displayUi.value = release != null
+            }
+            releaseState = release.observeAsState()
             NovaTheme {
-                Scaffold (
-                    topBar = {
-                        LargeTopAppBar(
-                            colors = TopAppBarDefaults.largeTopAppBarColors(
-                                containerColor = md_theme_light_primary
-                            ),
-                            navigationIcon = {
-                                IconButton(
-                                    onClick = { startActivity(navBackIntent) }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-                                }
-                            },
-                            title = {
-                                Column (
-                                    verticalArrangement = Arrangement.spacedBy(0.dp)
-                                ) {
-                                    Text(
-                                        text = sourceProject.name,
-                                        color = Color.White,
-                                        fontSize = 22.sp
-                                    )
-                                    Text(
-                                        text = release.value.releaseVersion,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            },
-                            actions = {
-                                IconButton(
-                                    onClick = {
-                                        suspendRefresher()
-                                        requester.sendRequest(
-                                            request = {
-                                                requester.createReportRelease(
-                                                    projectId = sourceProject.id,
-                                                    releaseId = release.value.id
-                                                )
-                                            },
-                                            onSuccess = { response ->
-                                                val reportPath = getReportUrl(response
-                                                    .getString(RELEASE_REPORT_PATH))
-                                                assetDownloader.downloadAsset(
-                                                    url = reportPath
-                                                )
-                                                refreshItem()
-                                            },
-                                            onFailure = { response ->
-                                                refreshItem()
-                                                snackbarLauncher.showSnack(
-                                                    message = response.getString(RESPONSE_MESSAGE_KEY)
-                                                )
-                                            }
+                if(displayUi.value) {
+                    val releaseCurrentStatus = releaseState.value!!.status
+                    val isReleaseApproved = releaseCurrentStatus == Approved
+                    Scaffold (
+                        topBar = {
+                            LargeTopAppBar(
+                                colors = TopAppBarDefaults.largeTopAppBarColors(
+                                    containerColor = md_theme_light_primary
+                                ),
+                                navigationIcon = {
+                                    IconButton(
+                                        onClick = { startActivity(navBackIntent) }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = null,
+                                            tint = Color.White
                                         )
                                     }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Receipt,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-                                }
-                                IconButton(
-                                    onClick = {
-                                        showDeleteRelease.value = true
-                                        suspendRefresher()
+                                },
+                                title = {
+                                    Column (
+                                        verticalArrangement = Arrangement.spacedBy(0.dp)
+                                    ) {
+                                        Text(
+                                            text = releaseState.value!!.project.name,
+                                            color = Color.White,
+                                            fontSize = 22.sp
+                                        )
+                                        Text(
+                                            text = releaseState.value!!.releaseVersion,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.DeleteForever,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-                                }
-                            }
-                        )
-                    },
-                    snackbarHost = {
-                        snackbarLauncher.CreateSnackbarHost()
-                    },
-                    floatingActionButton = {
-                        if(releaseCurrentStatus != Latest && activeLocalSession.isVendor &&
-                            releaseCurrentStatus != Verifying) {
-                            FloatingActionButton(
-                                onClick = {
-                                    if(!isUploading.value) {
-                                        if(isReleaseApproved) {
+                                },
+                                actions = {
+                                    IconButton(
+                                        onClick = {
                                             suspendRefresher()
-                                            showPromoteRelease.value = true
-                                        } else
-                                            pickAssets.launch(arrayOf("*/*"))
-                                    }
-                                },
-                                containerColor = md_theme_light_primary
-                            ) {
-                                if(isUploading.value) {
-                                    BallClipRotatePulseProgressIndicator(
-                                        color = Color.White
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = if(isReleaseApproved)
-                                            Icons.Default.Verified
-                                        else
-                                            Icons.Default.Upload,
-                                        contentDescription = null
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    containerColor = gray_background
-                ) {
-                    val closeDeleteReleaseDialog = {
-                        showDeleteRelease.value = false
-                        refreshItem()
-                    }
-                    NovaAlertDialog(
-                        show = showDeleteRelease,
-                        icon = Icons.Default.Warning,
-                        onDismissAction = closeDeleteReleaseDialog,
-                        title = delete_release,
-                        message = delete_release_alert_message,
-                        confirmAction = {
-                            requester.sendRequest(
-                                request = {
-                                    requester.deleteRelease(
-                                        projectId = sourceProject.id,
-                                        releaseId = release.value.id
-                                    )
-                                },
-                                onSuccess = {
-                                    showDeleteRelease.value = false
-                                    startActivity(navBackIntent)
-                                },
-                                onFailure = { response ->
-                                    closeDeleteReleaseDialog.invoke()
-                                    snackbarLauncher.showSnack(
-                                        message = response.getString(RESPONSE_MESSAGE_KEY)
-                                    )
-                                }
-                            )
-                        }
-                    )
-                    if(isReleaseApproved) {
-                        val closeAction = {
-                            showPromoteRelease.value = false
-                            refreshItem()
-                        }
-                        val lastEventStatus = release.value.lastPromotionStatus
-                        var newStatus: ReleaseStatus = Alpha
-                        NovaAlertDialog(
-                            show = showPromoteRelease,
-                            icon = Icons.Default.Verified,
-                            onDismissAction = closeAction,
-                            title = when (lastEventStatus) {
-                                Approved -> promote_release
-                                Alpha -> promote_release_as_beta
-                                else -> promote_release_as_latest
-                            },
-                            message = {
-                                val resId = when(lastEventStatus) {
-                                    Approved -> { promote_release }
-                                    Alpha -> {
-                                        newStatus = Beta
-                                        promote_beta_release_alert_message
-                                    }
-                                    else -> {
-                                        newStatus = Latest
-                                        promote_latest_release_alert_message
-                                    }
-                                }
-                                if(lastEventStatus == Approved) {
-                                    var isAlphaSelected by remember {
-                                        mutableStateOf(true)
-                                    }
-                                    var warnText by remember {
-                                        mutableIntStateOf(promote_alpha_release_alert_message)
-                                    }
-                                    Column {
-                                        Row (
-                                            modifier = Modifier
-                                                .fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.Center
-                                        ) {
-                                            RadioButton(
-                                                selected = isAlphaSelected,
-                                                onClick = {
-                                                    if(!isAlphaSelected) {
-                                                        isAlphaSelected = true
-                                                        newStatus = Alpha
-                                                        warnText = promote_alpha_release_alert_message
-                                                    }
+                                            requester.sendRequest(
+                                                request = {
+                                                    requester.createReportRelease(
+                                                        projectId = sourceProjectId!!,
+                                                        releaseId = releaseId!!
+                                                    )
+                                                },
+                                                onSuccess = { response ->
+                                                    val reportPath = getReportUrl(response
+                                                        .getString(RELEASE_REPORT_PATH))
+                                                    assetDownloader.downloadAsset(
+                                                        url = reportPath
+                                                    )
+                                                    refreshItem()
+                                                },
+                                                onFailure = { response ->
+                                                    refreshItem()
+                                                    snackbarLauncher.showSnack(
+                                                        message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                    )
                                                 }
-                                            )
-                                            Text(
-                                                text = Alpha.name
-                                            )
-                                            RadioButton(
-                                                selected = !isAlphaSelected,
-                                                onClick = {
-                                                    if(isAlphaSelected) {
-                                                        isAlphaSelected = false
-                                                        newStatus = Latest
-                                                        warnText = promote_latest_release_alert_message
-                                                    }
-                                                }
-                                            )
-                                            Text(
-                                                text = Latest.name
                                             )
                                         }
-                                        Text(
-                                            modifier = Modifier
-                                                .align(Alignment.CenterHorizontally),
-                                            text = getString(warnText),
-                                            textAlign = TextAlign.Justify
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Receipt,
+                                            contentDescription = null,
+                                            tint = Color.White
                                         )
                                     }
-                                } else {
-                                    Text(
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        text = getString(resId),
-                                        textAlign = TextAlign.Justify
-                                    )
+                                    IconButton(
+                                        onClick = {
+                                            showDeleteRelease.value = true
+                                            suspendRefresher()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.DeleteForever,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    }
                                 }
-                            },
+                            )
+                        },
+                        snackbarHost = {
+                            snackbarLauncher.CreateSnackbarHost()
+                        },
+                        floatingActionButton = {
+                            if(releaseCurrentStatus != Latest && activeLocalSession.isVendor &&
+                                releaseCurrentStatus != Verifying) {
+                                FloatingActionButton(
+                                    onClick = {
+                                        if(!isUploading.value) {
+                                            if(isReleaseApproved) {
+                                                suspendRefresher()
+                                                showPromoteRelease.value = true
+                                            } else
+                                                pickAssets.launch(arrayOf("*/*"))
+                                        }
+                                    },
+                                    containerColor = md_theme_light_primary
+                                ) {
+                                    if(isUploading.value) {
+                                        BallClipRotatePulseProgressIndicator(
+                                            color = Color.White
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = if(isReleaseApproved)
+                                                Icons.Default.Verified
+                                            else
+                                                Icons.Default.Upload,
+                                            contentDescription = null
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        containerColor = gray_background
+                    ) {
+                        val closeDeleteReleaseDialog = {
+                            showDeleteRelease.value = false
+                            refreshItem()
+                        }
+                        NovaAlertDialog(
+                            show = showDeleteRelease,
+                            icon = Icons.Default.Warning,
+                            onDismissAction = closeDeleteReleaseDialog,
+                            title = delete_release,
+                            message = delete_release_alert_message,
                             confirmAction = {
                                 requester.sendRequest(
                                     request = {
-                                        requester.promoteRelease(
-                                            projectId = sourceProject.id,
-                                            releaseId = release.value.id,
-                                            releaseStatus = newStatus
+                                        requester.deleteRelease(
+                                            projectId = sourceProjectId!!,
+                                            releaseId = releaseId!!
                                         )
                                     },
                                     onSuccess = {
-                                        closeAction.invoke()
+                                        showDeleteRelease.value = false
+                                        startActivity(navBackIntent)
                                     },
                                     onFailure = { response ->
-                                        closeAction.invoke()
+                                        closeDeleteReleaseDialog.invoke()
                                         snackbarLauncher.showSnack(
                                             message = response.getString(RESPONSE_MESSAGE_KEY)
                                         )
@@ -509,130 +420,214 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                 )
                             }
                         )
-                    }
-                    val events = release.value.releaseEvents
-                    if(events.isNotEmpty()) {
-                        JetLimeColumn(
-                            modifier = Modifier
-                                .padding(
-                                    top = it.calculateTopPadding() + 25.dp,
-                                    start = 20.dp,
-                                    end = 20.dp,
-                                    bottom = 20.dp
-                                ),
-                            itemsList = ItemsList(events),
-                            style = JetLimeDefaults.columnStyle(
-                                contentDistance = 24.dp,
-                                lineThickness = 3.dp
-                            ),
-                            key = { _, item -> item.id },
-                        ) { _, event, position ->
-                            val isAssetUploadingEvent = event is AssetUploadingEvent
-                            JetLimeExtendedEvent(
-                                style = JetLimeEventDefaults.eventStyle(
-                                    position = position,
-                                    pointRadius = 11.5.dp,
-                                    pointStrokeWidth = if(isAssetUploadingEvent)
-                                        6.dp
-                                    else
-                                        1.5.dp
-                                ),
-                                additionalContent = {
-                                    Column (
-                                        modifier = Modifier
-                                            .width(105.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        if(event is ReleaseStandardEvent) {
-                                            ReleaseStatusBadge(
-                                                releaseStatus = event.status,
-                                                paddingStart = 0.dp,
-                                            )
+                        if(isReleaseApproved) {
+                            val closeAction = {
+                                showPromoteRelease.value = false
+                                refreshItem()
+                            }
+                            val lastEventStatus = releaseState.value!!.lastPromotionStatus
+                            var newStatus: ReleaseStatus = Alpha
+                            NovaAlertDialog(
+                                show = showPromoteRelease,
+                                icon = Icons.Default.Verified,
+                                onDismissAction = closeAction,
+                                title = when (lastEventStatus) {
+                                    Approved -> promote_release
+                                    Alpha -> promote_release_as_beta
+                                    else -> promote_release_as_latest
+                                },
+                                message = {
+                                    val resId = when(lastEventStatus) {
+                                        Approved -> { promote_release }
+                                        Alpha -> {
+                                            newStatus = Beta
+                                            promote_beta_release_alert_message
+                                        }
+                                        else -> {
+                                            newStatus = Latest
+                                            promote_latest_release_alert_message
                                         }
                                     }
-                                }
-                            ) {
-                                Row (
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = event.releaseEventDate,
-                                            fontFamily = thinFontFamily,
-                                        )
-                                        if(event !is RejectedReleaseEvent) {
-                                            val message = if(isAssetUploadingEvent)
-                                                new_asset_has_been_uploaded
-                                            else
-                                                (event as ReleaseStandardEvent).getMessage()
+                                    if(lastEventStatus == Approved) {
+                                        var isAlphaSelected by remember {
+                                            mutableStateOf(true)
+                                        }
+                                        var warnText by remember {
+                                            mutableIntStateOf(promote_alpha_release_alert_message)
+                                        }
+                                        Column {
+                                            Row (
+                                                modifier = Modifier
+                                                    .fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center
+                                            ) {
+                                                RadioButton(
+                                                    selected = isAlphaSelected,
+                                                    onClick = {
+                                                        if(!isAlphaSelected) {
+                                                            isAlphaSelected = true
+                                                            newStatus = Alpha
+                                                            warnText = promote_alpha_release_alert_message
+                                                        }
+                                                    }
+                                                )
+                                                Text(
+                                                    text = Alpha.name
+                                                )
+                                                RadioButton(
+                                                    selected = !isAlphaSelected,
+                                                    onClick = {
+                                                        if(isAlphaSelected) {
+                                                            isAlphaSelected = false
+                                                            newStatus = Latest
+                                                            warnText = promote_latest_release_alert_message
+                                                        }
+                                                    }
+                                                )
+                                                Text(
+                                                    text = Latest.name
+                                                )
+                                            }
                                             Text(
-                                                text = getString(message),
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterHorizontally),
+                                                text = getString(warnText),
+                                                textAlign = TextAlign.Justify
                                             )
-                                            if((isAssetUploadingEvent && ((releaseCurrentStatus != Approved)
-                                                        && (releaseCurrentStatus != Latest)))) {
-                                                if(!(event as AssetUploadingEvent).isCommented) {
-                                                    val showCommentAsset = remember { mutableStateOf(false) }
-                                                    val isApproved = remember { mutableStateOf(true) }
-                                                    val reasons = remember { mutableStateOf("") }
-                                                    val reasonsErrorMessage = remember { mutableStateOf("") }
-                                                    val isError = remember { mutableStateOf(false) }
-                                                    val rejectedTags = remember {
-                                                        mutableListOf<ReleaseTag>()
-                                                    }
-                                                    val closeAction = {
-                                                        isApproved.value = true
-                                                        reasons.value = ""
-                                                        isError.value = false
-                                                        reasonsErrorMessage.value = ""
-                                                        showCommentAsset.value = false
-                                                        rejectedTags.clear()
-                                                    }
-                                                    NovaAlertDialog(
-                                                        show = showCommentAsset,
-                                                        icon = Icons.AutoMirrored.Filled.Comment,
-                                                        onDismissAction = closeAction,
-                                                        title = comment_the_asset,
-                                                        message = commentReleaseMessage(
-                                                            isApproved = isApproved,
-                                                            reasons = reasons,
-                                                            isError = isError,
-                                                            reasonsErrorMessage = reasonsErrorMessage,
-                                                            rejectedTags = rejectedTags
-                                                        ),
-                                                        dismissAction = closeAction,
-                                                        confirmAction = {
-                                                            if(isApproved.value) {
-                                                                requester.sendRequest(
-                                                                    request = {
-                                                                        requester.approveAssets(
-                                                                            projectId = sourceProject.id,
-                                                                            releaseId = release.value.id,
-                                                                            eventId = event.id
-                                                                        )
-                                                                    },
-                                                                    onSuccess = {
-                                                                        closeAction()
-                                                                    },
-                                                                    onFailure = { response ->
-                                                                        closeAction()
-                                                                        snackbarLauncher.showSnack(
-                                                                            message = response.getString(RESPONSE_MESSAGE_KEY)
-                                                                        )
-                                                                    }
-                                                                )
-                                                            } else {
-                                                                if(areRejectionReasonsValid(reasons.value)) {
+                                        }
+                                    } else {
+                                        Text(
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            text = getString(resId),
+                                            textAlign = TextAlign.Justify
+                                        )
+                                    }
+                                },
+                                confirmAction = {
+                                    requester.sendRequest(
+                                        request = {
+                                            requester.promoteRelease(
+                                                projectId = sourceProjectId!!,
+                                                releaseId = releaseId!!,
+                                                releaseStatus = newStatus
+                                            )
+                                        },
+                                        onSuccess = {
+                                            closeAction.invoke()
+                                        },
+                                        onFailure = { response ->
+                                            closeAction.invoke()
+                                            snackbarLauncher.showSnack(
+                                                message = response.getString(RESPONSE_MESSAGE_KEY)
+                                            )
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                        val events = releaseState.value!!.releaseEvents
+                        if(events.isNotEmpty()) {
+                            JetLimeColumn(
+                                modifier = Modifier
+                                    .padding(
+                                        top = it.calculateTopPadding() + 25.dp,
+                                        start = 20.dp,
+                                        end = 20.dp,
+                                        bottom = 20.dp
+                                    ),
+                                itemsList = ItemsList(events),
+                                style = JetLimeDefaults.columnStyle(
+                                    contentDistance = 24.dp,
+                                    lineThickness = 3.dp
+                                ),
+                                key = { _, item -> item.id },
+                            ) { _, event, position ->
+                                val isAssetUploadingEvent = event is AssetUploadingEvent
+                                JetLimeExtendedEvent(
+                                    style = JetLimeEventDefaults.eventStyle(
+                                        position = position,
+                                        pointRadius = 11.5.dp,
+                                        pointStrokeWidth = if(isAssetUploadingEvent)
+                                            6.dp
+                                        else
+                                            1.5.dp
+                                    ),
+                                    additionalContent = {
+                                        Column (
+                                            modifier = Modifier
+                                                .width(105.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            if(event is ReleaseStandardEvent) {
+                                                ReleaseStatusBadge(
+                                                    releaseStatus = event.status,
+                                                    paddingStart = 0.dp,
+                                                )
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Row (
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = event.releaseEventDate,
+                                                fontFamily = thinFontFamily,
+                                            )
+                                            if(event !is RejectedReleaseEvent) {
+                                                val message = if(isAssetUploadingEvent)
+                                                    new_asset_has_been_uploaded
+                                                else
+                                                    (event as ReleaseStandardEvent).getMessage()
+                                                Text(
+                                                    text = getString(message),
+                                                )
+                                                if((isAssetUploadingEvent && ((releaseCurrentStatus != Approved)
+                                                            && (releaseCurrentStatus != Latest)))) {
+                                                    if(!(event as AssetUploadingEvent).isCommented) {
+                                                        val showCommentAsset = remember { mutableStateOf(false) }
+                                                        val isApproved = remember { mutableStateOf(true) }
+                                                        val reasons = remember { mutableStateOf("") }
+                                                        val reasonsErrorMessage = remember { mutableStateOf("") }
+                                                        val isError = remember { mutableStateOf(false) }
+                                                        val rejectedTags = remember {
+                                                            mutableListOf<ReleaseTag>()
+                                                        }
+                                                        val closeAction = {
+                                                            isApproved.value = true
+                                                            reasons.value = ""
+                                                            isError.value = false
+                                                            reasonsErrorMessage.value = ""
+                                                            showCommentAsset.value = false
+                                                            rejectedTags.clear()
+                                                        }
+                                                        NovaAlertDialog(
+                                                            show = showCommentAsset,
+                                                            icon = Icons.AutoMirrored.Filled.Comment,
+                                                            onDismissAction = closeAction,
+                                                            title = comment_the_asset,
+                                                            message = commentReleaseMessage(
+                                                                isApproved = isApproved,
+                                                                reasons = reasons,
+                                                                isError = isError,
+                                                                reasonsErrorMessage = reasonsErrorMessage,
+                                                                rejectedTags = rejectedTags
+                                                            ),
+                                                            dismissAction = closeAction,
+                                                            confirmAction = {
+                                                                if(isApproved.value) {
                                                                     requester.sendRequest(
                                                                         request = {
-                                                                            requester.rejectAssets(
-                                                                                projectId = sourceProject.id,
-                                                                                releaseId = release.value.id,
-                                                                                eventId = event.id,
-                                                                                reasons = reasons.value,
-                                                                                tags = rejectedTags
+                                                                            requester.approveAssets(
+                                                                                projectId = sourceProjectId!!,
+                                                                                releaseId = releaseId!!,
+                                                                                eventId = event.id
                                                                             )
                                                                         },
                                                                         onSuccess = {
@@ -641,89 +636,114 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                                                         onFailure = { response ->
                                                                             closeAction()
                                                                             snackbarLauncher.showSnack(
-                                                                                message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                                                message = response
+                                                                                    .getString(RESPONSE_MESSAGE_KEY)
                                                                             )
                                                                         }
                                                                     )
                                                                 } else {
-                                                                    setErrorMessage(
-                                                                        errorMessage = reasonsErrorMessage,
-                                                                        errorMessageKey = string.wrong_reasons,
-                                                                        error = isError
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                    )
-                                                    Row (
-                                                        modifier = Modifier
-                                                            .fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                                    ) {
-                                                        Button(
-                                                            onClick = {
-                                                                event.assetsUploaded.forEach { asset ->
-                                                                    assetDownloader.downloadAsset(
-                                                                        getAssetUrl(
-                                                                            asset = asset.url
+                                                                    if(areRejectionReasonsValid(reasons.value)) {
+                                                                        requester.sendRequest(
+                                                                            request = {
+                                                                                requester.rejectAssets(
+                                                                                    projectId = sourceProjectId!!,
+                                                                                    releaseId = releaseId!!,
+                                                                                    eventId = event.id,
+                                                                                    reasons = reasons.value,
+                                                                                    tags = rejectedTags
+                                                                                )
+                                                                            },
+                                                                            onSuccess = {
+                                                                                closeAction()
+                                                                            },
+                                                                            onFailure = { response ->
+                                                                                closeAction()
+                                                                                snackbarLauncher.showSnack(
+                                                                                    message = response
+                                                                                        .getString(RESPONSE_MESSAGE_KEY)
+                                                                                )
+                                                                            }
                                                                         )
-                                                                    )
+                                                                    } else {
+                                                                        setErrorMessage(
+                                                                            errorMessage = reasonsErrorMessage,
+                                                                            errorMessageKey = string.wrong_reasons,
+                                                                            error = isError
+                                                                        )
+                                                                    }
                                                                 }
                                                             }
+                                                        )
+                                                        Row (
+                                                            modifier = Modifier
+                                                                .fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                                                         ) {
-                                                            Text(
-                                                                text = stringResource(string.test)
-                                                            )
-                                                        }
-                                                        if(activeLocalSession.isCustomer) {
                                                             Button(
-                                                                onClick = { showCommentAsset.value = true }
+                                                                onClick = {
+                                                                    event.assetsUploaded.forEach { asset ->
+                                                                        assetDownloader.downloadAsset(
+                                                                            getAssetUrl(
+                                                                                asset = asset.url
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                }
                                                             ) {
                                                                 Text(
-                                                                    text = getString(comment)
+                                                                    text = stringResource(string.test)
                                                                 )
+                                                            }
+                                                            if(activeLocalSession.isCustomer) {
+                                                                Button(
+                                                                    onClick = { showCommentAsset.value = true }
+                                                                ) {
+                                                                    Text(
+                                                                        text = getString(comment)
+                                                                    )
+                                                                }
                                                             }
                                                         }
                                                     }
                                                 }
-                                            }
-                                        } else {
-                                            Column {
-                                                Text(
-                                                    text = event.reasons,
-                                                    textAlign = TextAlign.Justify
-                                                )
-                                                LazyHorizontalGrid(
-                                                    modifier = Modifier
-                                                        .requiredHeightIn(
-                                                            min = 35.dp,
-                                                            max = 70.dp
+                                            } else {
+                                                Column {
+                                                    Text(
+                                                        text = event.reasons,
+                                                        textAlign = TextAlign.Justify
+                                                    )
+                                                    LazyHorizontalGrid(
+                                                        modifier = Modifier
+                                                            .requiredHeightIn(
+                                                                min = 35.dp,
+                                                                max = 70.dp
+                                                            ),
+                                                        contentPadding = PaddingValues(
+                                                            top = 5.dp
                                                         ),
-                                                    contentPadding = PaddingValues(
-                                                        top = 5.dp
-                                                    ),
-                                                    rows = GridCells.Fixed(2),
-                                                    verticalArrangement = Arrangement.spacedBy(5.dp),
-                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                                                ) {
-                                                    items(
-                                                        key = { tag -> tag.tag.name },
-                                                        items = event.tags
-                                                    ) { tag ->
-                                                        val showAlert = remember {
-                                                            mutableStateOf(false)
+                                                        rows = GridCells.Fixed(2),
+                                                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                    ) {
+                                                        items(
+                                                            key = { tag -> tag.tag.name },
+                                                            items = event.tags
+                                                        ) { tag ->
+                                                            val showAlert = remember {
+                                                                mutableStateOf(false)
+                                                            }
+                                                            ReleaseTagBadge(
+                                                                tag = tag,
+                                                                isLastEvent = releaseState.value!!.isLastEvent(event),
+                                                                onClick = { showAlert.value = true }
+                                                            )
+                                                            TagInformation(
+                                                                show = showAlert,
+                                                                event = event,
+                                                                tag = tag,
+                                                                date = event.releaseEventDate
+                                                            )
                                                         }
-                                                        ReleaseTagBadge(
-                                                            tag = tag,
-                                                            isLastEvent = release.value.isLastEvent(event),
-                                                            onClick = { showAlert.value = true }
-                                                        )
-                                                        TagInformation(
-                                                            show = showAlert,
-                                                            event = event,
-                                                            tag = tag,
-                                                            date = event.releaseEventDate
-                                                        )
                                                     }
                                                 }
                                             }
@@ -731,14 +751,15 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                     }
                                 }
                             }
+                        } else {
+                            EmptyList(
+                                icon = Icons.Default.EventBusy,
+                                description = no_events_yet
+                            )
                         }
-                    } else {
-                        EmptyList(
-                            icon = Icons.Default.EventBusy,
-                            description = no_events_yet
-                        )
                     }
-                }
+                } else
+                    LoadingUI()
             }
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -1021,8 +1042,8 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                         requester.sendRequest(
                                             request = {
                                                 requester.fillRejectedTag(
-                                                    projectId = sourceProject.id,
-                                                    releaseId = release.value.id,
+                                                    projectId = sourceProjectId!!,
+                                                    releaseId = releaseId!!,
                                                     eventId = event.id,
                                                     tagId = tag.id,
                                                     comment = description.value
@@ -1079,12 +1100,12 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                     requester.sendRequest(
                         request = {
                             requester.getRelease(
-                                projectId = sourceProject.id,
-                                releaseId = release.value.id
+                                projectId = sourceProjectId!!,
+                                releaseId = releaseId!!
                             )
                         },
                         onSuccess = { response ->
-                            release.value = Release(response.jsonObjectSource)
+                            release.postValue(Release(response.jsonObjectSource))
                         },
                         onFailure = {
                             refreshRoutine.cancel()

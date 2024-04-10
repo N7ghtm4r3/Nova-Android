@@ -51,7 +51,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -100,7 +99,7 @@ import com.tecknobit.novacore.records.User.PROJECTS_KEY
 import com.tecknobit.novacore.records.User.Role
 import com.tecknobit.novacore.records.User.TOKEN_KEY
 import com.tecknobit.novacore.records.project.Project
-import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
+import com.tecknobit.novacore.records.project.Project.PROJECT_IDENTIFIER_KEY
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -240,7 +239,6 @@ class MainActivity : NovaActivity(), ListFetcher {
                 scanOptions.setPrompt(LocalContext.current.getString(scan_to_join_in_a_project))
                 InitLauncher()
                 currentContext = LocalContext.current
-                refreshRoutine = rememberCoroutineScope()
                 refreshList()
                 Scaffold (
                     floatingActionButton = {
@@ -380,7 +378,7 @@ class MainActivity : NovaActivity(), ListFetcher {
                                                             this@MainActivity,
                                                             ProjectActivity::class.java
                                                         )
-                                                        intent.putExtra(PROJECT_KEY, project)
+                                                        intent.putExtra(PROJECT_IDENTIFIER_KEY, project.id)
                                                         startActivity(intent)
                                                     },
                                                 colors = ListItemDefaults.colors(

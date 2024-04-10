@@ -3,7 +3,6 @@ package com.tecknobit.nova.ui.activities.session
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -61,10 +60,11 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.WriterException
@@ -124,8 +125,8 @@ import com.tecknobit.novacore.records.User.Role.Vendor
 import com.tecknobit.novacore.records.project.JoiningQRCode
 import com.tecknobit.novacore.records.project.Project
 import com.tecknobit.novacore.records.project.Project.IDENTIFIER_KEY
-import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
-import com.tecknobit.novacore.records.release.Release.RELEASE_KEY
+import com.tecknobit.novacore.records.project.Project.PROJECT_IDENTIFIER_KEY
+import com.tecknobit.novacore.records.release.Release.RELEASE_IDENTIFIER_KEY
 import com.tecknobit.novacore.records.release.Release.ReleaseStatus.Approved
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -146,9 +147,19 @@ import org.json.JSONObject
 class ProjectActivity : NovaActivity(), ItemFetcher {
 
     /**
+     * **projectId** -> the identifier of the project displayed
+     */
+    private var projectId: String? = null
+    
+    /**
      * **project** -> the project displayed
      */
-    private lateinit var project: MutableState<Project>
+    private var project: MutableLiveData<Project?> = MutableLiveData()
+
+    /**
+     * **projectState** -> the project state to trigger the [Composable] invocations
+     */
+    private lateinit var projectState: State<Project?>
 
     /**
      * **displayAddMembers** -> state used to display the [CreateQrcode] UI
@@ -166,9 +177,14 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
     private lateinit var displayMembers: MutableState<Boolean>
 
     /**
-     * **isProjectAuthor** -> whether the current [user] is the author of the current [project]
+     * **isProjectAuthor** -> whether the current [activeLocalSession] is the author of the current [project]
      */
     private var isProjectAuthor: Boolean = false
+
+    /**
+     * **displayUi** -> whether display the UI or the [LoadingUI]
+     */
+    private lateinit var displayUi: MutableState<Boolean>
 
     /**
      * On create method
@@ -185,280 +201,256 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
         super.onCreate(savedInstanceState)
         val navBackIntent = Intent(this@ProjectActivity, MainActivity::class.java)
         setContent {
-            var projectFromExtra: Project?
-            project = remember {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    projectFromExtra = intent.getSerializableExtra(PROJECT_KEY, Project::class.java)
-                    if(projectFromExtra != null)
-                        mutableStateOf(projectFromExtra!!)
-                    else
-                    // TODO: MAKE THE REQUEST OR CHECK HOW TO AVOID A REQUEST
-                        mutableStateOf(Project())
-                } else {
-                    projectFromExtra = intent.getSerializableExtra(PROJECT_KEY) as Project?
-                    if(projectFromExtra != null)
-                        mutableStateOf(projectFromExtra!!)
-                    else
-                    // TODO: MAKE THE REQUEST OR CHECK HOW TO AVOID A REQUEST
-                        mutableStateOf(Project())
-                }
-            }
             currentContext = LocalContext.current
-            refreshRoutine = rememberCoroutineScope()
             InitLauncher()
+            projectId = intent.getStringExtra(PROJECT_IDENTIFIER_KEY)
+            project.value = getProject(projectId)
             refreshItem()
-            isProjectAuthor = project.value.amITheProjectAuthor(activeLocalSession.id)
             val showWorkOnProject = remember { mutableStateOf(false) }
+            displayUi = remember { mutableStateOf(project.value != null) }
             displayAddMembers = remember { mutableStateOf(false) }
             displayAddRelease = remember { mutableStateOf(false) }
             displayMembers = remember { mutableStateOf(false) }
+            project.observe(this) { project ->
+                if(project == null)
+                    displayUi.value = false
+                else {
+                    isProjectAuthor = project.amITheProjectAuthor(activeLocalSession.id)
+                    displayUi.value = true
+                }
+            }
+            projectState = project.observeAsState()
             NovaTheme {
-                Scaffold (
-                    topBar = {
-                        LargeTopAppBar(
-                            colors = TopAppBarDefaults.largeTopAppBarColors(
-                                containerColor = md_theme_light_primary
-                            ),
-                            navigationIcon = {
-                                IconButton(
-                                    onClick = { startActivity(navBackIntent) }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-                                }
-                            },
-                            title = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = spacedBy(5.dp)
-                                ) {
-                                    Text(
-                                        modifier = Modifier
-                                            .alignBy(LastBaseline),
-                                        text = project.value.name,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        modifier = Modifier
-                                            .alignBy(LastBaseline),
-                                        text = project.value.workingProgressVersionText,
-                                        fontSize = 14.sp,
-                                        color = Color.White
-                                    )
-                                }
-                            },
-                            actions = {
-                                if(activeLocalSession.isVendor) {
+                if(displayUi.value) {
+                    Scaffold (
+                        topBar = {
+                            LargeTopAppBar(
+                                colors = TopAppBarDefaults.largeTopAppBarColors(
+                                    containerColor = md_theme_light_primary
+                                ),
+                                navigationIcon = {
                                     IconButton(
-                                        onClick = {
-                                            displayAddMembers.value = true
-                                            suspendRefresher()
-                                        }
+                                        onClick = { startActivity(navBackIntent) }
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.QrCode,
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                             contentDescription = null,
                                             tint = Color.White
                                         )
                                     }
-                                    CreateQrcode()
-                                }
-                                IconButton(
-                                    onClick = {
-                                        displayMembers.value = true
-                                        suspendRefresher()
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Group,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-                                }
-                                ProjectMembers()
-                                IconButton(
-                                    onClick = {
-                                        showWorkOnProject.value = true
-                                        suspendRefresher()
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = if(isProjectAuthor)
-                                            Icons.Default.DeleteForever
-                                        else
-                                            Icons.AutoMirrored.Filled.ExitToApp,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-                                }
-                                NovaAlertDialog(
-                                    show = showWorkOnProject,
-                                    onDismissAction = {
-                                        showWorkOnProject.value = false
-                                        refreshItem()
-                                    },
-                                    icon = Icons.Default.Warning,
-                                    title = if(isProjectAuthor)
-                                        R.string.delete_project
-                                    else
-                                        R.string.leave_from_project,
-                                    message = if(isProjectAuthor)
-                                        R.string.delete_project_alert_message
-                                    else
-                                        R.string.leave_project_alert_message,
-                                    confirmAction = {
-                                        requester.sendRequest(
-                                            request = {
-                                                if(isProjectAuthor) {
-                                                    requester.deleteProject(
-                                                        projectId = project.value.id
-                                                    )
-                                                } else {
-                                                    requester.leaveProject(
-                                                        projectId = project.value.id
-                                                    )
-                                                }
-                                            },
-                                            onSuccess = {
-                                                showWorkOnProject.value = false
-                                                startActivity(navBackIntent)
-                                            },
-                                            onFailure = { response ->
-                                                showWorkOnProject.value = false
-                                                snackbarLauncher.showSnack(
-                                                    message = response.getString(RESPONSE_MESSAGE_KEY)
-                                                )
-                                                refreshItem()
-                                            }
+                                },
+                                title = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = spacedBy(5.dp)
+                                    ) {
+                                        Text(
+                                            modifier = Modifier
+                                                .alignBy(LastBaseline),
+                                            text = projectState.value!!.name,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            modifier = Modifier
+                                                .alignBy(LastBaseline),
+                                            text = projectState.value!!.workingProgressVersionText,
+                                            fontSize = 14.sp,
+                                            color = Color.White
                                         )
                                     }
-                                )
-                            }
-                        )
-                    },
-                    snackbarHost = {
-                        snackbarLauncher.CreateSnackbarHost()
-                    },
-                    floatingActionButton = {
-                        FloatingActionButton(
-                            onClick = {
-                                displayAddRelease.value = true
-                                suspendRefresher()
-                            },
-                            containerColor = md_theme_light_primary
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null
-                            )
-                        }
-                        AddRelease()
-                    }
-                ) {
-                    val releases = project.value.releases.sortedByDescending { release ->
-                        release.creationDate
-                    }
-                    if(releases.isNotEmpty()) {
-                        LazyColumn(
-                            modifier = Modifier
-                                .padding(
-                                    top = it.calculateTopPadding()
-                                )
-                                .fillMaxSize()
-                                .background(gray_background),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                            contentPadding = PaddingValues(16.dp)
-                        ) {
-                            items(
-                                key = { release -> release.id },
-                                items = releases
-                            ) { release ->
-                                OutlinedCard(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    shape = RoundedCornerShape(15.dp),
-                                    elevation = CardDefaults.cardElevation(5.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color.White
-                                    ),
-                                    onClick = {
-                                        val intent = Intent(this@ProjectActivity,
-                                            ReleaseActivity::class.java)
-                                        intent.putExtra(RELEASE_KEY, release)
-                                        intent.putExtra(PROJECT_KEY, project.value)
-                                        startActivity(intent)
-                                    }
-                                ) {
-                                    BadgedBox(
-                                        badge = {
-                                            val notifications = release.getNotifications(
-                                                MainActivity.notifications
-                                            )
-                                            if(notifications > 0) {
-                                                Badge (
-                                                    modifier = Modifier
-                                                        .padding(
-                                                            top = 10.dp
-                                                        )
-                                                        .size(
-                                                            width = 40.dp,
-                                                            height = 25.dp
-                                                        )
-                                                ) {
-                                                    Text(
-                                                        text = "$notifications"
-                                                    )
-                                                }
+                                },
+                                actions = {
+                                    if(activeLocalSession.isVendor) {
+                                        IconButton(
+                                            onClick = {
+                                                displayAddMembers.value = true
+                                                suspendRefresher()
                                             }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.QrCode,
+                                                contentDescription = null,
+                                                tint = Color.White
+                                            )
+                                        }
+                                        CreateQrcode()
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            displayMembers.value = true
+                                            suspendRefresher()
                                         }
                                     ) {
-                                        Column (
-                                            modifier = Modifier
-                                                .padding(16.dp)
-                                                .fillMaxSize()
-                                        ) {
-                                            Row (
-                                                modifier = Modifier
-                                                    .fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = release.releaseVersion,
-                                                    fontSize = 20.sp,
-                                                    fontWeight = FontWeight.Bold
+                                        Icon(
+                                            imageVector = Icons.Default.Group,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    }
+                                    ProjectMembers()
+                                    IconButton(
+                                        onClick = {
+                                            showWorkOnProject.value = true
+                                            suspendRefresher()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = if(isProjectAuthor)
+                                                Icons.Default.DeleteForever
+                                            else
+                                                Icons.AutoMirrored.Filled.ExitToApp,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                    }
+                                    NovaAlertDialog(
+                                        show = showWorkOnProject,
+                                        onDismissAction = {
+                                            showWorkOnProject.value = false
+                                            refreshItem()
+                                        },
+                                        icon = Icons.Default.Warning,
+                                        title = if(isProjectAuthor)
+                                            R.string.delete_project
+                                        else
+                                            R.string.leave_from_project,
+                                        message = if(isProjectAuthor)
+                                            R.string.delete_project_alert_message
+                                        else
+                                            R.string.leave_project_alert_message,
+                                        confirmAction = {
+                                            requester.sendRequest(
+                                                request = {
+                                                    if(isProjectAuthor) {
+                                                        requester.deleteProject(
+                                                            projectId = projectId!!
+                                                        )
+                                                    } else {
+                                                        requester.leaveProject(
+                                                            projectId = projectId!!
+                                                        )
+                                                    }
+                                                },
+                                                onSuccess = {
+                                                    showWorkOnProject.value = false
+                                                    startActivity(navBackIntent)
+                                                },
+                                                onFailure = { response ->
+                                                    showWorkOnProject.value = false
+                                                    snackbarLauncher.showSnack(
+                                                        message = response.getString(RESPONSE_MESSAGE_KEY)
+                                                    )
+                                                    refreshItem()
+                                                }
+                                            )
+                                        }
+                                    )
+                                }
+                            )
+                        },
+                        snackbarHost = {
+                            snackbarLauncher.CreateSnackbarHost()
+                        },
+                        floatingActionButton = {
+                            FloatingActionButton(
+                                onClick = {
+                                    displayAddRelease.value = true
+                                    suspendRefresher()
+                                },
+                                containerColor = md_theme_light_primary
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null
+                                )
+                            }
+                            AddRelease()
+                        }
+                    ) {
+                        val releases = projectState.value!!.releases.sortedByDescending { release ->
+                            release.creationDate
+                        }
+                        if(releases.isNotEmpty()) {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .padding(
+                                        top = it.calculateTopPadding()
+                                    )
+                                    .fillMaxSize()
+                                    .background(gray_background),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                                contentPadding = PaddingValues(16.dp)
+                            ) {
+                                items(
+                                    key = { release -> release.id },
+                                    items = releases
+                                ) { release ->
+                                    OutlinedCard(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        shape = RoundedCornerShape(15.dp),
+                                        elevation = CardDefaults.cardElevation(5.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color.White
+                                        ),
+                                        onClick = {
+                                            val intent = Intent(this@ProjectActivity,
+                                                ReleaseActivity::class.java)
+                                            intent.putExtra(PROJECT_IDENTIFIER_KEY, projectId)
+                                            intent.putExtra(RELEASE_IDENTIFIER_KEY, release.id)
+                                            startActivity(intent)
+                                        }
+                                    ) {
+                                        BadgedBox(
+                                            badge = {
+                                                val notifications = release.getNotifications(
+                                                    MainActivity.notifications
                                                 )
-                                                ReleaseStatusBadge(
-                                                    releaseStatus = release.status
-                                                )
+                                                if(notifications > 0) {
+                                                    Badge (
+                                                        modifier = Modifier
+                                                            .padding(
+                                                                top = 10.dp
+                                                            )
+                                                            .size(
+                                                                width = 40.dp,
+                                                                height = 25.dp
+                                                            )
+                                                    ) {
+                                                        Text(
+                                                            text = "$notifications"
+                                                        )
+                                                    }
+                                                }
                                             }
+                                        ) {
                                             Column (
                                                 modifier = Modifier
-                                                    .padding(
-                                                        top = 5.dp,
-                                                        start = 5.dp
-                                                    ),
+                                                    .padding(16.dp)
+                                                    .fillMaxSize()
                                             ) {
                                                 Row (
                                                     modifier = Modifier
                                                         .fillMaxWidth(),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                    verticalAlignment = Alignment.CenterVertically
                                                 ) {
                                                     Text(
-                                                        text = getString(R.string.creation_date),
-                                                        fontSize = 16.sp
+                                                        text = release.releaseVersion,
+                                                        fontSize = 20.sp,
+                                                        fontWeight = FontWeight.Bold
                                                     )
-                                                    Text(
-                                                        text = release.creationDate,
-                                                        fontSize = 16.sp,
-                                                        fontFamily = thinFontFamily
+                                                    ReleaseStatusBadge(
+                                                        releaseStatus = release.status
                                                     )
                                                 }
-                                                if(release.status == Approved) {
+                                                Column (
+                                                    modifier = Modifier
+                                                        .padding(
+                                                            top = 5.dp,
+                                                            start = 5.dp
+                                                        ),
+                                                ) {
                                                     Row (
                                                         modifier = Modifier
                                                             .fillMaxWidth(),
@@ -466,47 +458,66 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
                                                         horizontalArrangement = Arrangement.spacedBy(5.dp)
                                                     ) {
                                                         Text(
-                                                            text = getString(R.string.approbation_date),
+                                                            text = getString(R.string.creation_date),
                                                             fontSize = 16.sp
                                                         )
                                                         Text(
-                                                            text = release.approbationDate,
+                                                            text = release.creationDate,
                                                             fontSize = 16.sp,
                                                             fontFamily = thinFontFamily
                                                         )
                                                     }
+                                                    if(release.status == Approved) {
+                                                        Row (
+                                                            modifier = Modifier
+                                                                .fillMaxWidth(),
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                        ) {
+                                                            Text(
+                                                                text = getString(R.string.approbation_date),
+                                                                fontSize = 16.sp
+                                                            )
+                                                            Text(
+                                                                text = release.approbationDate,
+                                                                fontSize = 16.sp,
+                                                                fontFamily = thinFontFamily
+                                                            )
+                                                        }
+                                                    }
                                                 }
+                                                Text(
+                                                    modifier = Modifier
+                                                        .padding(
+                                                            top = 5.dp
+                                                        ),
+                                                    text = getString(R.string.release_notes),
+                                                    fontSize = 20.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                MarkdownText(
+                                                    modifier = Modifier
+                                                        .padding(
+                                                            top = 5.dp
+                                                        )
+                                                        .fillMaxWidth(),
+                                                    markdown = release.releaseNotes,
+                                                    fontSize = 16.sp
+                                                )
                                             }
-                                            Text(
-                                                modifier = Modifier
-                                                    .padding(
-                                                        top = 5.dp
-                                                    ),
-                                                text = getString(R.string.release_notes),
-                                                fontSize = 20.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            MarkdownText(
-                                                modifier = Modifier
-                                                    .padding(
-                                                        top = 5.dp
-                                                    )
-                                                    .fillMaxWidth(),
-                                                markdown = release.releaseNotes,
-                                                fontSize = 16.sp
-                                            )
                                         }
                                     }
                                 }
                             }
+                        } else {
+                            EmptyList(
+                                icon = Icons.AutoMirrored.Filled.LibraryBooks,
+                                description = R.string.no_releases_yet
+                            )
                         }
-                    } else {
-                        EmptyList(
-                            icon = Icons.AutoMirrored.Filled.LibraryBooks,
-                            description = R.string.no_releases_yet
-                        )
                     }
-                }
+                } else
+                    LoadingUI()
             }
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -670,7 +681,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
                         requester.sendRequest(
                             request = {
                                 requester.addMembers(
-                                    projectId = project.value.id,
+                                    projectId = projectId!!,
                                     mailingList = mailingList.value,
                                     role = role,
                                     createJoinCode = generateJoinCode
@@ -794,7 +805,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
                         requester.sendRequest(
                             request = {
                                 requester.addRelease(
-                                    projectId = project.value.id,
+                                    projectId = projectId!!,
                                     releaseVersion = releaseVersion.value,
                                     releaseNotes = releaseNotes.value.text
                                 )
@@ -848,7 +859,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
                 LazyColumn {
                     items(
                         key = { member -> member.id},
-                        items = project.value.projectMembers
+                        items = projectState.value!!.projectMembers
                     ) { member ->
                         ListItem(
                             leadingContent = {
@@ -888,7 +899,7 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
                                             requester.sendRequest(
                                                 request = {
                                                     requester.removeMember(
-                                                        projectId = project.value.id,
+                                                        projectId = projectId!!,
                                                         memberId = memberId
                                                     )
                                                 },
@@ -1014,11 +1025,11 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
                     requester.sendRequest(
                         request = {
                             requester.getProject(
-                                projectId = project.value.id
+                                projectId = projectId!!
                             )
                         },
                         onSuccess = { response ->
-                            project.value = Project(response.jsonObjectSource)
+                            project.postValue(Project(response.jsonObjectSource))
                         },
                         onFailure = {
                             refreshRoutine.cancel()

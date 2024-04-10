@@ -35,13 +35,18 @@ import com.tecknobit.nova.ui.activities.NovaActivity
 import com.tecknobit.nova.ui.activities.auth.AuthActivity
 import com.tecknobit.nova.ui.activities.navigation.MainActivity.Companion.notifications
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
+import com.tecknobit.nova.ui.activities.session.ReleaseActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
 import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.helpers.Requester.ListFetcher
 import com.tecknobit.novacore.records.NovaNotification
+import com.tecknobit.novacore.records.User.IDENTIFIER_KEY
 import com.tecknobit.novacore.records.User.PROJECTS_KEY
+import com.tecknobit.novacore.records.project.Project.PROJECT_IDENTIFIER_KEY
 import com.tecknobit.novacore.records.project.Project.PROJECT_KEY
+import com.tecknobit.novacore.records.release.Release.RELEASE_IDENTIFIER_KEY
+import com.tecknobit.novacore.records.release.Release.RELEASE_KEY
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -167,26 +172,42 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
                 }
                 LaunchedEffect(key1 = true) {
                     delay(250)
+                    var projectId: String? = null
+                    var releaseId: String? = null
                     val intentDestination: Class<*> = when(intent.getStringExtra(DESTINATION_KEY)) {
-                        PROJECTS_KEY -> MainActivity::class.java
-                        PROJECT_KEY -> ProjectActivity::class.java
+                        PROJECTS_KEY -> {
+                            localSessionsHelper.setNewActiveSession(intent.getStringExtra(IDENTIFIER_KEY))
+                            initAndStartSession(
+                                destination = MainActivity::class.java
+                            )
+                        }
+                        PROJECT_KEY -> {
+                            localSessionsHelper.setNewActiveSession(intent.getStringExtra(IDENTIFIER_KEY))
+                            projectId = intent.getStringExtra(PROJECT_IDENTIFIER_KEY)
+                            initAndStartSession(
+                                destination = ProjectActivity::class.java
+                            )
+                        }
+                        RELEASE_KEY -> {
+                            localSessionsHelper.setNewActiveSession(intent.getStringExtra(IDENTIFIER_KEY))
+                            projectId = intent.getStringExtra(PROJECT_IDENTIFIER_KEY)
+                            releaseId = intent.getStringExtra(RELEASE_IDENTIFIER_KEY)
+                            initAndStartSession(
+                                destination = ReleaseActivity::class.java
+                            )
+                        }
                         else -> {
-                            val activeSession = localSessionsHelper.activeSession
-                            if(activeSession != null) {
-                                requester = AndroidRequester(
-                                    host = activeSession.hostAddress,
-                                    userId = activeSession.id,
-                                    userToken = activeSession.token
-                                )
-                                activeLocalSession = activeSession
-                                refreshList()
-                                MainActivity::class.java
-                            } else 
-                                AuthActivity::class.java
+                            initAndStartSession(
+                                destination = MainActivity::class.java
+                            )
                         }
                     }
-                    // TODO: SET THE ACTIVE LOCAL SESSION FETCHING THE intent.getStringExtra(IDENTIFIER_KEY);
-                    startActivity(Intent(this@Splashscreen, intentDestination))
+                    val destination = Intent(this@Splashscreen, intentDestination)
+                    if(projectId != null)
+                        destination.putExtra(PROJECT_IDENTIFIER_KEY, projectId)
+                    if(releaseId != null)
+                        destination.putExtra(RELEASE_IDENTIFIER_KEY, releaseId)
+                    startActivity(destination)
                 }
             }
         }
@@ -195,6 +216,31 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
                 finishAffinity()
             }
         })
+    }
+
+    /**
+     * Function to init and start the session with the correct session data.
+     *
+     * If there is an active [NovaSession] available will be started the application if not will
+     * be launched the [AuthActivity] to execute the dedicated auth operations
+     *
+     * @param destination: the [Intent] destination to reach after start the application
+     *
+     * @return the destination as [Class]
+     */
+    private fun initAndStartSession(destination: Class<*>): Class<*> {
+        val activeSession = localSessionsHelper.activeSession
+        return if(activeSession != null) {
+            requester = AndroidRequester(
+                host = activeSession.hostAddress,
+                userId = activeSession.id,
+                userToken = activeSession.token
+            )
+            activeLocalSession = activeSession
+            refreshList()
+            destination
+        } else
+            AuthActivity::class.java
     }
 
     /**

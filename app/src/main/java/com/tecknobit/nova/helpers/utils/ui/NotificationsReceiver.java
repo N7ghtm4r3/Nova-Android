@@ -11,7 +11,10 @@ import static com.tecknobit.novacore.helpers.Requester.RESPONSE_STATUS_KEY;
 import static com.tecknobit.novacore.records.NovaItem.IDENTIFIER_KEY;
 import static com.tecknobit.novacore.records.NovaNotification.NOTIFICATIONS_KEY;
 import static com.tecknobit.novacore.records.User.PROJECTS_KEY;
+import static com.tecknobit.novacore.records.project.Project.PROJECT_IDENTIFIER_KEY;
 import static com.tecknobit.novacore.records.project.Project.PROJECT_KEY;
+import static com.tecknobit.novacore.records.release.Release.RELEASE_IDENTIFIER_KEY;
+import static com.tecknobit.novacore.records.release.Release.RELEASE_KEY;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -219,10 +222,17 @@ public class NotificationsReceiver extends BroadcastReceiver {
          */
         private Intent getDestination(NovaNotification notification) {
             Intent destination = new Intent(context, Splashscreen.class);
-            if(notification.getReleaseId() == null)
+            String releaseId = notification.getReleaseId();
+            if(releaseId == null)
                 destination.putExtra(DESTINATION_KEY, PROJECTS_KEY);
-            else
-                destination.putExtra(DESTINATION_KEY, PROJECT_KEY);
+            else {
+                destination.putExtra(PROJECT_IDENTIFIER_KEY, notification.getProjectId());
+                if(notification.getStatus() != null) {
+                    destination.putExtra(DESTINATION_KEY, RELEASE_KEY);
+                    destination.putExtra(RELEASE_IDENTIFIER_KEY, releaseId);
+                } else
+                    destination.putExtra(DESTINATION_KEY, PROJECT_KEY);
+            }
             destination.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             destination.putExtra(IDENTIFIER_KEY, notification.getUser().getId());
             return destination;

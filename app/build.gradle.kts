@@ -78,6 +78,7 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("com.ehsanmsz:msz-progress-indicator:0.8.0")
     implementation("org.apache.commons:commons-lang3:3.13.0")
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.5")
 }
 
 configurations.all {
