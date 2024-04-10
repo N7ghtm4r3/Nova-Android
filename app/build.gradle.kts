@@ -79,6 +79,10 @@ dependencies {
     implementation("com.ehsanmsz:msz-progress-indicator:0.8.0")
     implementation("org.apache.commons:commons-lang3:3.13.0")
     implementation("androidx.compose.runtime:runtime-livedata:1.6.5")
+    implementation("com.google.android.play:review:2.0.1")
+    implementation("com.google.android.play:review-ktx:2.0.1")
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 }
 
 configurations.all {

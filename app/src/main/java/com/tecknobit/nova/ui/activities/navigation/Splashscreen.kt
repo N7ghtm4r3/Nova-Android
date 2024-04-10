@@ -8,6 +8,7 @@ import android.os.StrictMode
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,12 @@ import coil.Coil
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.request.CachePolicy
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability.UPDATE_AVAILABLE
+import com.google.android.play.core.ktx.isImmediateUpdateAllowed
 import com.tecknobit.nova.R
 import com.tecknobit.nova.helpers.storage.LocalSessionHelper
 import com.tecknobit.nova.helpers.utils.AndroidRequester
@@ -110,6 +117,19 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
     private lateinit var context: Context
 
     /**
+     * **appUpdateManager** the manager to check if there is an update available
+     */
+    private lateinit var appUpdateManager: AppUpdateManager
+
+    /**
+     * **launcher** the result registered for [appUpdateManager] and the action to execute if fails
+     */
+    private var launcher  = registerForActivityResult(StartIntentSenderForResult()) { result ->
+        if (result.resultCode != RESULT_OK)
+            launchApp()
+    }
+
+    /**
      * On create method
      *
      * @param savedInstanceState If the activity is being re-initialized after
@@ -124,6 +144,7 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
         setContent {
             val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
             StrictMode.setThreadPolicy(policy)
+            appUpdateManager = AppUpdateManagerFactory.create(applicationContext)
             context = LocalContext.current
             currentContext = context
             refreshRoutine = rememberCoroutineScope()
@@ -174,6 +195,7 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
                     delay(250)
                     var projectId: String? = null
                     var releaseId: String? = null
+                    var checkForUpdates = false
                     val intentDestination: Class<*> = when(intent.getStringExtra(DESTINATION_KEY)) {
                         PROJECTS_KEY -> {
                             localSessionsHelper.setNewActiveSession(intent.getStringExtra(IDENTIFIER_KEY))
@@ -197,17 +219,21 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
                             )
                         }
                         else -> {
+                            checkForUpdates = true
                             initAndStartSession(
                                 destination = MainActivity::class.java
                             )
                         }
                     }
-                    val destination = Intent(this@Splashscreen, intentDestination)
-                    if(projectId != null)
-                        destination.putExtra(PROJECT_IDENTIFIER_KEY, projectId)
-                    if(releaseId != null)
-                        destination.putExtra(RELEASE_IDENTIFIER_KEY, releaseId)
-                    startActivity(destination)
+                    if(checkForUpdates)
+                        checkForUpdates()
+                    else {
+                        launchApp(
+                            intentDestination = intentDestination,
+                            projectId = projectId,
+                            releaseId = releaseId
+                        )
+                    }
                 }
             }
         }
@@ -312,6 +338,49 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
                 }
             }
         }
+    }
+
+    /**
+     * Method to check if there are some update available to install
+     *
+     * No-any params required
+     */
+    private fun checkForUpdates() {
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            val isUpdateAvailable = info.updateAvailability() == UPDATE_AVAILABLE
+            val isUpdateSupported = info.isImmediateUpdateAllowed
+            if(isUpdateAvailable && isUpdateSupported) {
+                appUpdateManager.startUpdateFlowForResult(
+                    info,
+                    launcher,
+                    AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
+                )
+            } else
+                launchApp()
+        }.addOnFailureListener {
+            launchApp()
+        }
+    }
+
+    /**
+     * Method to launch the app and the user session
+     *
+     * @param intentDestination: the intent to reach
+     * @param projectId: the project identifier
+     * @param releaseId: the release identifier
+     *
+     */
+    private fun launchApp(
+        intentDestination: Class<*> = MainActivity::class.java,
+        projectId: String? = null,
+        releaseId: String? = null
+    ) {
+        val destination = Intent(this@Splashscreen, intentDestination)
+        if(projectId != null)
+            destination.putExtra(PROJECT_IDENTIFIER_KEY, projectId)
+        if(releaseId != null)
+            destination.putExtra(RELEASE_IDENTIFIER_KEY, releaseId)
+        startActivity(destination)
     }
 
 }

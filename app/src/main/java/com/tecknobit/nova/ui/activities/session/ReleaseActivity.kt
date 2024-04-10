@@ -1,5 +1,3 @@
-@file:OptIn(DelicateCoroutinesApi::class)
-
 package com.tecknobit.nova.ui.activities.session
 
 import android.annotation.SuppressLint
@@ -69,6 +67,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.MutableLiveData
 import com.ehsanmsz.mszprogressindicator.progressindicator.BallClipRotatePulseProgressIndicator
+import com.google.android.play.core.review.ReviewManager
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.pushpal.jetlime.ItemsList
 import com.pushpal.jetlime.JetLimeColumn
 import com.pushpal.jetlime.JetLimeDefaults
@@ -141,7 +141,6 @@ import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.Iss
 import com.tecknobit.novacore.records.release.events.ReleaseEvent.ReleaseTag.LayoutChange
 import com.tecknobit.novacore.records.release.events.ReleaseStandardEvent
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -233,6 +232,8 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
      */
     private lateinit var displayUi: MutableState<Boolean>
 
+    private lateinit var reviewManager: ReviewManager
+
     /**
      * On create method
      *
@@ -255,6 +256,7 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
             if(sourceProject != null)
                 release.value = sourceProject.getRelease(releaseId)
             currentContext = LocalContext.current
+            reviewManager = ReviewManagerFactory.create(currentContext)
             InitLauncher()
             refreshItem()
             displayUi = remember { mutableStateOf(release.value != null) }
@@ -516,6 +518,8 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                         },
                                         onSuccess = {
                                             closeAction.invoke()
+                                            if(newStatus == Latest)
+                                                reviewInApp()
                                         },
                                         onFailure = { response ->
                                             closeAction.invoke()
@@ -632,6 +636,7 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
                                                                         },
                                                                         onSuccess = {
                                                                             closeAction()
+                                                                            reviewInApp()
                                                                         },
                                                                         onFailure = { response ->
                                                                             closeAction()
@@ -1152,6 +1157,27 @@ class ReleaseActivity : NovaActivity(), ItemFetcher {
     override fun onResume() {
         super.onResume()
         activeActivity = this
+    }
+
+    /**
+     * Function to launch the review in-app API
+     *
+     * No-any params required
+     */
+    private fun reviewInApp() {
+        val request = reviewManager.requestReviewFlow()
+        request.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                suspendRefresher()
+                val flow = reviewManager.launchReviewFlow(this, task.result)
+                flow.addOnCompleteListener {
+                    refreshItem()
+                }
+                flow.addOnCanceledListener {
+                    refreshItem()
+                }
+            }
+        }
     }
 
 }
