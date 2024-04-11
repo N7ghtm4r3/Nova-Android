@@ -412,7 +412,7 @@ class MainActivity : NovaActivity(), ListFetcher {
                                                     )
                                                 },
                                                 supportingContent = {
-                                                    val workingProgressVersionText = project.workingProgressVersionText
+                                                    val workingProgressVersionText = project.workingProgressVersion
                                                     Text(
                                                         text = if(workingProgressVersionText != null)
                                                             workingProgressVersionText

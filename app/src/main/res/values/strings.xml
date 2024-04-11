@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nova</string>
+    <string name="app_name" translatable="false">Nova</string>
     <string name="projects">Projects</string>
     <string name="no_version_available_yet">No version available yet</string>
     <string name="creation_date">Creation date:</string>
@@ -27,7 +27,7 @@
     <string name="reject">Reject</string>
     <string name="reasons">Reasons</string>
     <string name="wrong_reasons">The rejection reasons are not complete</string>
-    <string name="tags">Tags</string>
+    <string name="tags" translatable="false">Tags</string>
     <string name="close">Close</string>
     <string name="description">Description</string>
     <string name="wrong_description">Description is not valid</string>
@@ -53,8 +53,8 @@
     <string name="title_activity_profile">ProfileActivity</string>
     <string name="password">Password</string>
     <string name="email">Email</string>
-    <string name="uid">UID</string>
-    <string name="logout">Logout</string>
+    <string name="uid" translatable="false">UID</string>
+    <string name="logout" translatable="false">Logout</string>
     <string name="delete_account">Delete account</string>
     <string name="language">Language</string>
     <string name="edit">Edit</string>
@@ -64,8 +64,8 @@
     <string name="change_password">Change password</string>
     <string name="change_language">Change language</string>
     <string name="hello">Hello!</string>
-    <string name="host">Host</string>
-    <string name="server_secret">Server secret</string>
+    <string name="host" translatable="false">Host</string>
+    <string name="server_secret" translatable="false">Server secret</string>
     <string name="surname">Surname</string>
     <string name="sign_up">Sign up</string>
     <string name="authenticate_on_a_server">Authenticate on a server</string>
@@ -81,8 +81,6 @@
     <string name="wrong_server_secret">The server secret is not valid</string>
     <string name="my_sessions">My sessions</string>
     <string name="current">Current</string>
-    <string name="title_activity_main">MainActivity</string>
-    <string name="title_activity_qrcode">QRCodeActivity</string>
     <string name="scan_to_join_in_a_project">Scan to join in a project</string>
     <string name="generate_a_join_code_also">Generate a join code also</string>
     <string name="release_events">Release events</string>
@@ -98,7 +96,7 @@
     <string name="the_project_has_been_deleted">The project has been deleted</string>
     <string name="account_deletion_message">If you confirm your account will be permanently deleted on the current host to which it is connected</string>
     <string name="account_logout_message">If you confirm you will be disconnected from all hosts to which it is connected and you will then have to reconnect</string>
-    <string name="test">Test</string>
+    <string name="test" translatable="false">Test</string>
     <string name="uploading_assets">Uploading assets</string>
     <string name="the_assets_are_uploading_on_the_server">The assets are uploading on the server</string>
 </resources>

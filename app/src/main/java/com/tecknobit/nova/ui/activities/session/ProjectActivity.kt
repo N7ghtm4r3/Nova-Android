@@ -251,13 +251,17 @@ class ProjectActivity : NovaActivity(), ItemFetcher {
                                             color = Color.White,
                                             fontWeight = FontWeight.Bold
                                         )
-                                        Text(
-                                            modifier = Modifier
-                                                .alignBy(LastBaseline),
-                                            text = projectState.value!!.workingProgressVersionText,
-                                            fontSize = 14.sp,
-                                            color = Color.White
-                                        )
+                                        val workingProgressVersion = projectState.value!!
+                                            .workingProgressVersion
+                                        if(workingProgressVersion != null) {
+                                            Text(
+                                                modifier = Modifier
+                                                    .alignBy(LastBaseline),
+                                                text = workingProgressVersion,
+                                                fontSize = 14.sp,
+                                                color = Color.White
+                                            )
+                                        }
                                     }
                                 },
                                 actions = {

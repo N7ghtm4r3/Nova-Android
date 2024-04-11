@@ -33,7 +33,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import kotlin.math.min
 
-
 /**
  * Function to display an image as logo
  *
@@ -93,7 +92,6 @@ fun EmptyList(
         )
     }
 }
-
 
 /**
  * Function to get the complete file path of an file

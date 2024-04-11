@@ -44,6 +44,8 @@ import com.tecknobit.nova.ui.activities.navigation.MainActivity.Companion.notifi
 import com.tecknobit.nova.ui.activities.session.ProjectActivity
 import com.tecknobit.nova.ui.activities.session.ReleaseActivity
 import com.tecknobit.nova.ui.theme.NovaTheme
+import com.tecknobit.novacore.InputValidator.DEFAULT_LANGUAGE
+import com.tecknobit.novacore.InputValidator.LANGUAGES_SUPPORTED
 import com.tecknobit.novacore.helpers.LocalSessionUtils.NovaSession
 import com.tecknobit.novacore.helpers.Requester.Companion.RESPONSE_MESSAGE_KEY
 import com.tecknobit.novacore.helpers.Requester.ListFetcher
@@ -59,11 +61,13 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSession
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+
 
 /**
  * The {@code Splashscreen} activity is used to retrieve and load the session data and enter in
@@ -126,7 +130,7 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
      */
     private var launcher  = registerForActivityResult(StartIntentSenderForResult()) { result ->
         if (result.resultCode != RESULT_OK)
-            launchApp()
+            launchApp(MainActivity::class.java)
     }
 
     /**
@@ -226,7 +230,7 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
                         }
                     }
                     if(checkForUpdates)
-                        checkForUpdates()
+                        checkForUpdates(intentDestination)
                     else {
                         launchApp(
                             intentDestination = intentDestination,
@@ -263,6 +267,7 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
                 userToken = activeSession.token
             )
             activeLocalSession = activeSession
+            setLocale()
             refreshList()
             destination
         } else
@@ -343,9 +348,11 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
     /**
      * Method to check if there are some update available to install
      *
-     * No-any params required
+     * @param intentDestination: the intent to reach
      */
-    private fun checkForUpdates() {
+    private fun checkForUpdates(
+        intentDestination: Class<*>
+    ) {
         appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
             val isUpdateAvailable = info.updateAvailability() == UPDATE_AVAILABLE
             val isUpdateSupported = info.isImmediateUpdateAllowed
@@ -356,9 +363,9 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
                     AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
                 )
             } else
-                launchApp()
+                launchApp(intentDestination)
         }.addOnFailureListener {
-            launchApp()
+            launchApp(intentDestination)
         }
     }
 
@@ -371,7 +378,7 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
      *
      */
     private fun launchApp(
-        intentDestination: Class<*> = MainActivity::class.java,
+        intentDestination: Class<*>,
         projectId: String? = null,
         releaseId: String? = null
     ) {
@@ -381,6 +388,27 @@ class Splashscreen : NovaActivity(), ImageLoaderFactory, ListFetcher {
         if(releaseId != null)
             destination.putExtra(RELEASE_IDENTIFIER_KEY, releaseId)
         startActivity(destination)
+    }
+
+    /**
+     * Function to set locale language for the application
+     *
+     * No-any params required
+     */
+    private fun setLocale() {
+        var tag: String = DEFAULT_LANGUAGE
+        LANGUAGES_SUPPORTED.forEach { (key, value) ->
+            if(value == activeLocalSession.language) {
+                tag = key
+                return@forEach
+            }
+        }
+        val locale = Locale.forLanguageTag(tag)
+        Locale.setDefault(locale)
+        val resources = context.resources
+        val configuration = resources.configuration
+        configuration.locale = locale
+        resources.updateConfiguration(configuration, resources.displayMetrics)
     }
 
 }
