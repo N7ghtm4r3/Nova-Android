@@ -54,7 +54,7 @@ repositories {
 }
 
 dependencies {
-  implementation 'com.tecknobit.nova:Nova:1.0.0'
+  implementation 'com.tecknobit.novacore:Nova-core:1.0.0'
 }
 ```
 
@@ -67,7 +67,7 @@ repositories {
 }
 
 dependencies {
-  implementation("com.tecknobit.nova:Nova:1.0.0")
+  implementation("com.tecknobit.novacore:Nova-core:1.0.0")
 }
 ```
 

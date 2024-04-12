@@ -9,14 +9,14 @@
     <string name="alpha_timeline_message">La release è stata promossa alla versione Alpha</string>
     <string name="beta_timeline_message">La release è stata promossa alla versione Beta</string>
     <string name="latest_timeline_message">Rilascio promosso come più recente!</string>
-    <string name="new_asset_has_been_uploaded">È stata caricata una nuova release</string>
+    <string name="new_asset_has_been_uploaded">Sono stati caricati nuovi asset</string>
     <string name="delete_release">Eliminare la versione\?</string>
     <string name="delete_release_alert_message">Se confermi la liberatoria verrà cancellata e i relativi dati non saranno più disponibili</string>
     <string name="confirm">Conferma</string>
     <string name="dismiss">Annulla</string>
     <string name="promote_release">Promuovere release</string>
     <string name="promote_release_as_beta">Promuovi come Beta</string>
-    <string name="promote_release_as_latest">Promuovi come ultima</string>
+    <string name="promote_release_as_latest">Promuovi come Latest</string>
     <string name="promote_alpha_release_alert_message">Se confermi, la versione verrà promossa come versione alpha</string>
     <string name="promote_beta_release_alert_message">Se confermi, la versione verrà promossa come versione beta</string>
     <string name="promote_latest_release_alert_message">Se confermi, la versione verrà promossa come l\'ultima disponibile e non saranno consentite ulteriori modifiche</string>
