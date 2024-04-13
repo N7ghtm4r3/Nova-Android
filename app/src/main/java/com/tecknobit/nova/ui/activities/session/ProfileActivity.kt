@@ -206,8 +206,7 @@ class ProfileActivity : NovaActivity() {
                                 painter = rememberAsyncImagePainter(
                                     ImageRequest.Builder(LocalContext.current)
                                         .data(profilePic)
-                                        // TODO: USE THE REAL LOGO
-                                        .error(R.drawable.ic_launcher_background)
+                                        .error(R.drawable.logo)
                                         .crossfade(500)
                                         .build()
                                 ),

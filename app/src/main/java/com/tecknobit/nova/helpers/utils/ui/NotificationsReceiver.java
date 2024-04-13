@@ -247,8 +247,7 @@ public class NotificationsReceiver extends BroadcastReceiver {
          */
         private void sendNotification(NovaSession session, NovaNotification notification, Intent destination) {
             Notification.Builder builder = new Notification.Builder(context, NOVA_NOTIFICATIONS_CHANNEL_ID);
-            // TODO: 02/04/2024 USE THE REAL APPLICATION ICON
-            builder.setSmallIcon(R.drawable.ic_launcher_background);
+            builder.setSmallIcon(R.drawable.logo);
             String releaseVersion = notification.getReleaseVersion();
             String text = context.getString(getContentText(notification.getReleaseId(),
                     notification.getStatus()));

@@ -82,6 +82,7 @@ import com.tecknobit.nova.ui.components.EmptyList
 import com.tecknobit.nova.ui.components.Logo
 import com.tecknobit.nova.ui.components.NovaAlertDialog
 import com.tecknobit.nova.ui.components.NovaTextField
+import com.tecknobit.nova.ui.components.getDefProfilePic
 import com.tecknobit.nova.ui.components.getFilePath
 import com.tecknobit.nova.ui.components.getProjectLogoUrl
 import com.tecknobit.nova.ui.theme.NovaTheme
@@ -311,8 +312,7 @@ class MainActivity : NovaActivity(), ListFetcher {
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(activeLocalSession.profilePicUrl)
                                     .crossfade(500)
-                                    // TODO: USE THE REAL LOGO 
-                                    .error(R.drawable.ic_launcher_background)
+                                    .error(R.drawable.logo)
                                     .build(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop
@@ -378,7 +378,10 @@ class MainActivity : NovaActivity(), ListFetcher {
                                                             this@MainActivity,
                                                             ProjectActivity::class.java
                                                         )
-                                                        intent.putExtra(PROJECT_IDENTIFIER_KEY, project.id)
+                                                        intent.putExtra(
+                                                            PROJECT_IDENTIFIER_KEY,
+                                                            project.id
+                                                        )
                                                         startActivity(intent)
                                                     },
                                                 colors = ListItemDefaults.colors(
@@ -462,14 +465,15 @@ class MainActivity : NovaActivity(), ListFetcher {
         val projectName = remember { mutableStateOf("") }
         val isError = remember { mutableStateOf(false) }
         val errorMessage = remember { mutableStateOf("") }
-        // TODO: USE THE NOVA PROJECT LOGO AS DEFAULT IMAGE
-        var projectLogo by remember { mutableStateOf("https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg") }
+        var projectLogo by remember { mutableStateOf(getDefProfilePic()) }
+        var bordersColor by remember { mutableStateOf(Color.Transparent) }
         var selectedLogo = File(projectLogo)
         val resetLayout = {
             errorMessage.value = ""
             projectName.value = ""
             isError.value = false
-            projectLogo = "https://res.cloudinary.com/momentum-media-group-pty-ltd/image/upload/v1686795211/Space%20Connect/space-exploration-sc_fm1ysf.jpg"
+            projectLogo = getDefProfilePic()
+            bordersColor = Color.Transparent
             selectedLogo = File(projectLogo)
             displayAddProject.value = false
             refreshList()
@@ -500,13 +504,19 @@ class MainActivity : NovaActivity(), ListFetcher {
                                     )!!
                                     projectLogo = filePath
                                     selectedLogo = File(filePath)
+                                    bordersColor = Color.Transparent
                                 }
                             }
                         )
                         AsyncImage(
                             modifier = Modifier
                                 .size(125.dp)
-                                .clip(CircleShape),
+                                .clip(CircleShape)
+                                .border(
+                                    width = 2.dp,
+                                    shape = CircleShape,
+                                    color = bordersColor
+                                ),
                             model = projectLogo,
                             contentDescription = null,
                             contentScale = ContentScale.Crop
@@ -544,32 +554,35 @@ class MainActivity : NovaActivity(), ListFetcher {
             },
             dismissAction = resetLayout,
             confirmAction = {
-                if(isProjectNameValid(projectName.value)) {
-                    requester.sendRequest(
-                        request = {
-                            requester.addProject(
-                                logoPic = selectedLogo,
-                                projectName = projectName.value
-                            )
-                        },
-                        onSuccess = {
-                            resetLayout()
-                        },
-                        onFailure = { response ->
-                            setErrorMessage(
-                                errorMessage = errorMessage,
-                                errorMessageValue = response.getString(RESPONSE_MESSAGE_KEY),
-                                error = isError
-                            )
-                        }
-                    )
-                } else {
-                    setErrorMessage(
-                        errorMessage = errorMessage,
-                        errorMessageKey = R.string.name_is_not_valid,
-                        error = isError
-                    )
-                }
+                if(projectLogo != getDefProfilePic()) {
+                    if(isProjectNameValid(projectName.value)) {
+                        requester.sendRequest(
+                            request = {
+                                requester.addProject(
+                                    logoPic = selectedLogo,
+                                    projectName = projectName.value
+                                )
+                            },
+                            onSuccess = {
+                                resetLayout()
+                            },
+                            onFailure = { response ->
+                                setErrorMessage(
+                                    errorMessage = errorMessage,
+                                    errorMessageValue = response.getString(RESPONSE_MESSAGE_KEY),
+                                    error = isError
+                                )
+                            }
+                        )
+                    } else {
+                        setErrorMessage(
+                            errorMessage = errorMessage,
+                            errorMessageKey = R.string.name_is_not_valid,
+                            error = isError
+                        )
+                    }
+                } else
+                    bordersColor = com.tecknobit.nova.ui.theme.RedSchemeColors.primary
             }
         )
     }

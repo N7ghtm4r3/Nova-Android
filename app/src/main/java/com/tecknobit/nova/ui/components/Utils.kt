@@ -27,6 +27,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.tecknobit.nova.ui.activities.navigation.Splashscreen.Companion.activeLocalSession
 import com.tecknobit.novacore.records.User
+import com.tecknobit.novacore.records.User.DEFAULT_PROFILE_PIC
 import com.tecknobit.novacore.records.project.Project
 import java.io.File
 import java.io.FileOutputStream
@@ -133,6 +134,18 @@ fun getFilePath(
         returnCursor.close()
     }
     return file.path
+}
+
+/**
+ * Function to get the complete default profile pic url with the [activeLocalSession]'s host
+ *
+ * No-any params required
+ *
+ * @return the default profile pic path complete url to display as [String]
+ *
+ */
+fun getDefProfilePic(): String {
+    return activeLocalSession.hostAddress + "/" + DEFAULT_PROFILE_PIC
 }
 
 /**
