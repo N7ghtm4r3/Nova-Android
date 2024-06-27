@@ -109,6 +109,6 @@ with <a href="https://www.paypal.com/donate/?hosted_button_id=5QMN5UQH7LDT4">Pay
 
 This section concerns Privacy and policy for Android's application published on Google Play
 Store. <br>
-Pandoro application **will not share any personal data of the user with third part applications.**
+Nova application **will not share any personal data of the user with third part applications.**
 
 Copyright © 2024 Tecknobit
